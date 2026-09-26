@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Spike Sheet">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>Spike Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap">
+<style>
+/* Sportswear-app look: black on white, heavy condensed caps, pills, one volt highlight. */
+:root{
+  --bg:#FFFFFF; --soft:#F5F5F5; --soft2:#EDEDED; --ink:#111111; --muted:#707072; --faint:#9E9EA0; --line:#E5E5E5;
+  --btn:#111111; --btn-ink:#FFFFFF; --volt:#D7FF3A; --volt-ink:#111111; --hi:#111111;
+  --pos:#128A43; --neg:#D30005;
+  --head:"Archivo","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --font:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#000000; --soft:#161616; --soft2:#222222; --ink:#FFFFFF; --muted:#9E9EA0; --faint:#6B6B6D; --line:#2A2A2A;
+  --btn:#FFFFFF; --btn-ink:#111111; --volt:#D7FF3A; --volt-ink:#111111; --hi:#D7FF3A;
+  --pos:#3DDC84; --neg:#FF5A5F;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#000000; --soft:#161616; --soft2:#222222; --ink:#FFFFFF; --muted:#9E9EA0; --faint:#6B6B6D; --line:#2A2A2A;
+  --btn:#FFFFFF; --btn-ink:#111111; --volt:#D7FF3A; --volt-ink:#111111; --hi:#D7FF3A;
+  --pos:#3DDC84; --neg:#FF5A5F;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--font);padding-inline:16px;padding-block:0 110px;-webkit-tap-highlight-color:transparent}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:8;display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);padding:10px 18px 10px 14px;border-radius:999px;background:var(--btn);color:var(--btn-ink);box-shadow:0 6px 20px rgba(0,0,0,.25);text-align:left;font-weight:700;font-size:15px;line-height:1.1}
+.fab small{display:block;font-size:11px;font-weight:500;opacity:.75;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fab-i{font-size:22px;line-height:1}
+.fab:active{transform:scale(.96)}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:disabled{opacity:.3;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.big,.stat .n,.tile b,.pline b,.clock,td,.pbp .sc,.mitem .p{font-variant-numeric:tabular-nums}
+/* condensed caps display */
+.brand,h2,.big,.stat .n,.tile b,.pline b,.mitem .p,.pname,.team .nm,.jersey{font-family:var(--head);font-stretch:62%;font-weight:800;text-transform:uppercase;letter-spacing:-.005em}
+
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:20px 0;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px;font-size:28px;line-height:1}
+.brand .ball{width:12px;height:12px;border-radius:50%;background:var(--volt);box-shadow:0 0 0 2px var(--ink)}
+.brand em{font-style:normal}
+.tabs{display:flex;gap:18px}
+.tabs button{font-size:15px;font-weight:500;padding:6px 0;color:var(--muted);border-bottom:2px solid transparent}
+.tabs button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+
+.note{font-size:13px;color:var(--muted)}
+.kicker{font-size:13px;font-weight:500;color:var(--muted)}
+h2{font-size:34px;line-height:.95;margin:0;text-wrap:balance}
+h3{font-size:16px;font-weight:600;margin:0}
+.sec{display:flex;flex-direction:column;gap:10px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.panel{background:var(--soft);border-radius:20px;padding:22px 18px;display:flex;flex-direction:column;gap:16px}
+.panel form{margin:0;width:100%}
+
+label{font-size:13px;font-weight:500;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1 1 140px}
+.btn{font-weight:500;font-size:15px;padding:14px 22px;border-radius:999px;text-align:center;border:1.5px solid var(--line);background:var(--bg)}
+.btn-or{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.btn-dk{background:var(--bg)}
+.btn-del{color:var(--neg)}
+.btn-del.armed{background:var(--neg);color:#fff;border-color:var(--neg)}
+
+/* score */
+.bug{background:var(--soft);border-radius:20px;overflow:hidden}
+.bug-top{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 0;gap:8px}
+.bug-top .comp{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.setflag{font-size:12px;font-weight:600;background:var(--ink);color:var(--bg);padding:4px 10px;border-radius:999px;white-space:nowrap}
+.score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:10px 18px 14px}
+.team{display:flex;flex-direction:column;gap:4px;min-width:0}
+.team.away{text-align:right;align-items:flex-end}
+.team .nm{font-size:22px;line-height:1;overflow-wrap:anywhere}
+.team .sw{font-size:12px;color:var(--muted)}
+.big{display:flex;align-items:center;gap:8px;font-size:84px;line-height:.85}
+.big i{font-style:normal;color:var(--faint);font-size:50px}
+.big span{color:var(--faint)} .big .hi{color:var(--ink)}
+.pips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:0 18px 14px}
+.pip{font-size:12px;font-weight:500;padding:4px 10px;border-radius:999px;background:var(--bg);color:var(--muted)}
+.pip.w{color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}.pip.l{color:var(--muted)}
+.plus{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 12px}
+.plus button{padding:16px 10px;border-radius:999px;font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plus .us{background:var(--btn);color:var(--btn-ink)}
+.plus .them{background:var(--bg);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+.plus button:active{transform:scale(.97)}
+.bug-foot{display:flex;justify-content:space-between;align-items:center;padding:10px 12px 12px;gap:8px;flex-wrap:wrap}
+.setsel{display:flex;gap:4px;align-items:center}
+.setsel button{font-size:14px;font-weight:600;width:34px;height:34px;border-radius:50%;color:var(--muted)}
+.setsel button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.lnk{font-size:14px;font-weight:600;padding:8px 6px;text-decoration:underline;text-underline-offset:3px}
+
+/* player */
+.player{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:4px 0}
+.jersey{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:28px;background:var(--volt);color:var(--volt-ink)}
+.pinfo{min-width:0}
+.pname{font-size:26px;line-height:1;overflow-wrap:anywhere}
+.pline{display:flex;gap:22px;margin-top:8px;flex-wrap:wrap}
+.pline div{display:flex;flex-direction:column}
+.pline b{font-size:30px;line-height:.95}
+.pline span{font-size:12px;color:var(--muted)}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.court{display:flex;flex-direction:column;align-items:center;gap:6px}
+.court button{font-size:14px;font-weight:600;padding:10px 16px;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--line);min-width:104px}
+.court button.on{background:var(--volt);color:var(--volt-ink);box-shadow:none}
+.court .clock{font-size:15px;font-weight:600}
+.dot-ok{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--pos);margin-right:7px;vertical-align:1px}
+#syncnote .lnk{padding:0 2px;font-size:13px}
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pos);margin-right:6px;vertical-align:1px;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.3}}
+
+/* stat pad */
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.stat{background:var(--soft);border-radius:16px;min-height:88px;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:background .15s,transform .08s}
+.stat:active{transform:scale(.95)}
+.stat .n{font-size:36px;line-height:.9}
+.stat .l{font-size:13px;font-weight:600;line-height:1.15;text-align:center}
+.stat .s{font-size:11px;color:var(--muted);line-height:1.1;text-align:center}
+.stat.err .n{color:var(--neg)}
+.stat.flash{background:var(--volt);color:var(--volt-ink)}
+.stat.flash .s{color:var(--volt-ink)}
+.undo{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted)}
+.undo span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.undo .btn{padding:9px 18px;font-size:14px}
+
+/* play by play */
+.pbp{display:flex;flex-direction:column}
+.pbp div{display:grid;grid-template-columns:44px 56px 1fr;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.pbp .st{font-size:12px;color:var(--faint)}
+.pbp .sc{font-weight:600}
+.pbp .ev.pt{font-weight:600} .pbp .ev.err{color:var(--neg)} .pbp .ev.sub{color:var(--pos);font-weight:500} .pbp .ev.team{color:var(--muted)}
+
+/* tables */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{padding:10px 8px;text-align:right;white-space:nowrap;font-size:14px}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--bg);padding-left:0}
+thead th{font-size:12px;font-weight:500;color:var(--muted);border-bottom:1.5px solid var(--ink)}
+tbody td{border-top:1px solid var(--line)}
+tbody tr:first-child td{border-top:0}
+tr.sum td{font-weight:700;border-top:1.5px solid var(--ink)}
+td.k{font-weight:700}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tile{background:var(--soft);border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.tile b{font-size:36px;line-height:.9}
+.tile span{font-size:12px;font-weight:500;line-height:1.25}
+.tile em{font-style:normal;font-size:11px;color:var(--muted);line-height:1.25}
+.tile.hero{background:var(--ink);color:var(--bg)}
+.tile.hero em{color:var(--faint)}
+
+.stints{display:flex;flex-direction:column}
+.stint{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 0;font-size:14px;border-bottom:1px solid var(--line)}
+.stint b{font-weight:700}
+
+.mlist{display:flex;flex-direction:column}
+.mitem{display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:14px 0;text-align:left;width:100%;border-bottom:1px solid var(--line)}
+.res{font-size:12px;font-weight:700;min-width:34px;height:26px;padding:0 8px;border-radius:999px;display:grid;place-items:center;background:var(--soft);color:var(--muted)}
+.res.W{background:var(--ink);color:var(--bg)}.res.L{background:var(--soft2);color:var(--muted)}.res.live{background:var(--volt);color:var(--volt-ink)}
+.mitem .t{font-weight:600;overflow-wrap:anywhere}
+.mitem .d{font-size:12px;color:var(--muted)}
+.mitem .p{text-align:right;font-size:28px;line-height:.9}
+.mitem .p small{display:block;font:500 10px var(--font);color:var(--faint);text-transform:none;letter-spacing:0}
+.empty{color:var(--muted);padding:12px 0;text-align:center}
+.check{flex-direction:row!important;align-items:center;gap:10px;color:var(--ink)!important;font-size:15px!important}
+.check input{width:22px;height:22px;accent-color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:999px;font-size:14px;font-weight:500;z-index:10;white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
+textarea{width:100%;height:150px;background:var(--soft);color:var(--ink);border:0;border-radius:12px;font:14px var(--font);padding:12px}
+/* phone fit: nested wraps must fill, never grow to their content */
+.wrap .wrap{margin:0;width:100%;max-width:none;min-width:0}
+.sec,.tbl,.panel,.bug,.player{min-width:0;max-width:100%}
+.row>*{min-width:0}
+input,select{min-width:0;max-width:100%}
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-height:48px;text-align:left}
+input::-webkit-date-and-time-value{text-align:left}
+/* who passed to her */
+.tagbar{position:fixed;left:0;right:0;bottom:0;z-index:9;background:var(--ink);color:var(--bg);padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;box-shadow:0 -8px 24px rgba(0,0,0,.25)}
+.tagbar .q{font-size:14px;font-weight:600}
+.tagbar .nums{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;max-height:42vh;overflow-y:auto}
+.tagbar button{height:44px;border-radius:12px;background:var(--bg);color:var(--ink);font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
+.tagbar .more{display:flex;gap:6px}
+.tagbar .more input{flex:1;height:44px;min-width:0;background:transparent;color:var(--bg);border:1.5px solid var(--faint);border-radius:12px;padding:0 12px;font-size:16px}
+.tagbar .more input::placeholder{color:var(--faint)}
+.tagbar .more button{padding:0 16px;font-size:15px}
+.tagbar button.skip{padding:0 18px;background:transparent;color:var(--bg);box-shadow:inset 0 0 0 1.5px var(--faint);font-size:15px}
+.mates{display:flex;flex-direction:column}
+.mate{display:grid;grid-template-columns:1fr auto auto auto;gap:16px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center}
+.mate b{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.mate small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+@media (max-width:440px){
+  .big{font-size:66px}.big i{font-size:40px}
+  .pad{gap:5px}.stat{min-height:80px}.stat .n{font-size:30px}.stat .l{font-size:12px}
+  .tiles{grid-template-columns:repeat(2,1fr)}
+  .mitem{grid-template-columns:auto 1fr auto}.mitem .vir{display:none}
+  .player{grid-template-columns:auto 1fr}.court{grid-column:1/-1;flex-direction:row;justify-content:space-between}
+}
+@media (prefers-reduced-motion:reduce){.stat,.live-dot{animation:none;transition:none}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="ball" aria-hidden="true"></span><span>Spike <em>Sheet</em></span></div>
+    <nav class="tabs" aria-label="Views">
+      <button data-view="live">Live</button>
+      <button data-view="history">Season</button>
+      <button data-view="player">Player</button>
+    </nav>
+  </header>
+  <div id="syncnote" class="note" hidden></div>
+  <main id="app" class="wrap" style="max-width:none"></main>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+const STATS = [
+  {k:'ace',   l:'Ace',        s:'serve point', g:'pt',  a:'ACE'},
+  {k:'kill',  l:'Spike',      s:'kill',        g:'pt',  a:'SPK'},
+  {k:'plase', l:'Plasé',      s:'placed over', g:'pt',  a:'PLA'},
+  {k:'block', l:'Block',      s:'point',       g:'pt',  a:'BLK'},
+  {k:'dig',   l:'Defence',    s:'good dig',    g:'play',a:'DEF'},
+  {k:'pass',  l:'Reception',  s:'good pass',   g:'play',a:'REC'},
+  {k:'serve', l:'Serve in',   s:'no point',    g:'play',a:'SRV'},
+  {k:'assist',l:'Set',        s:'good set',    g:'play',a:'SET'},
+  {k:'serr',  l:'Serve',      s:'error',       g:'err', a:'SE'},
+  {k:'aerr',  l:'Attack',     s:'error',       g:'err', a:'AE'},
+  {k:'rerr',  l:'Reception',  s:'error',       g:'err', a:'RE'},
+  {k:'ferr',  l:'Net / fault',s:'error',       g:'err', a:'NF'},
+];
+const GROUPS = [{g:'pt',h:'Points won'},{g:'play',h:'Good plays'},{g:'err',h:'Errors'}];
+const BYK = Object.fromEntries(STATS.map(s=>[s.k,s]));
+const PT_KEYS = ['ace','kill','plase','block'];
+const ERR_KEYS = ['serr','aerr','rerr','ferr'];
+const TAG_KEYS = ['kill','plase'];
+const WEIGHT = {ace:1,kill:1,plase:1,block:1,dig:1,pass:.5,assist:.5,serve:0,serr:-1,aerr:-1,rerr:-1,ferr:-1};
+
+const S = {matches:{}, player:{name:'', num:'', pos:''}, activeId:null, view:'live', openId:null, set:1, db:null, pending:{}, flushing:false, timer:null, armed:null, unsubs:[], user:null};
+
+/* ---------- storage ---------- */
+const LS = {
+  get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+};
+function backup(){ LS.set('ss.matches', S.matches); LS.set('ss.active', S.activeId); LS.set('ss.player', S.player); }
+function restore(){
+  const m = LS.get('ss.matches'); if (m && typeof m === 'object') S.matches = m;
+  const p = LS.get('ss.player'); if (p && typeof p === 'object') S.player = Object.assign(S.player, p);
+  S.activeId = LS.get('ss.active');
+  if (S.activeId && !S.matches[S.activeId]) S.activeId = null;
+  const a = S.activeId && S.matches[S.activeId];
+  if (a) S.set = a.curSet || 1;
+}
+function save(m){
+  m.updatedAt = Date.now();
+  S.matches[m.id] = m;
+  backup(); queue('matches/'+m.id);
+}
+function savePlayer(){ S.player.updatedAt = Date.now(); backup(); queue('settings/player'); }
+function queue(path){
+  if (!S.db) return;
+  S.pending[path] = true;
+  clearTimeout(S.flushT); S.flushT = setTimeout(flush, 500);
+}
+function bodyFor(path){
+  if (path === 'settings/player') return S.player;
+  return S.matches[path.slice(8)];
+}
+async function flush(){
+  if (S.flushing || !S.db) return;
+  S.flushing = true;
+  try{
+    for (const path of Object.keys(S.pending)){
+      delete S.pending[path];
+      const body = bodyFor(path);
+      try{
+        if (body) await S.db.doc(path).set(JSON.parse(JSON.stringify(body)));
+        else await S.db.doc(path).delete();
+      }catch(e){
+        if (e && e.code === 'quota_exceeded') toast('Storage full. Delete old matches.');
+        else if (e && e.code === 'invalid_argument') { toast('Saving on this phone only'); S.db = null; }
+        else S.pending[path] = true;
+      }
+    }
+  } finally { S.flushing = false; }
+  if (S.db && Object.keys(S.pending).length) { clearTimeout(S.flushT); S.flushT = setTimeout(flush, 3000); }
+}
+function connect(db){
+  S.db = db;
+  // Upload only what this phone has that is newer than the shared copy, and
+  // only after reading the shared copy, so an older phone never overwrites a newer one.
+  let first = true;
+  const lastSync = LS.get('ss.synced') || 0;
+  S.unsubs.push(db.collection('matches').onSnapshot(snap => {
+    let changed = false;
+    const seen = new Set();
+    const reconcile = first && !snap.metadata?.fromCache;
+    snap.docs.forEach(d => {
+      const r = d.data(); if (!r) return;
+      seen.add(d.id);
+      const local = S.matches[d.id];
+      if (!local || (r.updatedAt||0) > (local.updatedAt||0)) { S.matches[d.id] = JSON.parse(JSON.stringify(r)); changed = true; }
+      else if (reconcile && (local.updatedAt||0) > (r.updatedAt||0)) queue('matches/'+d.id);
+    });
+    if (reconcile){
+      // a match only on this phone: upload it if it was made since the last sync,
+      // otherwise it was deleted on the other phone, so drop it here too
+      Object.keys(S.matches).forEach(id => {
+        if (seen.has(id)) return;
+        if ((S.matches[id].updatedAt||0) > lastSync) queue('matches/'+id);
+        else { delete S.matches[id]; if (S.activeId === id) S.activeId = null; changed = true; }
+      });
+      first = false;
+    }
+    if (!snap.metadata?.fromCache) LS.set('ss.synced', Date.now());
+    snap.docChanges().forEach(c => {
+      if (c.type === 'removed' && S.matches[c.doc.id] && !S.pending['matches/'+c.doc.id]) { delete S.matches[c.doc.id]; changed = true; }
+    });
+    if (changed){ backup(); if (!isTyping()) render(); }
+  }, () => {}));
+  let firstP = true;
+  S.unsubs.push(db.doc('settings/player').onSnapshot(d => {
+    const r = d.exists && d.data();
+    if (r && (r.updatedAt||0) > (S.player.updatedAt||0)) { S.player = Object.assign({}, r); backup(); if (!isTyping()) render(); }
+    else if (firstP && !d.metadata?.fromCache && (S.player.updatedAt||0) > ((r && r.updatedAt)||0)) queue('settings/player');
+    if (!d.metadata?.fromCache) firstP = false;
+  }, () => {}));
+  flush();
+}
+function disconnect(){
+  S.unsubs.forEach(u => { try{ u(); }catch(e){} });
+  S.unsubs = []; S.db = null; S.pending = {};
+}
+function clearLocal(){
+  S.matches = {}; S.activeId = null; S.player = {name:'', num:'', pos:''};
+  try{ localStorage.removeItem('ss.synced'); }catch(e){}
+  backup();
+}
+// Called by the Firebase module whenever the signed-in account changes.
+window.SS_onUser = (u, db) => {
+  const prev = LS.get('ss.uid');
+  disconnect();
+  if (u){
+    // another account used this phone before: never mix their matches in
+    if (prev && prev !== u.uid) clearLocal();
+    LS.set('ss.uid', u.uid);
+    S.user = u;
+    connect(db);
+  } else {
+    S.user = null;
+    // signed out: take this account's matches off the phone (they stay in the cloud)
+    if (prev){ clearLocal(); try{ localStorage.removeItem('ss.uid'); }catch(e){} }
+  }
+  syncNote(); render();
+};
+window.SS_writeFailed = e => {
+  if (e && e.code === 'permission-denied') toast('Not allowed to save. Sign in again.');
+};
+window.SS_toast = t => toast(t);
+function syncNote(){
+  const n = document.getElementById('syncnote');
+  n.hidden = false;
+  n.innerHTML = S.user
+    ? `<span class="dot-ok"></span>Synced to ${esc(S.user.email || 'your account')}`
+    : `Saving on this phone only. <button class="lnk" id="b-signin">Sign in with Google</button> to sync and back up.`;
+}
+const isTyping = () => ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName);
+
+/* ---------- analysis ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function counts(m, set){
+  const c = Object.fromEntries(STATS.map(s=>[s.k,0]));
+  (m.log||[]).forEach(e => { if (BYK[e.k] && (set == null || e.set === set)) c[e.k]++; });
+  return c;
+}
+const pts = c => PT_KEYS.reduce((a,k)=>a+(c[k]||0),0);
+const errs = c => ERR_KEYS.reduce((a,k)=>a+(c[k]||0),0);
+const vir = c => STATS.reduce((a,s)=>a+WEIGHT[s.k]*(c[s.k]||0),0);
+const fmtVir = v => (Math.round(v*10)/10).toString();
+const fmtPM = v => (v>0?'+':'')+v;
+const pmClass = v => v>0?'pos':v<0?'neg':'';
+
+// Replays the log: running set scores, her court stints and +/-.
+function analyze(m){
+  const score = {}, stints = []; let on = null, plus = 0, minus = 0; const feed = [];
+  const sc = s => score[s] || (score[s] = {us:0, them:0});
+  (m.log||[]).forEach(e => {
+    const s = sc(e.set);
+    if (e.k === 'us' || e.k === 'them'){
+      s[e.k]++;
+      if (on){ if (e.k === 'us'){ on.plus++; plus++; } else { on.minus++; minus++; } }
+    } else if (e.k === 'on'){
+      on = {inSet:e.set, inUs:s.us, inThem:s.them, plus:0, minus:0, t:e.t};
+      stints.push(on);
+    } else if (e.k === 'off' && on){
+      on.outSet = e.set; on.outUs = s.us; on.outThem = s.them; on.dur = e.dur; on = null;
+    }
+    // an automatic team point belongs to the stat just before it
+    if (e.auto && feed.length){ const f = feed[feed.length-1]; f.us = s.us; f.them = s.them; }
+    else feed.push({e, us:s.us, them:s.them});
+  });
+  return {score, stints, plus, minus, pm: plus - minus, feed, onNow: !!on};
+}
+function setsWon(m){
+  const {score} = analyze(m); let w = 0, l = 0;
+  (m.ended||[]).forEach(s => { const x = score[s]; if (!x) return; if (x.us > x.them) w++; else if (x.them > x.us) l++; });
+  return {w, l};
+}
+function playMs(m){ return (m.playMs||0) + (m.onCourt && m.courtSince ? Date.now() - m.courtSince : 0); }
+function fmtTime(ms){
+  const t = Math.floor(ms/1000), h = Math.floor(t/3600), mi = Math.floor(t%3600/60), s = t%60;
+  return h ? `${h}:${String(mi).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${mi}:${String(s).padStart(2,'0')}`;
+}
+const mins = ms => Math.round(ms/60000);
+function fmtDate(d){ try{ return new Date(d+'T12:00').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'}); }catch(e){ return d; } }
+const today = () => { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+function toast(t){ const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(S.toastT); S.toastT = setTimeout(()=>el.hidden = true, 2200); }
+function buzz(){ try{ navigator.vibrate && navigator.vibrate(12); }catch(e){} }
+let wake = null;
+async function keepAwake(){ try{ if (!wake && navigator.wakeLock) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', ()=>wake=null); } }catch(e){} }
+document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='visible' && S.activeId) keepAwake(); });
+const pName = () => S.player.name || 'Player';
+const homeName = m => m.home || 'Us';
+function evLabel(e, m){
+  if (BYK[e.k]) return {t: BYK[e.k].l + (BYK[e.k].g==='err' ? ' error' : '') + (e.from ? ' · pass from ' + e.from : ''), c: BYK[e.k].g==='play' ? '' : BYK[e.k].g};
+  if (e.k === 'us') return {t:'Point ' + homeName(m), c:'team'};
+  if (e.k === 'them') return {t:'Point ' + (m.opp||'them'), c:'team'};
+  if (e.k === 'on') return {t: pName() + ' on court', c:'sub'};
+  if (e.k === 'off') return {t: pName() + ' to the bench', c:'sub'};
+  return {t:e.k, c:''};
+}
+
+/* ---------- actions ---------- */
+function startMatch(f){
+  const id = 'm' + Date.now().toString(36);
+  const m = {id, opp:f.opp||'Opponent', home:f.home||'', date:f.date||today(), team:f.team||'', log:[], playMs:0, onCourt:false, courtSince:null, curSet:1, maxSet:1, ended:[], result:'', score:'', done:false, createdAt:Date.now()};
+  S.activeId = id; S.set = 1;
+  save(m);
+  if (f.starter) courtOn(m);
+  keepAwake(); render();
+}
+function push(m, e){ m.log = (m.log||[]).concat(Object.assign({set:S.set, t:Date.now()}, e)); }
+function tap(k){
+  const m = S.matches[S.activeId]; if (!m) return;
+  S.tag = null; clearTimeout(S.tagT);
+  push(m, {k});
+  const idx = m.log.length - 1;
+  // her point wins the rally for her team; her error gives it to the other team
+  if (PT_KEYS.includes(k)) push(m, {k:'us', auto:1});
+  if (ERR_KEYS.includes(k)) push(m, {k:'them', auto:1});
+  // a spike or plasé: ask which number passed to her
+  if (TAG_KEYS.includes(k)){
+    S.tag = {mid:m.id, i:idx};
+    S.tagT = setTimeout(()=>{ if (!isTyping()){ S.tag = null; render(); } }, 20000);
+  }
+  save(m); buzz(); render();
+  const el = document.querySelector(`[data-stat="${k}"]`);
+  if (el){ el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+}
+// n: a jersey number, or '' for "None"
+function setPasser(n){
+  const m = S.tag && S.matches[S.tag.mid], e = m && m.log[S.tag.i];
+  n = String(n).replace(/\D/g,'').slice(0,3);
+  if (e && n){
+    e.from = '#' + n; save(m); toast('Pass from #' + n);
+    const known = +n >= 1 && +n <= 20 || (S.player.extraNums||[]).includes(n);
+    if (!known){ S.player.extraNums = [...(S.player.extraNums||[]), n].sort((a,b)=>a-b); savePlayer(); }
+  }
+  S.tag = null; clearTimeout(S.tagT); render();
+}
+function teamPoint(side){
+  const m = S.matches[S.activeId]; if (!m) return;
+  S.tag = null;
+  push(m, {k:side}); save(m); buzz(); render();
+}
+function courtOn(m){ m.onCourt = true; m.courtSince = Date.now(); push(m, {k:'on'}); }
+function toggleCourt(){
+  const m = S.matches[S.activeId]; if (!m) return;
+  if (m.onCourt){
+    const dur = Date.now() - m.courtSince;
+    push(m, {k:'off', dur, onAt:m.courtSince});
+    m.playMs = (m.playMs||0) + dur; m.onCourt = false; m.courtSince = null;
+  } else courtOn(m);
+  save(m); buzz(); render();
+}
+function undo(){
+  const m = S.matches[S.activeId]; if (!m || !m.log?.length) return;
+  let last = m.log[m.log.length-1];
+  m.log = m.log.slice(0,-1);
+  // a stat's automatic team point goes with it
+  S.tag = null;
+  if ((last.k === 'us' || last.k === 'them') && last.auto && m.log.length && BYK[m.log[m.log.length-1].k]){ last = m.log[m.log.length-1]; m.log = m.log.slice(0,-1); }
+  if (last.k === 'on'){ m.onCourt = false; m.courtSince = null; }
+  if (last.k === 'off'){ m.playMs = Math.max(0,(m.playMs||0) - (last.dur||0)); m.onCourt = true; m.courtSince = last.onAt || Date.now(); }
+  save(m); render(); toast('Undone: ' + evLabel(last, m).t);
+}
+function pickSet(n){
+  S.set = n; const m = S.matches[S.activeId];
+  if (m){ m.curSet = n; m.maxSet = Math.max(m.maxSet||1, n); save(m); }
+  render();
+}
+function endSet(){
+  const m = S.matches[S.activeId]; if (!m) return;
+  const s = S.set;
+  m.ended = [...new Set([...(m.ended||[]), s])].sort((a,b)=>a-b);
+  const sc = analyze(m).score[s] || {us:0,them:0};
+  toast(`Set ${s}: ${sc.us}–${sc.them}`);
+  pickSet(Math.min(s+1, 5));
+}
+function finishMatch(result, score){
+  const m = S.matches[S.activeId]; if (!m) return;
+  // the final whistle belongs to the last set that was played, not an empty next set
+  const cur = analyze(m).score[S.set], log = m.log||[];
+  const offSet = (cur && (cur.us || cur.them)) || !log.length ? S.set : log[log.length-1].set;
+  if (m.onCourt){ const dur = Date.now()-m.courtSince; push(m,{k:'off',dur,onAt:m.courtSince,set:offSet}); m.playMs=(m.playMs||0)+dur; m.onCourt=false; m.courtSince=null; }
+  if (!(m.ended||[]).includes(S.set)){ const sc = analyze(m).score[S.set]; if (sc && (sc.us||sc.them)) m.ended = [...(m.ended||[]), S.set]; }
+  m.result = result; m.score = score; m.done = true;
+  save(m);
+  S.activeId = null; backup();
+  S.view = 'match'; S.openId = m.id; render(); window.scrollTo(0,0);
+}
+function resume(id){
+  const m = S.matches[id]; if (!m) return;
+  m.done = false; save(m);
+  S.activeId = id; S.set = m.curSet || 1; S.view = 'live'; render(); window.scrollTo(0,0);
+}
+function removeMatch(id){
+  delete S.matches[id];
+  if (S.activeId === id) S.activeId = null;
+  backup(); queue('matches/'+id);
+  S.view = 'history'; S.openId = null; render(); toast('Match deleted');
+}
+
+/* ---------- views ---------- */
+function render(){
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || (S.view==='match' && b.dataset.view==='history'))));
+  const app = $('#app');
+  if (S.view === 'live') app.innerHTML = S.activeId && S.matches[S.activeId] ? liveView(S.matches[S.activeId]) : newView();
+  else if (S.view === 'player') app.innerHTML = playerView();
+  else if (S.view === 'match' && S.matches[S.openId]) app.innerHTML = matchView(S.matches[S.openId]);
+  else { S.view = 'history'; app.innerHTML = historyView(); }
+  clearInterval(S.timer);
+  const m = S.activeId && S.matches[S.activeId];
+  if (S.view === 'live' && m && m.onCourt) S.timer = setInterval(()=>{ const c = $('#clock'); if (c) c.textContent = fmtTime(playMs(m)); }, 1000);
+}
+
+function newView(){
+  const last = Object.values(S.matches).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];
+  return `
+  <section class="panel">
+    <div class="kicker">Tip-off</div>
+    <h2>New match</h2>
+    <form id="newform" class="wrap" style="max-width:none;gap:12px">
+      <div class="row">
+        <label>Her team<input id="f-home" autocomplete="off" placeholder="e.g. Panathinaikos" value="${esc(last?.home||'')}"></label>
+        <label>Opponent<input id="f-opp" autocomplete="off" placeholder="e.g. Olympiacos"></label>
+      </div>
+      <div class="row">
+        <label>Date<input id="f-date" type="date" value="${today()}"></label>
+        <label>Competition<input id="f-team" autocomplete="off" placeholder="League, cup, friendly" value="${esc(last?.team||'')}"></label>
+      </div>
+      <label class="check"><input id="f-starter" type="checkbox"> She starts on court</label>
+      <button class="btn btn-or" type="submit">Start match</button>
+    </form>
+    <p class="note">Count the score with the two big buttons. Tap her stats as they happen. Her points add a point to her team, her errors add one to the other team. Tap the court button every time she goes on or off.</p>
+  </section>
+  ${S.player.name ? '' : `<button class="btn btn-dk" data-view="player">Add her name and number</button>`}`;
+}
+
+function scoreBug(m, a, opts){
+  const {w, l} = setsWon(m);
+  // live: the current set's rally score; finished: sets won
+  const s = S.set, sc = opts.live ? (a.score[s] || {us:0,them:0}) : {us:w, them:l};
+  const pips = Object.keys(a.score).map(Number).sort((x,y)=>x-y).filter(n => (m.ended||[]).includes(n))
+    .map(n => { const x = a.score[n]; return `<span class="pip ${x.us>x.them?'w':x.them>x.us?'l':''}">S${n} ${x.us}–${x.them}</span>`; }).join('');
+  return `
+  <section class="bug">
+    <div class="bug-top"><span class="comp">${esc(fmtDate(m.date))}${m.team?' · '+esc(m.team):''}</span><span class="setflag">${opts.live ? 'Set '+s : 'Sets'}</span></div>
+    <div class="score">
+      <div class="team"><span class="nm">${esc(homeName(m))}</span><span class="sw">Sets ${w}</span></div>
+      <div class="big"><span class="${sc.us>=sc.them?'hi':''}">${sc.us}</span><i>:</i><span class="${sc.them>sc.us?'hi':''}">${sc.them}</span></div>
+      <div class="team away"><span class="nm">${esc(m.opp)}</span><span class="sw">Sets ${l}</span></div>
+    </div>
+    ${pips ? `<div class="pips">${pips}</div>` : ''}
+    ${opts.live ? `
+    <div class="plus">
+      <button class="us" id="b-us">+1 ${esc(homeName(m))}</button>
+      <button class="them" id="b-them">+1 ${esc(m.opp)}</button>
+    </div>
+    <div class="bug-foot">
+      <div class="setsel" role="group" aria-label="Set">${[1,2,3,4,5].map(n=>`<button data-set="${n}" aria-pressed="${S.set===n}">${n}</button>`).join('')}</div>
+      <button class="lnk" id="b-endset">End set ${s} ›</button>
+    </div>` : ''}
+  </section>`;
+}
+
+function liveView(m){
+  const a = analyze(m), all = counts(m);
+  const lastE = m.log?.[m.log.length-1];
+  const lastStint = a.stints[a.stints.length-1];
+  const since = m.onCourt && lastStint ? `On at ${lastStint.inUs}–${lastStint.inThem}, set ${lastStint.inSet}` : (lastStint ? `Off at ${lastStint.outUs}–${lastStint.outThem}, set ${lastStint.outSet}` : 'Not on court yet');
+  return `
+  ${scoreBug(m, a, {live:true})}
+  <section class="player">
+    <div class="jersey">${esc(S.player.num || '?')}</div>
+    <div class="pinfo">
+      <div class="pname">${esc(pName())}</div>
+      <div class="note">${m.onCourt?'<span class="live-dot"></span>':''}${esc(since)}</div>
+      <div class="pline">
+        <div><b>${pts(all)}</b><span>Pts</span></div>
+        <div><b class="${pmClass(a.pm)}">${fmtPM(a.pm)}</b><span>+/-</span></div>
+        <div><b>${fmtVir(vir(all))}</b><span>Rating</span></div>
+      </div>
+    </div>
+    <div class="court">
+      <button class="${m.onCourt?'on':''}" id="b-court">${m.onCourt?'On court':'On bench'}</button>
+      <span class="clock" id="clock">${fmtTime(playMs(m))}</span>
+    </div>
+  </section>
+  ${GROUPS.map(G=>`
+  <section class="sec"><h3>${G.h}</h3><div class="pad">
+    ${STATS.filter(s=>s.g===G.g).map(s=>`<button class="stat ${s.g}" data-stat="${s.k}" aria-label="${esc(s.l+' '+s.s)}, ${all[s.k]} so far"><span class="n">${all[s.k]}</span><span class="l">${esc(s.l)}</span><span class="s">${esc(s.s)}</span></button>`).join('')}
+  </div></section>`).join('')}
+  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>Play by play</h3></div>${feedHTML(m, a.feed.slice(-8).reverse())}</section>` : ''}
+  <section class="panel">
+    <h2>Final whistle</h2>
+    ${finishForm(m)}
+  </section>
+  <button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?'Tap again to delete this match':'Delete this match'}</button>
+  ${undoFab(m)}
+  ${tagBar(m)}`;
+}
+// Always-visible undo, naming the tap it will take back.
+function undoFab(m){
+  const log = m.log||[]; let e = log[log.length-1];
+  if (e && e.auto && log.length > 1) e = log[log.length-2];
+  return `<button class="fab" id="b-undo" ${e?'':'disabled'} aria-label="Undo ${e?esc(evLabel(e,m).t):''}">
+    <span class="fab-i" aria-hidden="true">↶</span><span>Undo<small>${e?esc(evLabel(e,m).t):'nothing yet'}</small></span></button>`;
+}
+function tagBar(m){
+  if (!S.tag || S.tag.mid !== m.id) return '';
+  const e = m.log[S.tag.i]; if (!e) return '';
+  const nums = [...Array.from({length:20},(_,i)=>String(i+1)), ...(S.player.extraNums||[])];
+  return `<div class="tagbar" role="group" aria-label="Who passed to her">
+    <div class="q">${esc(evLabel(e,m).t)}: who passed to her?</div>
+    <div class="nums">${nums.map(n=>`<button data-pass="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+    <form class="more" id="passform">
+      <input id="pass-other" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="Other number" aria-label="Other number">
+      <button type="submit">Add</button>
+      <button type="button" class="skip" data-pass="">None</button>
+    </form>
+  </div>`;
+}
+// Attacks by who passed to her: attempts, points, errors.
+function passTable(matches){
+  const by = {};
+  matches.forEach(m => (m.log||[]).forEach(e => {
+    if (!e.from || !TAG_KEYS.includes(e.k)) return;
+    const r = by[e.from] || (by[e.from] = {pts:0, kill:0, plase:0});
+    r.pts++; r[e.k]++;
+  }));
+  const rows = Object.entries(by).sort((a,b)=>b[1].pts-a[1].pts);
+  if (!rows.length) return '';
+  return `<section class="sec"><div class="sec-h"><h3>Who passed to her</h3><span class="note">her points after their pass</span></div>
+    <div class="mates">${rows.map(([n,r])=>`<div class="mate"><span style="color:var(--ink);font-size:15px;font-weight:600">${esc(n)}</span><b>${r.pts}<small>points</small></b><b>${r.kill}<small>spikes</small></b><b>${r.plase}<small>plasé</small></b></div>`).join('')}</div></section>`;
+}
+function passLine(m){
+  const by = {};
+  (m.log||[]).forEach(e => { if (e.from && TAG_KEYS.includes(e.k)) by[e.from] = (by[e.from]||0) + 1; });
+  const t = Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`${n} ${v}`).join(', ');
+  return t ? `Points from passes by: ${t}` : '';
+}
+function finishForm(m){
+  const {w, l} = setsWon(m);
+  const guess = w > l ? 'W' : l > w ? 'L' : '';
+  return `<div class="row">
+      <label>Result<select id="fin-res"><option value="W" ${guess==='W'?'selected':''}>Won</option><option value="L" ${guess==='L'?'selected':''}>Lost</option><option value="" ${guess===''?'selected':''}>Not sure</option></select></label>
+      <label>Sets<input id="fin-score" placeholder="e.g. 3-1" autocomplete="off" value="${w||l ? w+'-'+l : ''}"></label>
+    </div>
+    <button class="btn btn-or" id="b-finish">Save and see box score</button>`;
+}
+function feedHTML(m, rows){
+  return `<div class="pbp">${rows.map(r=>{ const L = evLabel(r.e, m); return `<div><span class="st">SET ${r.e.set}</span><span class="sc">${r.us}–${r.them}</span><span class="ev ${L.c}">${esc(L.t)}</span></div>`; }).join('')}</div>`;
+}
+
+function boxTable(rows, head){
+  return `<div class="tbl"><table>
+    <thead><tr><th>${head}</th><th>Pts</th><th>Rtg</th>${STATS.map(s=>`<th title="${esc(s.l+' '+s.s)}">${s.a}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r=>`<tr class="${r.sum?'sum':''}"><td>${esc(r.label)}</td><td class="k">${pts(r.c)}</td><td>${fmtVir(vir(r.c))}</td>${STATS.map(s=>`<td>${r.c[s.k]||0}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table></div>`;
+}
+const LEGEND = `<p class="note">SPK spike · PLA plasé · BLK block · DEF defence · REC good reception · SRV serve in · SET good set · SE / AE / RE serve, attack, reception error · NF net or fault. Rating: +1 for every point, block or defence, +0.5 for a good reception or set, −1 for every error.</p>`;
+
+function tiles(c, x){
+  const att = c.kill + c.plase + c.aerr, srv = c.ace + c.serve + c.serr, rec = c.pass + c.rerr;
+  const pct = (a,b) => b ? Math.round(100*a/b)+'%' : '–';
+  return `<div class="tiles">
+    <div class="tile hero"><b>${x.pts ?? pts(c)}</b><span>Points</span>${x.ptsNote||''}</div>
+    <div class="tile"><b>${x.vir ?? fmtVir(vir(c))}</b><span>Rating</span>${x.virNote||''}</div>
+    <div class="tile"><b class="${pmClass(x.pm)}">${fmtPM(x.pm)}</b><span>+/- on court</span>${x.pmNote||''}</div>
+    <div class="tile"><b>${x.min}</b><span>Minutes</span>${x.minNote||''}</div>
+    <div class="tile"><b>${c.kill+c.plase}</b><span>Spike + plasé</span><em>${pct(c.kill+c.plase, att)} of attacks</em></div>
+    <div class="tile"><b>${c.ace}</b><span>Aces</span><em>${pct(srv - c.serr, srv)} serves in</em></div>
+    <div class="tile"><b>${c.block}</b><span>Blocks</span><em>${c.dig} defences</em></div>
+    <div class="tile"><b>${errs(c)}</b><span>Errors</span><em>${pct(c.pass, rec)} clean receptions</em></div>
+  </div>`;
+}
+
+function matchView(m){
+  const a = analyze(m), c = counts(m);
+  const sets = [...new Set((m.log||[]).filter(e=>BYK[e.k]).map(e=>e.set))].sort((x,y)=>x-y);
+  const rows = sets.map(s=>({label:'Set '+s, c:counts(m,s)})).concat({label:'Match', c, sum:true});
+  const armed = S.armed === 'del-'+m.id;
+  return `
+  <div class="row" style="align-items:center"><div><div class="kicker">${m.result==='W'?'Final · Win':m.result==='L'?'Final · Loss':'Final'}${m.score?' '+esc(m.score):''}</div><h2>${esc(homeName(m))} vs ${esc(m.opp)}</h2></div></div>
+  ${scoreBug(m, a, {live:false})}
+  ${tiles(c, {pm:a.pm, min:mins(playMs(m)), pmNote:`<em>${a.plus} won, ${a.minus} lost</em>`})}
+  ${a.stints.length ? `<section class="sec"><div class="sec-h"><h3>Time on court</h3><span class="note">${a.stints.length} spell${a.stints.length>1?'s':''}</span></div><div class="stints">${a.stints.map(st=>`
+    <div class="stint"><span>On at <b>${st.inUs}–${st.inThem}</b> (set ${st.inSet}) · ${st.outSet!=null?`off at <b>${st.outUs}–${st.outThem}</b> (set ${st.outSet})`:'to the end'}${st.dur?' · '+mins(st.dur)+' min':''}</span><b class="${pmClass(st.plus-st.minus)}">${fmtPM(st.plus-st.minus)}</b></div>`).join('')}</div></section>` : ''}
+  ${passTable([m])}
+  <section class="sec"><div class="sec-h"><h3>Box score</h3><span class="note">${esc(pName())}${S.player.num?' #'+esc(S.player.num):''}</span></div>${boxTable(rows,'Set')}${LEGEND}</section>
+  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>Play by play</h3><span class="note">${a.feed.length} events</span></div><div style="max-height:320px;overflow-y:auto">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
+  <div class="row">
+    <button class="btn btn-or" id="b-copy" data-id="${m.id}">Copy summary</button>
+    <button class="btn btn-dk" id="b-resume" data-id="${m.id}">Keep tracking</button>
+    <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${m.id}">${armed?'Tap again to delete':'Delete'}</button>
+  </div>
+  <button class="btn btn-dk" data-view="history">‹ Back to season</button>`;
+}
+
+function historyView(){
+  const list = Object.values(S.matches).sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
+  if (!list.length) return `<section class="panel"><h2>Season</h2><p class="empty">No matches yet. Start one from the Live tab.</p></section>`;
+  const total = Object.fromEntries(STATS.map(s=>[s.k,0])); let time = 0, w = 0, l = 0, pm = 0, bestPts = null, bestVir = null;
+  const per = list.map(m => { const c = counts(m), a = analyze(m); STATS.forEach(s=> total[s.k]+=c[s.k]); time += playMs(m); pm += a.pm; if (m.result==='W') w++; if (m.result==='L') l++;
+    if (!bestPts || pts(c) > bestPts.v) bestPts = {v:pts(c), m}; if (!bestVir || vir(c) > bestVir.v) bestVir = {v:vir(c), m};
+    return {m, c, a}; });
+  const n = list.length, avg = v => (v/n).toFixed(1);
+  const rows = per.map(p=>({label: fmtDate(p.m.date)+' '+p.m.opp, c:p.c})).concat({label:'Season', c:total, sum:true});
+  return `
+  <section class="player">
+    <div class="jersey">${esc(S.player.num || '?')}</div>
+    <div class="pinfo"><div class="pname">${esc(pName())}</div><div class="note">${esc(S.player.pos||'')}${S.player.pos?' · ':''}${n} match${n>1?'es':''} · ${w}W ${l}L</div>
+      <div class="pline">
+        <div><b>${avg(pts(total))}</b><span>Pts / match</span></div>
+        <div><b>${avg(vir(total))}</b><span>Rtg / match</span></div>
+        <div><b class="${pmClass(pm)}">${fmtPM(pm)}</b><span>Season +/-</span></div>
+      </div>
+    </div>
+  </section>
+  ${tiles(total, {pm, min:mins(time), ptsNote:`<em>best ${bestPts.v} vs ${esc(bestPts.m.opp)}</em>`, virNote:`<em>best ${fmtVir(bestVir.v)}</em>`, minNote:`<em>${Math.round(mins(time)/n)} a match</em>`})}
+  <section class="sec"><div class="sec-h"><h3>Game log</h3></div>
+  <div class="mlist">${per.map(({m,c,a})=>{ const live = m.id===S.activeId; return `
+    <button class="mitem" data-open="${m.id}">
+      <span class="res ${live?'live':(m.result||'')}">${live?'LIVE':(m.result||'–')}</span>
+      <span><div class="t">vs ${esc(m.opp)}</div><div class="d">${esc(fmtDate(m.date))}${m.score?' · '+esc(m.score):''} · ${mins(playMs(m))} min · <span class="${pmClass(a.pm)}">${fmtPM(a.pm)}</span></div></span>
+      <span class="p vir">${fmtVir(vir(c))}<small>RTG</small></span>
+      <span class="p">${pts(c)}<small>PTS</small></span>
+    </button>`; }).join('')}</div></section>
+  ${passTable(list)}
+  <section class="sec"><div class="sec-h"><h3>Season box score</h3></div>${boxTable(rows,'Match')}${LEGEND}</section>`;
+}
+
+function playerView(){
+  const p = S.player;
+  return `<section class="panel">
+    <div class="kicker">Roster</div><h2>Player card</h2>
+    <form id="pform" class="wrap" style="max-width:none;gap:12px">
+      <div class="row">
+        <label>Name<input id="p-name" autocomplete="off" value="${esc(p.name)}" placeholder="Her name"></label>
+        <label style="flex:0 1 110px">Number<input id="p-num" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(p.num)}" placeholder="7"></label>
+      </div>
+      <label>Position<select id="p-pos">${['','Outside hitter','Opposite','Middle blocker','Setter','Libero','Defensive specialist'].map(o=>`<option ${o===p.pos?'selected':''} value="${esc(o)}">${o||'Choose'}</option>`).join('')}</select></label>
+      <button class="btn btn-or" type="submit">Save player</button>
+    </form>
+  </section>
+  <section class="panel">
+    <div class="kicker">Account</div>
+    ${S.user
+      ? `<p style="margin:0">Signed in as <b>${esc(S.user.email||'')}</b>. Your matches are saved in your account and sync to every phone you sign in on.</p>
+         <button class="btn btn-dk" id="b-signout">Sign out</button>`
+      : `<p style="margin:0">Not signed in. Matches are saved on this phone only.</p>
+         <button class="btn btn-or" id="b-signin">Sign in with Google</button>`}
+  </section>`;
+}
+
+function summaryText(m){
+  const c = counts(m), a = analyze(m);
+  const sets = (m.ended||[]).map(s=>{ const x = a.score[s]; return x ? `${x.us}-${x.them}` : ''; }).filter(Boolean).join(', ');
+  return [
+    `🏐 ${homeName(m)} vs ${m.opp} · ${fmtDate(m.date)}${m.result?' · '+(m.result==='W'?'Won':'Lost'):''}${m.score?' '+m.score:''}${sets?' ('+sets+')':''}`,
+    `${pName()}${S.player.num?' #'+S.player.num:''}: ${pts(c)} pts · rating ${fmtVir(vir(c))} · +/- ${fmtPM(a.pm)} · ${mins(playMs(m))} min`,
+    `Spikes ${c.kill} · plasé ${c.plase} · aces ${c.ace} · blocks ${c.block}`,
+    `Defences ${c.dig} · good receptions ${c.pass} · serves in ${c.serve} · sets ${c.assist}`,
+    `Errors ${errs(c)} (serve ${c.serr}, attack ${c.aerr}, reception ${c.rerr}, net ${c.ferr})`,
+    passLine(m),
+  ].filter(Boolean).join('\n');
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', async e => {
+  const t = e.target.closest('button'); if (!t || (t.type === 'submit' && t.form)) return;
+  if (t.id !== 'b-del') S.armed = null;
+  // any other button closes the "who passed" picker
+  if (t.dataset.pass == null && !t.dataset.stat){ S.tag = null; clearTimeout(S.tagT); }
+  if (t.dataset.view){ S.view = t.dataset.view; S.openId = null; render(); window.scrollTo(0,0); return; }
+  if (t.dataset.pass != null) return setPasser(t.dataset.pass);
+  if (t.dataset.stat) return tap(t.dataset.stat);
+  if (t.dataset.set) return pickSet(+t.dataset.set);
+  if (t.dataset.open){
+    if (t.dataset.open === S.activeId){ S.view = 'live'; } else { S.view = 'match'; S.openId = t.dataset.open; }
+    render(); window.scrollTo(0,0); return;
+  }
+  switch (t.id){
+    case 'b-us': return teamPoint('us');
+    case 'b-them': return teamPoint('them');
+    case 'b-endset': return endSet();
+    case 'b-court': return toggleCourt();
+    case 'b-undo': return undo();
+    case 'b-signin': return window.SS_auth ? window.SS_auth.signIn() : toast("Can't reach Google. Check the internet.");
+    case 'b-signout': return window.SS_auth && window.SS_auth.signOut();
+    case 'b-finish': return finishMatch($('#fin-res').value, $('#fin-score').value.trim());
+    case 'b-resume': return resume(t.dataset.id);
+    case 'b-del':
+      if (S.armed === 'del-'+t.dataset.id) { S.armed = null; return removeMatch(t.dataset.id); }
+      S.armed = 'del-'+t.dataset.id; render(); return;
+    case 'b-copy': {
+      const txt = summaryText(S.matches[t.dataset.id]);
+      try{ await navigator.clipboard.writeText(txt); toast('Copied. Paste it in a message.'); }
+      catch(err){ document.querySelector('textarea')?.remove(); const ta = document.createElement('textarea'); ta.value = txt; t.parentElement.after(ta); ta.select(); toast('Select the text and copy it'); }
+      return;
+    }
+  }
+});
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  if (e.target.id === 'passform') return setPasser($('#pass-other').value);
+  if (e.target.id === 'newform') startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:$('#f-starter').checked});
+  if (e.target.id === 'pform'){
+    S.player = Object.assign({}, S.player, {name:$('#p-name').value.trim(), num:$('#p-num').value.trim(), pos:$('#p-pos').value});
+    savePlayer(); toast('Player saved'); S.view = S.activeId || !Object.keys(S.matches).length ? 'live' : 'history'; render();
+  }
+});
+window.addEventListener('pagehide', () => { backup(); flush(); });
+
+restore();
+render();
+if (S.activeId) keepAwake();
+syncNote();
+</script>
+
+<script type="module">
+// Firebase: Google sign-in + Firestore. Each account's data lives under users/<uid>/,
+// and the security rules let only that account read or write it.
+const V = '10.14.1';
+const CONFIG = {
+  apiKey: "AIzaSyApQHL_W_ZD5QDBQIOqApBrRQ75OvgXYgA",
+  authDomain: "spike-sheet-theo.firebaseapp.com",
+  projectId: "spike-sheet-theo",
+  storageBucket: "spike-sheet-theo.firebasestorage.app",
+  messagingSenderId: "617616185148",
+  appId: "1:617616185148:web:6288e4b7fdba0cff46f039",
+};
+const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+const A = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
+const F = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+const app = initializeApp(CONFIG);
+const auth = A.getAuth(app);
+let fs;
+try{ fs = F.initializeFirestore(app, {localCache: F.persistentLocalCache({tabManager: F.persistentMultipleTabManager()})}); }
+catch(e){ fs = F.getFirestore(app); }
+
+// Same small interface the app already uses: doc(path).set/delete/onSnapshot, collection(path).onSnapshot.
+// Writes return at once: Firestore keeps them queued on the phone until there is signal.
+function database(uid){
+  const base = 'users/' + uid + '/';
+  const fail = e => window.SS_writeFailed(e);
+  const meta = {includeMetadataChanges: true};
+  return {
+    doc: p => ({
+      set: body => { F.setDoc(F.doc(fs, base + p), body).catch(fail); return Promise.resolve(); },
+      delete: () => { F.deleteDoc(F.doc(fs, base + p)).catch(fail); return Promise.resolve(); },
+      onSnapshot: (cb, err) => F.onSnapshot(F.doc(fs, base + p), meta,
+        s => cb({exists: s.exists(), data: () => s.data(), metadata: s.metadata}), err),
+    }),
+    collection: p => ({
+      onSnapshot: (cb, err) => F.onSnapshot(F.collection(fs, base + p), meta,
+        s => cb({docs: s.docs.map(d => ({id: d.id, data: () => d.data()})),
+                 docChanges: () => s.docChanges().map(c => ({type: c.type, doc: {id: c.doc.id}})),
+                 metadata: s.metadata}), err),
+    }),
+  };
+}
+const provider = new A.GoogleAuthProvider();
+window.SS_auth = {
+  async signIn(){
+    try{ await A.signInWithPopup(auth, provider); }
+    catch(e){
+      if (['auth/popup-blocked','auth/operation-not-supported-in-this-environment'].includes(e.code)) return A.signInWithRedirect(auth, provider);
+      if (!['auth/popup-closed-by-user','auth/cancelled-popup-request'].includes(e.code)) window.SS_toast('Sign-in failed (' + e.code + ')');
+    }
+  },
+  signOut(){ return A.signOut(auth); },
+};
+A.getRedirectResult(auth).catch(() => {});
+A.onAuthStateChanged(auth, u => window.SS_onUser(u ? {uid: u.uid, email: u.email} : null, u ? database(u.uid) : null));
+</script>
+<script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
