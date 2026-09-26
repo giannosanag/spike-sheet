@@ -871,7 +871,9 @@ syncNote();
 const V = '10.14.1';
 const CONFIG = {
   apiKey: "AIzaSyApQHL_W_ZD5QDBQIOqApBrRQ75OvgXYgA",
-  authDomain: "spike-sheet-theo.firebaseapp.com",
+  // Sign-in helper is self-hosted on this domain (repo giannosanag.github.io, /__/auth/),
+  // so Safari and home-screen apps don't lose the sign-in state between sites.
+  authDomain: "giannosanag.github.io",
   projectId: "spike-sheet-theo",
   storageBucket: "spike-sheet-theo.firebasestorage.app",
   messagingSenderId: "617616185148",
@@ -909,16 +911,14 @@ function database(uid){
 }
 const provider = new A.GoogleAuthProvider();
 window.SS_auth = {
+  // Full-page sign-in: works in Safari, Chrome and home-screen apps, where popups don't.
   async signIn(){
-    try{ await A.signInWithPopup(auth, provider); }
-    catch(e){
-      if (['auth/popup-blocked','auth/operation-not-supported-in-this-environment'].includes(e.code)) return A.signInWithRedirect(auth, provider);
-      if (!['auth/popup-closed-by-user','auth/cancelled-popup-request'].includes(e.code)) window.SS_toast('Sign-in failed (' + e.code + ')');
-    }
+    try{ await A.signInWithRedirect(auth, provider); }
+    catch(e){ window.SS_toast('Sign-in failed (' + e.code + ')'); }
   },
   signOut(){ return A.signOut(auth); },
 };
-A.getRedirectResult(auth).catch(() => {});
+A.getRedirectResult(auth).catch(e => window.SS_toast('Sign-in failed (' + e.code + ')'));
 A.onAuthStateChanged(auth, u => window.SS_onUser(u ? {uid: u.uid, email: u.email} : null, u ? database(u.uid) : null));
 </script>
 <script>
