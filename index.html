@@ -162,6 +162,29 @@ td.k{font-weight:700}
 
 /* tiles */
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.pct{display:flex;flex-direction:column;gap:14px;background:var(--soft);border-radius:16px;padding:16px}
+.pr{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:6px 12px}
+.pr .pl{font-weight:600}.pr .pl small{font-weight:400;font-size:13px;color:var(--muted);margin-left:6px}
+.pr b{font-family:var(--head);font-stretch:62%;font-weight:800;font-size:24px;line-height:1;font-variant-numeric:tabular-nums}
+.pbar{grid-column:1/-1;height:6px;border-radius:3px;background:var(--soft2);overflow:hidden}
+.pbar i{display:block;height:100%;border-radius:3px;background:var(--hi)}
+.setc{background:var(--soft);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.setc-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.setc-h b{font-family:var(--head);font-stretch:62%;font-weight:800;font-size:22px;text-transform:uppercase}
+.setc-h span{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.setc p{margin:0;font-size:14px;line-height:1.35}.setc .m{color:var(--muted)}
+details.more summary{cursor:pointer;font-weight:600;padding:6px 0;list-style:none}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::after{content:' ›'}details.more[open] summary::after{content:' ⌄'}
+.seg{display:inline-flex;background:var(--soft);border-radius:999px;padding:3px}
+.seg button{font-size:13px;font-weight:600;padding:6px 14px;border-radius:999px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--bg);color:var(--ink)}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart .bar{fill:var(--muted)}.chart .bar.sel{fill:var(--hi)}
+.chart .base{stroke:var(--line);stroke-width:1}
+.chart text{font:500 10px var(--font);fill:var(--muted)}.chart text.v{font-weight:700;fill:var(--ink)}
+.chart .hit{fill:transparent;cursor:pointer}
+.chart-d{font-size:14px;min-height:20px}
 .tile{background:var(--soft);border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;gap:3px;min-width:0}
 .tile b{font-size:36px;line-height:.9}
 .tile span{font-size:12px;font-weight:500;line-height:1.25}
@@ -194,7 +217,7 @@ textarea{width:100%;height:150px;background:var(--soft);color:var(--ink);border:
 input,select{min-width:0;max-width:100%}
 input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-height:48px;text-align:left}
 input::-webkit-date-and-time-value{text-align:left}
-/* who passed to her */
+/* who passed to the player */
 .tagbar{position:fixed;left:0;right:0;bottom:0;z-index:9;background:var(--ink);color:var(--bg);padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;box-shadow:0 -8px 24px rgba(0,0,0,.25)}
 .tagbar .q{font-size:14px;font-weight:600}
 .tagbar .nums{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;max-height:42vh;overflow-y:auto}
@@ -412,7 +435,7 @@ const fmtVir = v => (Math.round(v*10)/10).toString();
 const fmtPM = v => (v>0?'+':'')+v;
 const pmClass = v => v>0?'pos':v<0?'neg':'';
 
-// Replays the log: running set scores, her court stints and +/-.
+// Replays the log: running set scores, the player's court stints and +/-.
 function analyze(m){
   const score = {}, stints = []; let on = null, plus = 0, minus = 0; const feed = [];
   const sc = s => score[s] || (score[s] = {us:0, them:0});
@@ -433,9 +456,11 @@ function analyze(m){
   });
   return {score, stints, plus, minus, pm: plus - minus, feed, onNow: !!on};
 }
-function setsWon(m){
+// open: also count the set in play, as the final whistle will end it
+function setsWon(m, open){
   const {score} = analyze(m); let w = 0, l = 0;
-  (m.ended||[]).forEach(s => { const x = score[s]; if (!x) return; if (x.us > x.them) w++; else if (x.them > x.us) l++; });
+  const ended = open && !(m.ended||[]).includes(open) ? [...(m.ended||[]), open] : (m.ended||[]);
+  ended.forEach(s => { const x = score[s]; if (!x) return; if (x.us > x.them) w++; else if (x.them > x.us) l++; });
   return {w, l};
 }
 function playMs(m){ return (m.playMs||0) + (m.onCourt && m.courtSince ? Date.now() - m.courtSince : 0); }
@@ -457,6 +482,9 @@ document.addEventListener('visibilitychange', ()=>{
   if (S.hiddenAt && idleLong() && !S.choose){ S.choose = true; S.view = 'live'; render(); window.scrollTo(0,0); }
 });
 const pName = () => S.player.name || 'Player';
+// mid-sentence: the name, or "the player" (no he/she anywhere)
+const pWho = () => esc(S.player.name || 'the player');
+const pWhose = () => S.player.name ? esc(S.player.name) + "'s" : "the player's";
 const homeName = m => m.home || 'Us';
 function evLabel(e, m){
   if (BYK[e.k]) return {t: BYK[e.k].l + (BYK[e.k].g==='err' ? ' error' : '') + (e.from ? ' · pass from ' + e.from : ''), c: BYK[e.k].g==='play' ? '' : BYK[e.k].g};
@@ -480,12 +508,14 @@ function push(m, e){ m.log = (m.log||[]).concat(Object.assign({set:S.set, t:Date
 function tap(k){
   const m = S.matches[S.activeId]; if (!m) return;
   S.tag = null; clearTimeout(S.tagT);
+  // a stat means the player is playing: put them on court if the tap was forgotten
+  if (!m.onCourt){ courtOn(m, true); toast(pName() + ' put on court'); }
   push(m, {k});
   const idx = m.log.length - 1;
-  // her point wins the rally for her team; her error gives it to the other team
+  // the player's point wins the rally for the team; an error gives it to the other team
   if (PT_KEYS.includes(k)) push(m, {k:'us', auto:1});
   if (ERR_KEYS.includes(k)) push(m, {k:'them', auto:1});
-  // a spike or plasé: ask which number passed to her
+  // a spike or plasé: ask which number passed the ball
   if (TAG_KEYS.includes(k)){
     S.tag = {mid:m.id, i:idx};
     S.tagT = setTimeout(()=>{ if (!isTyping()){ S.tag = null; render(); } }, 20000);
@@ -510,7 +540,7 @@ function teamPoint(side){
   S.tag = null;
   push(m, {k:side}); save(m); buzz(); render();
 }
-function courtOn(m){ m.onCourt = true; m.courtSince = Date.now(); push(m, {k:'on'}); }
+function courtOn(m, auto){ m.onCourt = true; m.courtSince = Date.now(); push(m, auto ? {k:'on', byStat:1} : {k:'on'}); }
 function toggleCourt(){
   const m = S.matches[S.activeId]; if (!m) return;
   if (m.onCourt){
@@ -528,6 +558,8 @@ function undo(){
   S.tag = null;
   if ((last.k === 'us' || last.k === 'them') && last.auto && m.log.length && BYK[m.log[m.log.length-1].k]){ last = m.log[m.log.length-1]; m.log = m.log.slice(0,-1); }
   if (last.k === 'on'){ m.onCourt = false; m.courtSince = null; }
+  // a stat that put the player on court by itself: take that back too
+  else if (BYK[last.k] && m.log.length && m.log[m.log.length-1].k === 'on' && m.log[m.log.length-1].byStat){ m.log = m.log.slice(0,-1); m.onCourt = false; m.courtSince = null; }
   if (last.k === 'off'){ m.playMs = Math.max(0,(m.playMs||0) - (last.dur||0)); m.onCourt = true; m.courtSince = last.onAt || Date.now(); }
   save(m); render(); toast('Undone: ' + evLabel(last, m).t);
 }
@@ -559,7 +591,7 @@ function finishMatch(result, score, endAt){
 // Close the open match (result guessed from sets won) and go straight to the new-match form.
 function closeAndNew(){
   const m = S.matches[S.activeId]; if (!m) return;
-  const {w, l} = setsWon(m), log = m.log||[];
+  const {w, l} = setsWon(m, m.curSet || S.set), log = m.log||[];
   // a result saved before "Keep tracking" wins over the guess from sets won
   finishMatch(m.result || (w > l ? 'W' : l > w ? 'L' : ''), m.score || (w||l ? w+'-'+l : ''), log.length ? log[log.length-1].t : m.createdAt);
   S.view = 'live'; render(); window.scrollTo(0,0);
@@ -622,19 +654,19 @@ function newView(){
     <h2>New match</h2>
     <form id="newform" class="wrap" style="max-width:none;gap:12px">
       <div class="row">
-        <label>Her team<input id="f-home" autocomplete="off" placeholder="e.g. Panathinaikos" value="${esc(last?.home||'')}"></label>
+        <label>Team<input id="f-home" autocomplete="off" placeholder="e.g. Panathinaikos" value="${esc(last?.home||'')}"></label>
         <label>Opponent<input id="f-opp" autocomplete="off" placeholder="e.g. Olympiacos"></label>
       </div>
       <div class="row">
         <label>Date<input id="f-date" type="date" value="${today()}"></label>
         <label>Competition<input id="f-team" autocomplete="off" placeholder="League, cup, friendly" value="${esc(last?.team||'')}"></label>
       </div>
-      <label class="check"><input id="f-starter" type="checkbox"> She starts on court</label>
+      <label class="check"><input id="f-starter" type="checkbox"> ${esc(pName())} starts on court</label>
       <button class="btn btn-or" type="submit">Start match</button>
     </form>
-    <p class="note">Count the score with the two big buttons. Tap her stats as they happen. Her points add a point to her team, her errors add one to the other team. Tap the court button every time she goes on or off.</p>
+    <p class="note">Count the score with the two big buttons. Tap ${pWhose()} stats as they happen: a point adds one to your team, an error adds one to the other team. Tap the court button each time ${pWho()} goes on or off.</p>
   </section>
-  ${S.player.name ? '' : `<button class="btn btn-dk" data-view="player">Add her name and number</button>`}`;
+  ${S.player.name ? '' : `<button class="btn btn-dk" data-view="player">Add the player's name and number</button>`}`;
 }
 
 // a long word (PANATHINAIKOS) would split mid-word on a phone: shrink it instead
@@ -713,8 +745,8 @@ function tagBar(m){
   if (!S.tag || S.tag.mid !== m.id) return '';
   const e = m.log[S.tag.i]; if (!e) return '';
   const nums = [...Array.from({length:20},(_,i)=>String(i+1)), ...(S.player.extraNums||[])];
-  return `<div class="tagbar" role="group" aria-label="Who passed to her">
-    <div class="q">${esc(evLabel(e,m).t)}: who passed to her?</div>
+  return `<div class="tagbar" role="group" aria-label="Who passed to ${pWho()}">
+    <div class="q">${esc(evLabel(e,m).t)}: who passed to ${pWho()}?</div>
     <div class="nums">${nums.map(n=>`<button data-pass="${esc(n)}">${esc(n)}</button>`).join('')}</div>
     <form class="more" id="passform">
       <input id="pass-other" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="Other number" aria-label="Other number">
@@ -723,7 +755,7 @@ function tagBar(m){
     </form>
   </div>`;
 }
-// Attacks by who passed to her: attempts, points, errors.
+// Attacks by who passed to the player: attempts, points, errors.
 function passTable(matches){
   const by = {};
   matches.forEach(m => (m.log||[]).forEach(e => {
@@ -733,7 +765,7 @@ function passTable(matches){
   }));
   const rows = Object.entries(by).sort((a,b)=>b[1].pts-a[1].pts);
   if (!rows.length) return '';
-  return `<section class="sec"><div class="sec-h"><h3>Who passed to her</h3><span class="note">her points after their pass</span></div>
+  return `<section class="sec"><div class="sec-h"><h3>Who passed to ${pWho()}</h3><span class="note">points after their pass</span></div>
     <div class="mates">${rows.map(([n,r])=>`<div class="mate"><span style="color:var(--ink);font-size:15px;font-weight:600">${esc(n)}</span><b>${r.pts}<small>points</small></b><b>${r.kill}<small>spikes</small></b><b>${r.plase}<small>plasé</small></b></div>`).join('')}</div></section>`;
 }
 function passLine(m){
@@ -743,7 +775,7 @@ function passLine(m){
   return t ? `Points from passes by: ${t}` : '';
 }
 function finishForm(m){
-  const {w, l} = setsWon(m);
+  const {w, l} = setsWon(m, S.set);
   const guess = m.result || (w > l ? 'W' : l > w ? 'L' : '');
   return `<div class="row">
       <label>Result<select id="fin-res"><option value="W" ${guess==='W'?'selected':''}>Won</option><option value="L" ${guess==='L'?'selected':''}>Lost</option><option value="" ${guess===''?'selected':''}>Not sure</option></select></label>
@@ -778,6 +810,90 @@ function tiles(c, x){
   </div>`;
 }
 
+/* ---------- match report ---------- */
+const WORDS = {ace:['ace','aces'], kill:['spike','spikes'], plase:['plasé','plasés'], block:['block','blocks'],
+  dig:['defence','defences'], pass:['good reception','good receptions'], serve:['serve in','serves in'], assist:['good set','good sets'],
+  serr:['serve','serve'], aerr:['attack','attack'], rerr:['reception','reception'], ferr:['net / fault','net / fault']};
+const nWord = (n, k) => n + ' ' + WORDS[k][n === 1 ? 0 : 1];
+const listOf = (c, keys) => keys.filter(k => c[k]).map(k => nWord(c[k], k)).join(', ');
+// Attack / serve / reception as "x of y" and a percentage. Only what was tapped counts.
+function pctParts(c){
+  return [
+    {l:'Attack', a:c.kill + c.plase, b:c.kill + c.plase + c.aerr, n:'points from attacks'},
+    {l:'Serve', a:c.ace + c.serve, b:c.ace + c.serve + c.serr, n:c.ace ? nWord(c.ace,'ace') : 'serves in'},
+    {l:'Reception', a:c.pass, b:c.pass + c.rerr, n:'good receptions'},
+  ].map(r => Object.assign(r, {p: r.b ? Math.round(100*r.a/r.b) : null}));
+}
+function pctRows(c){
+  return `<div class="pct">${pctParts(c).map(r => `
+    <div class="pr"><span class="pl">${r.l}<small>${r.b ? `${r.a} of ${r.b} · ${esc(r.n)}` : 'none tapped'}</small></span>
+      <b>${r.p == null ? '–' : r.p + '%'}</b>
+      <span class="pbar" aria-hidden="true"><i style="width:${r.p || 0}%"></i></span></div>`).join('')}
+  </div>`;
+}
+// Per set: how many rallies were played with the player on court, and +/- in them.
+function setCourt(m){
+  const out = {}; let on = false;
+  (m.log||[]).forEach(e => {
+    const o = out[e.set] || (out[e.set] = {rallies:0, onR:0, pm:0});
+    if (e.k === 'on') on = true;
+    else if (e.k === 'off') on = false;
+    else if (e.k === 'us' || e.k === 'them'){ o.rallies++; if (on){ o.onR++; o.pm += e.k === 'us' ? 1 : -1; } }
+  });
+  return out;
+}
+function setCards(m, a){
+  const court = setCourt(m);
+  const sets = Object.keys(a.score).map(Number).filter(s => { const c = counts(m, s), x = a.score[s]; return x.us || x.them || pts(c) || errs(c); }).sort((x,y)=>x-y);
+  if (!sets.length) return '';
+  return `<section class="sec"><div class="sec-h"><h3>Set by set</h3></div>${sets.map(s => {
+    const c = counts(m, s), x = a.score[s], cr = court[s] || {rallies:0, onR:0, pm:0};
+    const ended = (m.ended||[]).includes(s);
+    const res = ended ? (x.us > x.them ? 'won' : x.them > x.us ? 'lost' : 'tied') : 'not finished';
+    const p = pts(c), e = errs(c), good = listOf(c, ['dig','pass','assist','serve']);
+    const onTxt = !cr.rallies ? '' : cr.onR === cr.rallies ? 'On court the whole set' : cr.onR ? `On court for ${cr.onR} of ${cr.rallies} rallies` : 'On the bench this set';
+    return `<div class="setc">
+      <div class="setc-h"><b>Set ${s}</b><span>${x.us}–${x.them} ${res}</span></div>
+      <p>${p ? `<b>${p} point${p>1?'s':''}</b>: ${listOf(c, PT_KEYS)}` : 'No points'}</p>
+      ${good ? `<p class="m">Good plays: ${good}</p>` : ''}
+      <p class="m">${e ? `${e} error${e>1?'s':''}: ${listOf(c, ERR_KEYS)}` : 'No errors'}</p>
+      ${onTxt ? `<p class="m">${onTxt}${cr.onR ? ` · <span class="${pmClass(cr.pm)}">${fmtPM(cr.pm)}</span>` : ''}</p>` : ''}
+    </div>`; }).join('')}</section>`;
+}
+function setsPlayed(m){ const a = analyze(m); return Object.values(a.score).filter(x => x.us || x.them).length || 1; }
+
+// Season: one bar per match (oldest left), points or rating. Tap a bar to read it.
+function seasonChart(list){
+  if (list.length < 2) return '';
+  const metric = S.chartMetric || 'pts';
+  const ms = list.slice(0, 12).reverse();
+  const val = m => { const c = counts(m); return metric === 'pts' ? pts(c) : Math.round(vir(c)*10)/10; };
+  const vals = ms.map(val);
+  const sel = S.chartSel && ms.find(m => m.id === S.chartSel) ? S.chartSel : ms[ms.length-1].id;
+  const W = 320, H = 150, top = 16, bot = 22, hi = Math.max(1, ...vals), lo = Math.min(0, ...vals);
+  const y = v => top + (hi - v) * (H - top - bot) / (hi - lo), base = y(0);
+  const slot = W / ms.length, bw = Math.min(28, slot * 0.6);
+  const bars = ms.map((m, i) => {
+    const v = vals[i], x = i*slot + (slot-bw)/2, y1 = y(Math.max(v,0)), y2 = y(Math.min(v,0)), r = Math.min(4, (y2-y1)/2, bw/2);
+    // rounded at the data end only, square on the baseline
+    const d = v >= 0
+      ? `M${x},${y2} V${y1+r} Q${x},${y1} ${x+r},${y1} H${x+bw-r} Q${x+bw},${y1} ${x+bw},${y1+r} V${y2} Z`
+      : `M${x},${y1} V${y2-r} Q${x},${y2} ${x+r},${y2} H${x+bw-r} Q${x+bw},${y2} ${x+bw},${y2-r} V${y1} Z`;
+    const isSel = m.id === sel, isMax = v === hi && v > 0;
+    const lab = (isSel || isMax) ? `<text class="v" x="${x+bw/2}" y="${v >= 0 ? y1-4 : Math.min(y2+11, H-bot-2)}" text-anchor="middle">${v}</text>` : '';
+    const dl = ms.length <= 8 || i === 0 || i === ms.length-1 ? `<text x="${x+bw/2}" y="${H-6}" text-anchor="middle">${esc(shortDate(m.date))}</text>` : '';
+    return `<path class="bar${isSel?' sel':''}" d="${d}"/>${lab}${dl}<rect class="hit" data-csel="${m.id}" x="${i*slot}" y="0" width="${slot}" height="${H}"><title>${esc('vs '+m.opp)}: ${v}</title></rect>`;
+  }).join('');
+  const sm = ms.find(m => m.id === sel), sc = counts(sm), sa = analyze(sm);
+  return `<section class="sec chart"><div class="sec-h"><h3>Progress</h3>
+      <div class="seg" role="group" aria-label="Chart shows"><button data-metric="pts" aria-pressed="${metric==='pts'}">Points</button><button data-metric="vir" aria-pressed="${metric==='vir'}">Rating</button></div></div>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${metric==='pts'?'Points':'Rating'} per match, last ${ms.length} matches">
+      ${bars}<line class="base" x1="0" x2="${W}" y1="${base}" y2="${base}"/></svg>
+    <div class="chart-d"><b>vs ${esc(sm.opp)}</b> · ${esc(fmtDate(sm.date))} · ${pts(sc)} pts · rating ${fmtVir(vir(sc))} · <span class="${pmClass(sa.pm)}">${fmtPM(sa.pm)}</span></div>
+  </section>`;
+}
+function shortDate(d){ try{ const x = new Date(d+'T12:00'); return x.getDate() + '/' + (x.getMonth()+1); }catch(e){ return ''; } }
+
 function matchView(m){
   const a = analyze(m), c = counts(m);
   const sets = [...new Set((m.log||[]).filter(e=>BYK[e.k]).map(e=>e.set))].sort((x,y)=>x-y);
@@ -786,14 +902,18 @@ function matchView(m){
   return `
   <div class="row" style="align-items:center"><div><div class="kicker">${m.result==='W'?'Final · Win':m.result==='L'?'Final · Loss':'Final'}${m.score?' '+esc(m.score):''}</div><h2>${esc(homeName(m))} vs ${esc(m.opp)}</h2></div></div>
   ${scoreBug(m, a, {live:false})}
-  ${tiles(c, {pm:a.pm, min:mins(playMs(m)), pmNote:`<em>${a.plus} won, ${a.minus} lost</em>`})}
+  ${tiles(c, {pm:a.pm, min:mins(playMs(m)), pmNote:`<em>${a.plus} won, ${a.minus} lost</em>`, ptsNote:`<em>${fmtVir(pts(c)/setsPlayed(m))} per set</em>`})}
+  <div class="row">
+    <button class="btn btn-or" id="b-share" data-id="${m.id}" style="flex:1">Share report</button>
+  </div>
+  ${pctRows(c)}
+  ${setCards(m, a)}
   ${a.stints.length ? `<section class="sec"><div class="sec-h"><h3>Time on court</h3><span class="note">${a.stints.length} spell${a.stints.length>1?'s':''}</span></div><div class="stints">${a.stints.map(st=>`
     <div class="stint"><span>On at <b>${st.inUs}–${st.inThem}</b> (set ${st.inSet}) · ${st.outSet!=null?`off at <b>${st.outUs}–${st.outThem}</b> (set ${st.outSet})`:'to the end'}${st.dur?' · '+mins(st.dur)+' min':''}</span><b class="${pmClass(st.plus-st.minus)}">${fmtPM(st.plus-st.minus)}</b></div>`).join('')}</div></section>` : ''}
   ${passTable([m])}
-  <section class="sec"><div class="sec-h"><h3>Box score</h3><span class="note">${esc(pName())}${S.player.num?' #'+esc(S.player.num):''}</span></div>${boxTable(rows,'Set')}${LEGEND}</section>
+  <details class="more sec"><summary>Full table</summary><span class="note">${esc(pName())}${S.player.num?' #'+esc(S.player.num):''}</span>${boxTable(rows,'Set')}${LEGEND}</details>
   ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>Play by play</h3><span class="note">${a.feed.length} events</span></div><div style="max-height:320px;overflow-y:auto">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
   <div class="row">
-    <button class="btn btn-or" id="b-copy" data-id="${m.id}">Copy summary</button>
     <button class="btn btn-dk" id="b-resume" data-id="${m.id}">Keep tracking</button>
     <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${m.id}">${armed?'Tap again to delete':'Delete'}</button>
   </div>
@@ -822,6 +942,8 @@ function historyView(){
     </div>
   </section>
   ${tiles(total, {pm, min:mins(time), ptsNote:`<em>best ${bestPts.v} vs ${esc(bestPts.m.opp)}</em>`, virNote:`<em>best ${fmtVir(bestVir.v)}</em>`, minNote:`<em>${Math.round(mins(time)/n)} a match</em>`})}
+  ${pctRows(total)}
+  ${seasonChart(list)}
   ${newMatchBtn()}
   <section class="sec"><div class="sec-h"><h3>Game log</h3><button class="lnk" id="b-editlist">${S.editList?'Done':'Remove matches'}</button></div>
   <div class="mlist">${per.map(({m,c,a})=>{ const live = m.id===S.activeId, armed = S.armed==='x-'+m.id;
@@ -847,7 +969,7 @@ function playerView(){
     <div class="kicker">Roster</div><h2>Player card</h2>
     <form id="pform" class="wrap" style="max-width:none;gap:12px">
       <div class="row">
-        <label>Name<input id="p-name" autocomplete="off" value="${esc(p.name)}" placeholder="Her name"></label>
+        <label>Name<input id="p-name" autocomplete="off" value="${esc(p.name)}" placeholder="Name"></label>
         <label style="flex:0 1 110px">Number<input id="p-num" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(p.num)}" placeholder="7"></label>
       </div>
       <label>Position<select id="p-pos">${['','Outside hitter','Opposite','Middle blocker','Setter','Libero','Defensive specialist'].map(o=>`<option ${o===p.pos?'selected':''} value="${esc(o)}">${o||'Choose'}</option>`).join('')}</select></label>
@@ -867,18 +989,28 @@ function playerView(){
 function summaryText(m){
   const c = counts(m), a = analyze(m);
   const sets = (m.ended||[]).map(s=>{ const x = a.score[s]; return x ? `${x.us}-${x.them}` : ''; }).filter(Boolean).join(', ');
+  const pct = pctParts(c).filter(r => r.b).map(r => `${r.l} ${r.a}/${r.b} (${r.p}%)`).join(' · ');
+  const perSet = Object.keys(a.score).map(Number).sort((x,y)=>x-y).map(s => {
+    const cs = counts(m, s), x = a.score[s], p = pts(cs), e = errs(cs);
+    if (!x.us && !x.them && !p && !e) return '';
+    return `Set ${s} ${x.us}-${x.them}: ${p} pt${p===1?'':'s'}${p ? ' (' + listOf(cs, PT_KEYS) + ')' : ''}${e ? `, ${e} error${e>1?'s':''}` : ''}`;
+  }).filter(Boolean);
   return [
     `🏐 ${homeName(m)} vs ${m.opp} · ${fmtDate(m.date)}${m.result?' · '+(m.result==='W'?'Won':'Lost'):''}${m.score?' '+m.score:''}${sets?' ('+sets+')':''}`,
-    `${pName()}${S.player.num?' #'+S.player.num:''}: ${pts(c)} pts · rating ${fmtVir(vir(c))} · +/- ${fmtPM(a.pm)} · ${mins(playMs(m))} min`,
-    `Spikes ${c.kill} · plasé ${c.plase} · aces ${c.ace} · blocks ${c.block}`,
-    `Defences ${c.dig} · good receptions ${c.pass} · serves in ${c.serve} · sets ${c.assist}`,
-    `Errors ${errs(c)} (serve ${c.serr}, attack ${c.aerr}, reception ${c.rerr}, net ${c.ferr})`,
+    `${pName()}${S.player.num?' #'+S.player.num:''}: ${pts(c)} pts (${fmtVir(pts(c)/setsPlayed(m))} per set) · rating ${fmtVir(vir(c))} · +/- ${fmtPM(a.pm)} · ${mins(playMs(m))} min`,
+    pct,
+    ...perSet,
+    listOf(c, ['dig','pass','assist','serve']) ? 'Good plays: ' + listOf(c, ['dig','pass','assist','serve']) : '',
+    `Errors ${errs(c)}${errs(c) ? ' (' + listOf(c, ERR_KEYS) + ')' : ''}`,
     passLine(m),
+    'Spike Sheet',
   ].filter(Boolean).join('\n');
 }
 
 /* ---------- events ---------- */
 document.addEventListener('click', async e => {
+  // a bar in the season chart (SVG, not a button)
+  const cs = e.target.closest('[data-csel]'); if (cs){ S.chartSel = cs.dataset.csel; S.armed = null; return render(); }
   const t = e.target.closest('button'); if (!t || (t.type === 'submit' && t.form)) return;
   const wasArmed = S.armed;
   if (t.id !== 'b-del') S.armed = null;
@@ -894,6 +1026,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.pass != null) return setPasser(t.dataset.pass);
   if (t.dataset.stat) return tap(t.dataset.stat);
   if (t.dataset.set) return pickSet(+t.dataset.set);
+  if (t.dataset.metric){ S.chartMetric = t.dataset.metric; return render(); }
   if (t.dataset.open){
     if (t.dataset.open === S.activeId){ S.view = 'live'; } else { S.view = 'match'; S.openId = t.dataset.open; }
     render(); window.scrollTo(0,0); return;
@@ -914,8 +1047,10 @@ document.addEventListener('click', async e => {
     case 'b-del':
       if (S.armed === 'del-'+t.dataset.id) { S.armed = null; return removeMatch(t.dataset.id); }
       S.armed = 'del-'+t.dataset.id; render(); return;
-    case 'b-copy': {
+    case 'b-share': {
+      // the phone's own share sheet (WhatsApp, Messages...); copy when there is none
       const txt = summaryText(S.matches[t.dataset.id]);
+      if (navigator.share){ try{ await navigator.share({text: txt}); return; }catch(err){ if (err && err.name === 'AbortError') return; } }
       try{ await navigator.clipboard.writeText(txt); toast('Copied. Paste it in a message.'); }
       catch(err){ document.querySelector('textarea')?.remove(); const ta = document.createElement('textarea'); ta.value = txt; t.parentElement.after(ta); ta.select(); toast('Select the text and copy it'); }
       return;
