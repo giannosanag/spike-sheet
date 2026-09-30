@@ -620,7 +620,7 @@ function render(){
   const app = $('#app');
   if (S.view === 'live') app.innerHTML = S.activeId && S.matches[S.activeId] ? (S.choose ? chooseView(S.matches[S.activeId]) : liveView(S.matches[S.activeId])) : newView();
   else if (S.view === 'player') app.innerHTML = playerView();
-  else if (S.view === 'match' && S.matches[S.openId]) app.innerHTML = matchView(S.matches[S.openId]);
+  else if (S.view === 'match' && S.matches[S.openId]){ app.innerHTML = matchView(S.matches[S.openId]); prepPicture(S.matches[S.openId]); }
   else { S.view = 'history'; app.innerHTML = historyView(); }
   clearInterval(S.timer);
   const m = S.activeId && S.matches[S.activeId];
@@ -894,6 +894,150 @@ function seasonChart(list){
 }
 function shortDate(d){ try{ const x = new Date(d+'T12:00'); return x.getDate() + '/' + (x.getMonth()+1); }catch(e){ return ''; } }
 
+/* ---------- report picture ---------- */
+// The match report drawn on a canvas (1080 wide, Instagram/WhatsApp friendly), always dark.
+const PIC = {bg:'#000000', soft:'#161616', soft2:'#2A2A2A', ink:'#FFFFFF', muted:'#9E9EA0', volt:'#D7FF3A', voltInk:'#111111', pos:'#3DDC84', neg:'#FF5A5F'};
+function picFont(ctx, weight, size, head){
+  ctx.font = `${weight} ${size}px ${head ? '"Archivo","Arial Narrow",Arial,sans-serif' : '"Archivo",Helvetica,Arial,sans-serif'}`;
+  try{ ctx.fontStretch = head ? 'ultra-condensed' : 'normal'; }catch(e){}
+}
+// largest size up to `size` at which the text fits in maxW
+function picFit(ctx, text, maxW, weight, size, head){
+  for (let z = size; z > 12; z -= 2){ picFont(ctx, weight, z, head); if (ctx.measureText(text).width <= maxW) return z; }
+  return 12;
+}
+function picText(ctx, text, x, y, o){
+  o = o || {};
+  if (o.fit) picFit(ctx, text, o.fit, o.w || 800, o.size, o.head); else picFont(ctx, o.w || 500, o.size || 30, o.head);
+  ctx.fillStyle = o.color || PIC.ink; ctx.textAlign = o.align || 'left'; ctx.textBaseline = o.base || 'alphabetic';
+  ctx.fillText(text, x, y);
+}
+// capitals the Greek way: no accents on capital letters
+const capsName = t => String(t||'').toUpperCase().normalize('NFD').replace(/([\u0370-\u03ff])[\u0300-\u036f]+/g, '$1').normalize('NFC');
+// a team name: one line when it fits big enough, otherwise two balanced lines
+function picTeam(ctx, text, x, y, maxW, align){
+  text = capsName(text);
+  const z = picFit(ctx, text, maxW, 800, 64, true);
+  const ws = text.split(/\s+/);
+  if (z >= 46 || ws.length < 2){ picText(ctx, text, x, y, {w:800, size:64, head:true, align, fit:maxW}); return; }
+  let best = null;
+  picFont(ctx, 800, 50, true);
+  for (let i = 1; i < ws.length; i++){
+    const a = ws.slice(0,i).join(' '), b = ws.slice(i).join(' '), wd = Math.max(ctx.measureText(a).width, ctx.measureText(b).width);
+    if (!best || wd < best.wd) best = {a, b, wd};
+  }
+  const zz = Math.min(picFit(ctx, best.a, maxW, 800, 52, true), picFit(ctx, best.b, maxW, 800, 52, true));
+  picText(ctx, best.a, x, y - zz*0.5, {w:800, size:zz, head:true, align, fit:maxW});
+  picText(ctx, best.b, x, y + zz*0.5, {w:800, size:zz, head:true, align, fit:maxW});
+}
+function picRound(ctx, x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function drawReport(m){
+  const c = counts(m), a = analyze(m), {w, l} = setsWon(m), court = setCourt(m);
+  const sets = Object.keys(a.score).map(Number).sort((x,y)=>x-y).filter(n => { const x = a.score[n], cs = counts(m, n); return x.us || x.them || pts(cs) || errs(cs); });
+  // sets start at y 1290 (after three 96-high bars from 990); the footer needs 90 below the last line
+  const W = 1080, P = 72, H = 1290 + sets.length * 64 + (passLine(m) ? 60 : 0) + 90;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = PIC.bg; ctx.fillRect(0, 0, W, H);
+  // brand + date
+  ctx.fillStyle = PIC.volt; ctx.beginPath(); ctx.arc(P+12, 92, 12, 0, 7); ctx.fill();
+  picText(ctx, 'SPIKE SHEET', P+36, 108, {w:800, size:46, head:true});
+  picText(ctx, fmtDate(m.date) + (m.team ? ' · ' + m.team : ''), W-P, 106, {size:30, color:PIC.muted, align:'right', fit:520, w:500});
+  // result
+  const res = m.result === 'W' ? 'FINAL · WON' : m.result === 'L' ? 'FINAL · LOST' : 'FINAL';
+  picText(ctx, res, W/2, 214, {w:700, size:34, color:m.result === 'W' ? PIC.volt : PIC.muted, align:'center'});
+  // teams and sets won
+  picTeam(ctx, homeName(m), P, 360, 320, 'left');
+  picTeam(ctx, m.opp, W-P, 360, 320, 'right');
+  picText(ctx, `${w}–${l}`, W/2, 400, {w:800, size:190, head:true, align:'center'});
+  picText(ctx, 'SETS', W/2, 446, {w:600, size:26, color:PIC.muted, align:'center'});
+  // set chips
+  const chips = sets.map(n => `${a.score[n].us}-${a.score[n].them}`);
+  if (chips.length){
+    picFont(ctx, 600, 30); const cw = chips.map(t => ctx.measureText(t).width + 40), tot = cw.reduce((x,y)=>x+y,0) + (chips.length-1)*14;
+    let x = (W - tot)/2;
+    chips.forEach((t, i) => { const won = a.score[sets[i]].us > a.score[sets[i]].them;
+      ctx.strokeStyle = won ? PIC.ink : PIC.soft2; ctx.lineWidth = 3; picRound(ctx, x, 480, cw[i], 54, 27); ctx.stroke();
+      picText(ctx, t, x + cw[i]/2, 518, {w:600, size:30, color:won ? PIC.ink : PIC.muted, align:'center'}); x += cw[i] + 14; });
+  }
+  // player
+  const py = 640;
+  ctx.fillStyle = PIC.volt; ctx.beginPath(); ctx.arc(P+64, py, 64, 0, 7); ctx.fill();
+  picText(ctx, S.player.num || '?', P+64, py+2, {w:800, size:70, head:true, color:PIC.voltInk, align:'center', base:'middle'});
+  picText(ctx, capsName(pName()), P+160, py+10, {w:800, size:76, head:true, fit:W-P-P-160});
+  picText(ctx, [S.player.pos, `${fmtVir(pts(c)/setsPlayed(m))} points per set`].filter(Boolean).join(' · '), P+160, py+58, {size:30, color:PIC.muted, fit:W-P-P-160, w:500});
+  // hero numbers
+  const hero = [[String(pts(c)), 'POINTS', PIC.ink], [fmtVir(vir(c)), 'RATING', PIC.ink], [fmtPM(a.pm), '+/-', a.pm > 0 ? PIC.pos : a.pm < 0 ? PIC.neg : PIC.ink], [String(mins(playMs(m))), 'MINUTES', PIC.ink]];
+  const hw = (W - 2*P - 3*16) / 4;
+  hero.forEach(([v, lab, col], i) => { const x = P + i*(hw+16);
+    ctx.fillStyle = i === 0 ? PIC.volt : PIC.soft; picRound(ctx, x, 750, hw, 170, 24); ctx.fill();
+    picText(ctx, v, x+24, 850, {w:800, size:88, head:true, color:i === 0 ? PIC.voltInk : col, fit:hw-40});
+    picText(ctx, lab, x+24, 892, {w:600, size:24, color:i === 0 ? PIC.voltInk : PIC.muted}); });
+  // attack / serve / reception
+  let y = 990;
+  pctParts(c).forEach(r => {
+    picText(ctx, r.l, P, y, {w:700, size:36});
+    picFont(ctx, 700, 36); const lw = ctx.measureText(r.l).width;
+    picText(ctx, r.b ? `${r.a} of ${r.b}` : 'none tapped', P + lw + 18, y, {size:28, color:PIC.muted});
+    picText(ctx, r.p == null ? '–' : r.p + '%', W-P, y+4, {w:800, size:56, head:true, align:'right'});
+    ctx.fillStyle = PIC.soft2; picRound(ctx, P, y+20, W-2*P, 14, 7); ctx.fill();
+    if (r.p){ ctx.fillStyle = PIC.volt; picRound(ctx, P, y+20, Math.max(14, (W-2*P)*r.p/100), 14, 7); ctx.fill(); }
+    y += 96;
+  });
+  // set by set
+  y += 12;
+  sets.forEach(n => {
+    const x = a.score[n], cs = counts(m, n), cr = court[n] || {onR:0, pm:0}, p = pts(cs), e = errs(cs);
+    ctx.fillStyle = PIC.soft; picRound(ctx, P, y-40, W-2*P, 54, 14); ctx.fill();
+    picText(ctx, `SET ${n}`, P+22, y-4, {w:800, size:34, head:true});
+    picText(ctx, `${x.us}–${x.them}`, P+170, y-4, {w:700, size:30});
+    picText(ctx, `${p} pt${p === 1 ? '' : 's'} · ${e} error${e === 1 ? '' : 's'}`, P+330, y-4, {size:30, color:PIC.muted});
+    if (cr.onR) picText(ctx, fmtPM(cr.pm), W-P-22, y-4, {w:700, size:30, align:'right', color:cr.pm > 0 ? PIC.pos : cr.pm < 0 ? PIC.neg : PIC.ink});
+    else picText(ctx, 'bench', W-P-22, y-4, {size:28, align:'right', color:PIC.muted});
+    y += 64;
+  });
+  const pl = passLine(m);
+  if (pl) { picText(ctx, pl, P, y+14, {size:28, color:PIC.muted, fit:W-2*P, w:500}); y += 60; }
+  picText(ctx, 'giannosanag.github.io/spike-sheet', W/2, H-40, {size:24, color:PIC.muted, align:'center'});
+  return cv;
+}
+function picName(m){ return ('spike-sheet-' + (m.opp||'match') + '-' + (m.date||'')).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-+/g, '-') + '.jpg'; }
+// Made ahead, when the match page opens: iOS only allows the share sheet straight from a tap,
+// so the picture must already exist when the button is pressed.
+async function prepPicture(m){
+  const key = m.id + ':' + (m.updatedAt||0) + ':' + (S.player.updatedAt||0);
+  if (S.pic && S.pic.key === key) return S.pic;
+  try{ await Promise.race([document.fonts.load('800 60px "Archivo"'), new Promise(r => setTimeout(r, 1500))]); }catch(e){}
+  // JPEG: about 10x faster to make than PNG on a phone, and WhatsApp turns pictures into JPEG anyway
+  const blob = await new Promise(r => drawReport(m).toBlob(r, 'image/jpeg', 0.92));
+  if (!blob) return null;
+  S.pic = {key, id:m.id, file:new File([blob], picName(m), {type:'image/jpeg'})};
+  return S.pic;
+}
+function sharePicture(m){
+  const pic = S.pic && S.pic.id === m.id ? S.pic : null;
+  // not made yet (tapped straight away): make it, then try; a phone that refuses a late share asks for one more tap
+  if (!pic){ prepPicture(m).then(p => p && openShare(m, p, true)); return; }
+  openShare(m, pic, false);
+}
+function openShare(m, pic, late){
+  const data = {files:[pic.file], title:`${homeName(m)} vs ${m.opp}`};
+  if (navigator.canShare && navigator.canShare(data)){
+    navigator.share(data).catch(err => {
+      if (err && err.name === 'AbortError') return;
+      if (late && err && err.name === 'NotAllowedError') return toast('Picture ready. Tap Share picture again.');
+      savePicture(pic.file);
+    });
+  } else savePicture(pic.file);
+}
+// no share sheet (a computer): save the picture instead
+function savePicture(file){
+  const url = URL.createObjectURL(file), a = document.createElement('a');
+  a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast('Picture saved');
+}
+
 function matchView(m){
   const a = analyze(m), c = counts(m);
   const sets = [...new Set((m.log||[]).filter(e=>BYK[e.k]).map(e=>e.set))].sort((x,y)=>x-y);
@@ -904,7 +1048,7 @@ function matchView(m){
   ${scoreBug(m, a, {live:false})}
   ${tiles(c, {pm:a.pm, min:mins(playMs(m)), pmNote:`<em>${a.plus} won, ${a.minus} lost</em>`, ptsNote:`<em>${fmtVir(pts(c)/setsPlayed(m))} per set</em>`})}
   <div class="row">
-    <button class="btn btn-or" id="b-share" data-id="${m.id}" style="flex:1">Share report</button>
+    <button class="btn btn-or" id="b-share" data-id="${m.id}" style="flex:1">Share picture</button>
   </div>
   ${pctRows(c)}
   ${setCards(m, a)}
@@ -986,27 +1130,6 @@ function playerView(){
   </section>`;
 }
 
-function summaryText(m){
-  const c = counts(m), a = analyze(m);
-  const sets = (m.ended||[]).map(s=>{ const x = a.score[s]; return x ? `${x.us}-${x.them}` : ''; }).filter(Boolean).join(', ');
-  const pct = pctParts(c).filter(r => r.b).map(r => `${r.l} ${r.a}/${r.b} (${r.p}%)`).join(' · ');
-  const perSet = Object.keys(a.score).map(Number).sort((x,y)=>x-y).map(s => {
-    const cs = counts(m, s), x = a.score[s], p = pts(cs), e = errs(cs);
-    if (!x.us && !x.them && !p && !e) return '';
-    return `Set ${s} ${x.us}-${x.them}: ${p} pt${p===1?'':'s'}${p ? ' (' + listOf(cs, PT_KEYS) + ')' : ''}${e ? `, ${e} error${e>1?'s':''}` : ''}`;
-  }).filter(Boolean);
-  return [
-    `🏐 ${homeName(m)} vs ${m.opp} · ${fmtDate(m.date)}${m.result?' · '+(m.result==='W'?'Won':'Lost'):''}${m.score?' '+m.score:''}${sets?' ('+sets+')':''}`,
-    `${pName()}${S.player.num?' #'+S.player.num:''}: ${pts(c)} pts (${fmtVir(pts(c)/setsPlayed(m))} per set) · rating ${fmtVir(vir(c))} · +/- ${fmtPM(a.pm)} · ${mins(playMs(m))} min`,
-    pct,
-    ...perSet,
-    listOf(c, ['dig','pass','assist','serve']) ? 'Good plays: ' + listOf(c, ['dig','pass','assist','serve']) : '',
-    `Errors ${errs(c)}${errs(c) ? ' (' + listOf(c, ERR_KEYS) + ')' : ''}`,
-    passLine(m),
-    'Spike Sheet',
-  ].filter(Boolean).join('\n');
-}
-
 /* ---------- events ---------- */
 document.addEventListener('click', async e => {
   // a bar in the season chart (SVG, not a button)
@@ -1047,14 +1170,8 @@ document.addEventListener('click', async e => {
     case 'b-del':
       if (S.armed === 'del-'+t.dataset.id) { S.armed = null; return removeMatch(t.dataset.id); }
       S.armed = 'del-'+t.dataset.id; render(); return;
-    case 'b-share': {
-      // the phone's own share sheet (WhatsApp, Messages...); copy when there is none
-      const txt = summaryText(S.matches[t.dataset.id]);
-      if (navigator.share){ try{ await navigator.share({text: txt}); return; }catch(err){ if (err && err.name === 'AbortError') return; } }
-      try{ await navigator.clipboard.writeText(txt); toast('Copied. Paste it in a message.'); }
-      catch(err){ document.querySelector('textarea')?.remove(); const ta = document.createElement('textarea'); ta.value = txt; t.parentElement.after(ta); ta.select(); toast('Select the text and copy it'); }
-      return;
-    }
+    // the report as a picture, through the phone's share sheet (WhatsApp, Messages...)
+    case 'b-share': return sharePicture(S.matches[t.dataset.id]);
   }
 });
 document.addEventListener('submit', e => {
