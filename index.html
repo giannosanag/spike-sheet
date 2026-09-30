@@ -565,11 +565,17 @@ function undo(){
   if (last.k === 'on'){ m.onCourt = false; m.courtSince = null; }
   // a stat that put the player on court by itself: take that back too
   else if (BYK[last.k] && m.log.length && m.log[m.log.length-1].k === 'on' && m.log[m.log.length-1].byStat){ m.log = m.log.slice(0,-1); m.onCourt = false; m.courtSince = null; }
-  if (last.k === 'off'){ m.playMs = Math.max(0,(m.playMs||0) - (last.dur||0)); m.onCourt = true; m.courtSince = last.onAt || Date.now(); }
+  // the final whistle's own "to the bench" (after Keep tracking): the time up to the whistle stays counted,
+  // the clock restarts now - never across the hours or days between finishing and resuming
+  if (last.k === 'off' && last.fin){ m.onCourt = true; m.courtSince = Date.now(); }
+  else if (last.k === 'off'){ m.playMs = Math.max(0,(m.playMs||0) - (last.dur||0)); m.onCourt = true; m.courtSince = last.onAt || Date.now(); }
   save(m); render(); toast('Undone: ' + evLabel(last, m).t);
 }
 function pickSet(n){
-  S.set = n; const m = S.matches[S.activeId];
+  const m = S.matches[S.activeId];
+  // going forward with the set buttons instead of "End set": the set that was played is over
+  if (m && n > S.set && !(m.ended||[]).includes(S.set)){ const sc = analyze(m).score[S.set]; if (sc && (sc.us || sc.them)) m.ended = [...(m.ended||[]), S.set].sort((a,b)=>a-b); }
+  S.set = n;
   if (m){ m.curSet = n; m.maxSet = Math.max(m.maxSet||1, n); save(m); }
   render();
 }
@@ -586,7 +592,7 @@ function finishMatch(result, score, endAt){
   // the final whistle belongs to the last set that was played, not an empty next set
   const cur = analyze(m).score[S.set], log = m.log||[];
   const offSet = (cur && (cur.us || cur.them)) || !log.length ? S.set : log[log.length-1].set;
-  if (m.onCourt){ const end = Math.max(endAt || Date.now(), m.courtSince), dur = end-m.courtSince; push(m,{k:'off',dur,onAt:m.courtSince,set:offSet,t:end}); m.playMs=(m.playMs||0)+dur; m.onCourt=false; m.courtSince=null; }
+  if (m.onCourt){ const end = Math.max(endAt || Date.now(), m.courtSince), dur = end-m.courtSince; push(m,{k:'off',dur,onAt:m.courtSince,set:offSet,t:end,fin:1}); m.playMs=(m.playMs||0)+dur; m.onCourt=false; m.courtSince=null; }
   if (!(m.ended||[]).includes(S.set)){ const sc = analyze(m).score[S.set]; if (sc && (sc.us||sc.them)) m.ended = [...(m.ended||[]), S.set]; }
   m.result = result; m.score = score; m.done = true;
   save(m);
@@ -1010,7 +1016,7 @@ function picName(m){ return ('spike-sheet-' + (m.opp||'match') + '-' + (m.date||
 // Made ahead, when the match page opens: iOS only allows the share sheet straight from a tap,
 // so the picture must already exist when the button is pressed.
 async function prepPicture(m){
-  const key = m.id + ':' + (m.updatedAt||0) + ':' + (S.player.updatedAt||0);
+  const key = picKey(m);
   if (S.pic && S.pic.key === key) return S.pic;
   try{ await Promise.race([document.fonts.load('800 60px "Archivo"'), new Promise(r => setTimeout(r, 1500))]); }catch(e){}
   // JPEG: about 10x faster to make than PNG on a phone, and WhatsApp turns pictures into JPEG anyway
@@ -1019,8 +1025,9 @@ async function prepPicture(m){
   S.pic = {key, id:m.id, file:new File([blob], picName(m), {type:'image/jpeg'})};
   return S.pic;
 }
+const picKey = m => m.id + ':' + (m.updatedAt||0) + ':' + (S.player.updatedAt||0);
 function sharePicture(m){
-  const pic = S.pic && S.pic.id === m.id ? S.pic : null;
+  const pic = S.pic && S.pic.key === picKey(m) ? S.pic : null;
   // not made yet (tapped straight away): make it, then try; a phone that refuses a late share asks for one more tap
   if (!pic){ prepPicture(m).then(p => p && openShare(m, p, true)); return; }
   openShare(m, pic, false);
