@@ -87,7 +87,7 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 .score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:10px 18px 14px}
 .team{display:flex;flex-direction:column;gap:4px;min-width:0}
 .team.away{text-align:right;align-items:flex-end}
-.team .nm{font-size:22px;line-height:1;overflow-wrap:anywhere}
+.team .nm{font-size:22px;line-height:1;overflow-wrap:anywhere}.team .nm.long{font-size:16px}@media (max-width:360px){.team .nm.long{font-size:13px}}
 .team .sw{font-size:12px;color:var(--muted)}
 .big{display:flex;align-items:center;gap:8px;font-size:84px;line-height:.85}
 .big i{font-style:normal;color:var(--faint);font-size:50px}
@@ -116,10 +116,13 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 .pline b{font-size:30px;line-height:.95}
 .pline span{font-size:12px;color:var(--muted)}
 .pos{color:var(--pos)}.neg{color:var(--neg)}
-.court{display:flex;flex-direction:column;align-items:center;gap:6px}
-.court button{font-size:14px;font-weight:600;padding:10px 16px;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--line);min-width:104px}
-.court button.on{background:var(--volt);color:var(--volt-ink);box-shadow:none}
-.court .clock{font-size:15px;font-weight:600}
+.court{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:16px;background:var(--soft)}
+.court.is-on{background:var(--volt);color:var(--volt-ink)}
+.cst{min-width:0}.cst b{display:block;font-family:var(--head);font-stretch:62%;font-weight:800;text-transform:uppercase;font-size:24px;line-height:1}
+.cst>span{font-size:13px;opacity:.75}#clock{font-variant-numeric:tabular-nums}
+.court button{flex:none;font-size:15px;font-weight:600;padding:12px 18px;border-radius:999px;background:var(--volt);color:var(--volt-ink)}
+.court.is-on button{background:var(--volt-ink);color:var(--volt)}
+.choose{gap:12px}.choose p{margin:0}
 .dot-ok{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--pos);margin-right:7px;vertical-align:1px}
 #syncnote .lnk{padding:0 2px;font-size:13px}
 .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pos);margin-right:6px;vertical-align:1px;animation:pulse 1.6s infinite}
@@ -176,6 +179,7 @@ td.k{font-weight:700}
 .res.W{background:var(--ink);color:var(--bg)}.res.L{background:var(--soft2);color:var(--muted)}.res.live{background:var(--volt);color:var(--volt-ink)}
 .mitem .t{font-weight:600;overflow-wrap:anywhere}
 .mitem .d{font-size:12px;color:var(--muted)}
+.mitem.medit{grid-template-columns:auto 1fr auto!important}.xdel{padding:9px 16px;font-size:14px;min-width:84px}
 .mitem .p{text-align:right;font-size:28px;line-height:.9}
 .mitem .p small{display:block;font:500 10px var(--font);color:var(--faint);text-transform:none;letter-spacing:0}
 .empty{color:var(--muted);padding:12px 0;text-align:center}
@@ -209,7 +213,7 @@ input::-webkit-date-and-time-value{text-align:left}
   .pad{gap:5px}.stat{min-height:80px}.stat .n{font-size:30px}.stat .l{font-size:12px}
   .tiles{grid-template-columns:repeat(2,1fr)}
   .mitem{grid-template-columns:auto 1fr auto}.mitem .vir{display:none}
-  .player{grid-template-columns:auto 1fr}.court{grid-column:1/-1;flex-direction:row;justify-content:space-between}
+  .player{grid-template-columns:auto 1fr}
 }
 @media (prefers-reduced-motion:reduce){.stat,.live-dot{animation:none;transition:none}}
 </style>
@@ -218,7 +222,7 @@ input::-webkit-date-and-time-value{text-align:left}
 <body>
 <div class="wrap">
   <header>
-    <div class="brand"><span class="ball" aria-hidden="true"></span><span>Spike <em>Sheet</em></span></div>
+    <button class="brand" data-view="live" aria-label="Spike Sheet, home"><span class="ball" aria-hidden="true"></span><span>Spike <em>Sheet</em></span></button>
     <nav class="tabs" aria-label="Views">
       <button data-view="live">Live</button>
       <button data-view="history">Season</button>
@@ -264,7 +268,7 @@ function restore(){
   const m = LS.get('ss.matches'); if (m && typeof m === 'object') S.matches = m;
   const p = LS.get('ss.player'); if (p && typeof p === 'object') S.player = Object.assign(S.player, p);
   S.activeId = LS.get('ss.active');
-  if (S.activeId && !S.matches[S.activeId]) S.activeId = null;
+  if (S.activeId && (!S.matches[S.activeId] || S.matches[S.activeId].done)) S.activeId = null;
   const a = S.activeId && S.matches[S.activeId];
   if (a) S.set = a.curSet || 1;
 }
@@ -312,8 +316,10 @@ function connect(db){
     let changed = false;
     const seen = new Set();
     const reconcile = first && !snap.metadata?.fromCache;
+    const deleted = new Set(LS.get('ss.deleted') || []);
     snap.docs.forEach(d => {
       const r = d.data(); if (!r) return;
+      if (deleted.has(d.id)) { if (!S.matches[d.id]) queue('matches/'+d.id); return; }
       seen.add(d.id);
       const local = S.matches[d.id];
       if (!local || (r.updatedAt||0) > (local.updatedAt||0)) { S.matches[d.id] = JSON.parse(JSON.stringify(r)); changed = true; }
@@ -329,10 +335,18 @@ function connect(db){
       });
       first = false;
     }
-    if (!snap.metadata?.fromCache) LS.set('ss.synced', Date.now());
+    if (!snap.metadata?.fromCache){
+      LS.set('ss.synced', Date.now());
+      // a delete is done once the cloud no longer has the match
+      const ids = new Set(snap.docs.map(d => d.id));
+      [...deleted].forEach(id => { if (!ids.has(id)) deleted.delete(id); });
+      LS.set('ss.deleted', [...deleted]);
+    }
     snap.docChanges().forEach(c => {
       if (c.type === 'removed' && S.matches[c.doc.id] && !S.pending['matches/'+c.doc.id]) { delete S.matches[c.doc.id]; changed = true; }
     });
+    const act = S.activeId && S.matches[S.activeId];
+    if (S.activeId && (!act || act.done)) { S.activeId = null; S.choose = false; changed = true; }
     if (changed){ backup(); if (!isTyping()) render(); }
   }, () => {}));
   let firstP = true;
@@ -350,7 +364,7 @@ function disconnect(){
 }
 function clearLocal(){
   S.matches = {}; S.activeId = null; S.player = {name:'', num:'', pos:''};
-  try{ localStorage.removeItem('ss.synced'); }catch(e){}
+  try{ localStorage.removeItem('ss.synced'); localStorage.removeItem('ss.deleted'); }catch(e){}
   backup();
 }
 // Called by the Firebase module whenever the signed-in account changes.
@@ -436,7 +450,12 @@ function toast(t){ const el = $('#toast'); el.textContent = t; el.hidden = false
 function buzz(){ try{ navigator.vibrate && navigator.vibrate(12); }catch(e){} }
 let wake = null;
 async function keepAwake(){ try{ if (!wake && navigator.wakeLock) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', ()=>wake=null); } }catch(e){} }
-document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='visible' && S.activeId) keepAwake(); });
+document.addEventListener('visibilitychange', ()=>{
+  if (document.visibilityState !== 'visible'){ S.hiddenAt = Date.now(); return; }
+  if (!S.activeId) return;
+  keepAwake();
+  if (S.hiddenAt && idleLong() && !S.choose){ S.choose = true; S.view = 'live'; render(); window.scrollTo(0,0); }
+});
 const pName = () => S.player.name || 'Player';
 const homeName = m => m.home || 'Us';
 function evLabel(e, m){
@@ -452,7 +471,7 @@ function evLabel(e, m){
 function startMatch(f){
   const id = 'm' + Date.now().toString(36);
   const m = {id, opp:f.opp||'Opponent', home:f.home||'', date:f.date||today(), team:f.team||'', log:[], playMs:0, onCourt:false, courtSince:null, curSet:1, maxSet:1, ended:[], result:'', score:'', done:false, createdAt:Date.now()};
-  S.activeId = id; S.set = 1;
+  S.activeId = id; S.set = 1; S.choose = false;
   save(m);
   if (f.starter) courtOn(m);
   keepAwake(); render();
@@ -525,25 +544,39 @@ function endSet(){
   toast(`Set ${s}: ${sc.us}–${sc.them}`);
   pickSet(Math.min(s+1, 5));
 }
-function finishMatch(result, score){
+function finishMatch(result, score, endAt){
   const m = S.matches[S.activeId]; if (!m) return;
   // the final whistle belongs to the last set that was played, not an empty next set
   const cur = analyze(m).score[S.set], log = m.log||[];
   const offSet = (cur && (cur.us || cur.them)) || !log.length ? S.set : log[log.length-1].set;
-  if (m.onCourt){ const dur = Date.now()-m.courtSince; push(m,{k:'off',dur,onAt:m.courtSince,set:offSet}); m.playMs=(m.playMs||0)+dur; m.onCourt=false; m.courtSince=null; }
+  if (m.onCourt){ const end = Math.max(endAt || Date.now(), m.courtSince), dur = end-m.courtSince; push(m,{k:'off',dur,onAt:m.courtSince,set:offSet,t:end}); m.playMs=(m.playMs||0)+dur; m.onCourt=false; m.courtSince=null; }
   if (!(m.ended||[]).includes(S.set)){ const sc = analyze(m).score[S.set]; if (sc && (sc.us||sc.them)) m.ended = [...(m.ended||[]), S.set]; }
   m.result = result; m.score = score; m.done = true;
   save(m);
   S.activeId = null; backup();
   S.view = 'match'; S.openId = m.id; render(); window.scrollTo(0,0);
 }
+// Close the open match (result guessed from sets won) and go straight to the new-match form.
+function closeAndNew(){
+  const m = S.matches[S.activeId]; if (!m) return;
+  const {w, l} = setsWon(m), log = m.log||[];
+  // a result saved before "Keep tracking" wins over the guess from sets won
+  finishMatch(m.result || (w > l ? 'W' : l > w ? 'L' : ''), m.score || (w||l ? w+'-'+l : ''), log.length ? log[log.length-1].t : m.createdAt);
+  S.view = 'live'; render(); window.scrollTo(0,0);
+  toast('Saved. It is in Season.');
+}
+// Hidden while a match is live: that match's screen is where Live leads.
+const newMatchBtn = () => S.activeId && S.matches[S.activeId] ? '' : `<button class="btn btn-or" data-view="live">+ New match</button>`;
 function resume(id){
   const m = S.matches[id]; if (!m) return;
-  m.done = false; save(m);
+  if (S.activeId && S.activeId !== id && S.matches[S.activeId]) return toast('Finish the live match first');
+  m.done = false; S.choose = false; save(m);
   S.activeId = id; S.set = m.curSet || 1; S.view = 'live'; render(); window.scrollTo(0,0);
 }
 function removeMatch(id){
   delete S.matches[id];
+  // remembered until the cloud copy is gone, so a delete made before sign-in finishes still happens
+  LS.set('ss.deleted', [...new Set([...(LS.get('ss.deleted')||[]), id])]);
   if (S.activeId === id) S.activeId = null;
   backup(); queue('matches/'+id);
   S.view = 'history'; S.openId = null; render(); toast('Match deleted');
@@ -553,7 +586,7 @@ function removeMatch(id){
 function render(){
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || (S.view==='match' && b.dataset.view==='history'))));
   const app = $('#app');
-  if (S.view === 'live') app.innerHTML = S.activeId && S.matches[S.activeId] ? liveView(S.matches[S.activeId]) : newView();
+  if (S.view === 'live') app.innerHTML = S.activeId && S.matches[S.activeId] ? (S.choose ? chooseView(S.matches[S.activeId]) : liveView(S.matches[S.activeId])) : newView();
   else if (S.view === 'player') app.innerHTML = playerView();
   else if (S.view === 'match' && S.matches[S.openId]) app.innerHTML = matchView(S.matches[S.openId]);
   else { S.view = 'history'; app.innerHTML = historyView(); }
@@ -562,6 +595,25 @@ function render(){
   if (S.view === 'live' && m && m.onCourt) S.timer = setInterval(()=>{ const c = $('#clock'); if (c) c.textContent = fmtTime(playMs(m)); }, 1000);
 }
 
+// Opening the app on an open match: carry on with it, or save it and start another.
+// Asked only after 20 minutes without a tap, so a reload in the middle of a set goes straight back.
+function idleLong(){
+  const m = S.activeId && S.matches[S.activeId]; if (!m) return false;
+  const last = Math.max(m.createdAt||0, ...(m.log||[]).map(e => e.t||0));
+  return Date.now() - last > 20*60e3;
+}
+function chooseView(m){
+  const a = analyze(m), sc = a.score[m.curSet||1] || {us:0, them:0}, {w, l} = setsWon(m);
+  return `
+  <section class="panel choose">
+    <div class="kicker">Match in progress</div>
+    <h2>${esc(homeName(m))} vs ${esc(m.opp)}</h2>
+    <p class="note">${esc(fmtDate(m.date))} · sets ${w}–${l} · set ${m.curSet||1} at ${sc.us}–${sc.them}</p>
+    <button class="btn btn-or" id="b-continue">Continue this match</button>
+    <button class="btn btn-dk" id="b-closenew">Start a new match</button>
+    <p class="note">Starting a new one saves this match. You find it in Season.</p>
+  </section>`;
+}
 function newView(){
   const last = Object.values(S.matches).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];
   return `
@@ -585,6 +637,8 @@ function newView(){
   ${S.player.name ? '' : `<button class="btn btn-dk" data-view="player">Add her name and number</button>`}`;
 }
 
+// a long word (PANATHINAIKOS) would split mid-word on a phone: shrink it instead
+const nmLong = n => String(n).split(/\s+/).some(w => w.length > 9) ? ' long' : '';
 function scoreBug(m, a, opts){
   const {w, l} = setsWon(m);
   // live: the current set's rally score; finished: sets won
@@ -595,9 +649,9 @@ function scoreBug(m, a, opts){
   <section class="bug">
     <div class="bug-top"><span class="comp">${esc(fmtDate(m.date))}${m.team?' · '+esc(m.team):''}</span><span class="setflag">${opts.live ? 'Set '+s : 'Sets'}</span></div>
     <div class="score">
-      <div class="team"><span class="nm">${esc(homeName(m))}</span><span class="sw">Sets ${w}</span></div>
+      <div class="team"><span class="nm${nmLong(homeName(m))}">${esc(homeName(m))}</span><span class="sw">Sets ${w}</span></div>
       <div class="big"><span class="${sc.us>=sc.them?'hi':''}">${sc.us}</span><i>:</i><span class="${sc.them>sc.us?'hi':''}">${sc.them}</span></div>
-      <div class="team away"><span class="nm">${esc(m.opp)}</span><span class="sw">Sets ${l}</span></div>
+      <div class="team away"><span class="nm${nmLong(m.opp)}">${esc(m.opp)}</span><span class="sw">Sets ${l}</span></div>
     </div>
     ${pips ? `<div class="pips">${pips}</div>` : ''}
     ${opts.live ? `
@@ -630,9 +684,9 @@ function liveView(m){
         <div><b>${fmtVir(vir(all))}</b><span>Rating</span></div>
       </div>
     </div>
-    <div class="court">
-      <button class="${m.onCourt?'on':''}" id="b-court">${m.onCourt?'On court':'On bench'}</button>
-      <span class="clock" id="clock">${fmtTime(playMs(m))}</span>
+    <div class="court ${m.onCourt?'is-on':''}">
+      <div class="cst"><b>${m.onCourt?'On court':'On bench'}</b><span>${m.onCourt?'Playing now':'Not playing'} · <span id="clock">${fmtTime(playMs(m))}</span> played</span></div>
+      <button id="b-court">${m.onCourt?'Take off court':'Put on court'}</button>
     </div>
   </section>
   ${GROUPS.map(G=>`
@@ -690,10 +744,10 @@ function passLine(m){
 }
 function finishForm(m){
   const {w, l} = setsWon(m);
-  const guess = w > l ? 'W' : l > w ? 'L' : '';
+  const guess = m.result || (w > l ? 'W' : l > w ? 'L' : '');
   return `<div class="row">
       <label>Result<select id="fin-res"><option value="W" ${guess==='W'?'selected':''}>Won</option><option value="L" ${guess==='L'?'selected':''}>Lost</option><option value="" ${guess===''?'selected':''}>Not sure</option></select></label>
-      <label>Sets<input id="fin-score" placeholder="e.g. 3-1" autocomplete="off" value="${w||l ? w+'-'+l : ''}"></label>
+      <label>Sets<input id="fin-score" placeholder="e.g. 3-1" autocomplete="off" value="${esc(m.score || (w||l ? w+'-'+l : ''))}"></label>
     </div>
     <button class="btn btn-or" id="b-finish">Save and see box score</button>`;
 }
@@ -743,12 +797,13 @@ function matchView(m){
     <button class="btn btn-dk" id="b-resume" data-id="${m.id}">Keep tracking</button>
     <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${m.id}">${armed?'Tap again to delete':'Delete'}</button>
   </div>
+  ${newMatchBtn()}
   <button class="btn btn-dk" data-view="history">‹ Back to season</button>`;
 }
 
 function historyView(){
   const list = Object.values(S.matches).sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
-  if (!list.length) return `<section class="panel"><h2>Season</h2><p class="empty">No matches yet. Start one from the Live tab.</p></section>`;
+  if (!list.length) return `<section class="panel"><h2>Season</h2><p class="empty">No matches yet.</p></section>${newMatchBtn()}`;
   const total = Object.fromEntries(STATS.map(s=>[s.k,0])); let time = 0, w = 0, l = 0, pm = 0, bestPts = null, bestVir = null;
   const per = list.map(m => { const c = counts(m), a = analyze(m); STATS.forEach(s=> total[s.k]+=c[s.k]); time += playMs(m); pm += a.pm; if (m.result==='W') w++; if (m.result==='L') l++;
     if (!bestPts || pts(c) > bestPts.v) bestPts = {v:pts(c), m}; if (!bestVir || vir(c) > bestVir.v) bestVir = {v:vir(c), m};
@@ -767,14 +822,21 @@ function historyView(){
     </div>
   </section>
   ${tiles(total, {pm, min:mins(time), ptsNote:`<em>best ${bestPts.v} vs ${esc(bestPts.m.opp)}</em>`, virNote:`<em>best ${fmtVir(bestVir.v)}</em>`, minNote:`<em>${Math.round(mins(time)/n)} a match</em>`})}
-  <section class="sec"><div class="sec-h"><h3>Game log</h3></div>
-  <div class="mlist">${per.map(({m,c,a})=>{ const live = m.id===S.activeId; return `
-    <button class="mitem" data-open="${m.id}">
-      <span class="res ${live?'live':(m.result||'')}">${live?'LIVE':(m.result||'–')}</span>
-      <span><div class="t">vs ${esc(m.opp)}</div><div class="d">${esc(fmtDate(m.date))}${m.score?' · '+esc(m.score):''} · ${mins(playMs(m))} min · <span class="${pmClass(a.pm)}">${fmtPM(a.pm)}</span></div></span>
+  ${newMatchBtn()}
+  <section class="sec"><div class="sec-h"><h3>Game log</h3><button class="lnk" id="b-editlist">${S.editList?'Done':'Remove matches'}</button></div>
+  <div class="mlist">${per.map(({m,c,a})=>{ const live = m.id===S.activeId, armed = S.armed==='x-'+m.id;
+    const info = `<span class="res ${live?'live':(m.result||'')}">${live?'LIVE':(m.result||'–')}</span>
+      <span><div class="t">vs ${esc(m.opp)}</div><div class="d">${esc(fmtDate(m.date))}${m.score?' · '+esc(m.score):''} · ${mins(playMs(m))} min · <span class="${pmClass(a.pm)}">${fmtPM(a.pm)}</span></div></span>`;
+    // remove mode: the row stops opening the match and gets its own delete button
+    return S.editList ? `
+    <div class="mitem medit">${info}
+      <button class="btn btn-del xdel ${armed?'armed':''}" data-xdel="${m.id}" aria-label="${armed?'Tap again to delete':'Delete'} vs ${esc(m.opp)}">${armed?'Sure?':'Delete'}</button>
+    </div>` : `
+    <button class="mitem" data-open="${m.id}">${info}
       <span class="p vir">${fmtVir(vir(c))}<small>RTG</small></span>
       <span class="p">${pts(c)}<small>PTS</small></span>
-    </button>`; }).join('')}</div></section>
+    </button>`; }).join('')}</div>
+  ${S.editList ? `<p class="note">Tap Delete, then tap again to remove the match from every phone.</p>` : ''}</section>
   ${passTable(list)}
   <section class="sec"><div class="sec-h"><h3>Season box score</h3></div>${boxTable(rows,'Match')}${LEGEND}</section>`;
 }
@@ -818,10 +880,17 @@ function summaryText(m){
 /* ---------- events ---------- */
 document.addEventListener('click', async e => {
   const t = e.target.closest('button'); if (!t || (t.type === 'submit' && t.form)) return;
+  const wasArmed = S.armed;
   if (t.id !== 'b-del') S.armed = null;
   // any other button closes the "who passed" picker
   if (t.dataset.pass == null && !t.dataset.stat){ S.tag = null; clearTimeout(S.tagT); }
-  if (t.dataset.view){ S.view = t.dataset.view; S.openId = null; render(); window.scrollTo(0,0); return; }
+  if (t.dataset.view){ S.view = t.dataset.view; S.openId = null; S.editList = false; render(); window.scrollTo(0,0); return; }
+  // Season list in remove mode: first tap arms the row, second tap deletes it
+  if (t.dataset.xdel){
+    const id = t.dataset.xdel;
+    if (wasArmed === 'x-'+id) return removeMatch(id);
+    S.armed = 'x-'+id; render(); return;
+  }
   if (t.dataset.pass != null) return setPasser(t.dataset.pass);
   if (t.dataset.stat) return tap(t.dataset.stat);
   if (t.dataset.set) return pickSet(+t.dataset.set);
@@ -839,6 +908,9 @@ document.addEventListener('click', async e => {
     case 'b-signout': return window.SS_auth && window.SS_auth.signOut();
     case 'b-finish': return finishMatch($('#fin-res').value, $('#fin-score').value.trim());
     case 'b-resume': return resume(t.dataset.id);
+    case 'b-closenew': S.choose = false; return closeAndNew();
+    case 'b-continue': S.choose = false; render(); window.scrollTo(0,0); return;
+    case 'b-editlist': S.editList = !S.editList; return render();
     case 'b-del':
       if (S.armed === 'del-'+t.dataset.id) { S.armed = null; return removeMatch(t.dataset.id); }
       S.armed = 'del-'+t.dataset.id; render(); return;
@@ -862,6 +934,7 @@ document.addEventListener('submit', e => {
 window.addEventListener('pagehide', () => { backup(); flush(); });
 
 restore();
+S.choose = idleLong();
 render();
 if (S.activeId) keepAwake();
 syncNote();
