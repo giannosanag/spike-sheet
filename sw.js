@@ -1,4 +1,4 @@
-const CACHE = 'spike-sheet-v4';
+const CACHE = 'spike-sheet-v5';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -15,7 +15,9 @@ self.addEventListener('fetch', e => {
   if (same){
     // newest copy from the internet, but never wait more than 2.5 s for it on a weak court-side signal:
     // then the saved copy opens and the download keeps going in the background for next time
-    const net = fetch(req).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return r; });
+    // no-cache: always ask GitHub whether the page changed (a tiny 304 when it has not), so an update
+    // reaches the phone on the next open instead of up to 10 minutes later
+    const net = fetch(req, {cache: 'no-cache'}).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return r; });
     const saved = () => caches.match(req).then(r => r || caches.match('./'));
     const slow = new Promise(res => setTimeout(res, 2500)).then(saved).then(r => r || net);
     e.respondWith(Promise.race([net.catch(saved), slow]));
