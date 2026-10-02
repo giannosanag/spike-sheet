@@ -150,7 +150,7 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 
 /* play by play */
 .pbp{display:flex;flex-direction:column}
-.pbp div{display:grid;grid-template-columns:44px 56px 1fr;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.pbp div,.pbp button{text-align:left;width:100%;display:grid;grid-template-columns:44px 56px 1fr;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
 .pbp .st{font-size:12px;color:var(--faint)}
 .pbp .sc{font-weight:600}
 .pbp .ev.pt{font-weight:600} .pbp .ev.err{color:var(--neg)} .pbp .ev.sub{color:var(--pos);font-weight:500} .pbp .ev.team{color:var(--muted)}
@@ -714,12 +714,13 @@ function pickSet(n){
 }
 function endSet(){
   const m = S.matches[S.activeId]; if (!m) return;
-  const s = S.set;
+  const s = S.set, sc = analyze(m).score[s];
+  // a stray tap before the first point must not move the match into the next set
+  if (!sc || !(sc.us || sc.them)) return toast(`Set ${s} has no points yet`);
   m.ended = [...new Set([...(m.ended||[]), s])].sort((a,b)=>a-b);
   pauseClock(m); S.barAt = Date.now();
-  const sc = analyze(m).score[s] || {us:0,them:0};
   toast(`Set ${s}: ${sc.us}–${sc.them}`);
-  pickSet(Math.min(s+1, 5));
+  pickSet(s >= LAST_SET ? s : s+1);
 }
 function finishMatch(result, score, endAt){
   const m = S.matches[S.activeId]; if (!m) return;
@@ -749,9 +750,9 @@ const newMatchBtn = () => S.activeId && S.matches[S.activeId] ? '' : `<button cl
 function resume(id){
   const m = S.matches[id]; if (!m) return;
   if (S.activeId && S.activeId !== id && S.matches[S.activeId]) return toast('Finish the live match first');
-  // a match that was over (three sets won): carry on in the last set played, never in an empty extra set
+  // a match that was over (two sets won): carry on in the last set played, never in an empty extra set
   const {w, l} = setsWon(m), log = m.log||[];
-  if ((w >= 3 || l >= 3) && log.length && !log.some(e => e.set === (m.curSet||1))) m.curSet = log[log.length-1].set;
+  if ((w >= WIN_SETS || l >= WIN_SETS) && log.length && !log.some(e => e.set === (m.curSet||1))) m.curSet = log[log.length-1].set;
   m.done = false; S.choose = false; S.keepOver = overKey(m); save(m);
   S.activeId = id; S.set = m.curSet || 1; S.view = 'live'; render(); window.scrollTo(0,0);
 }
@@ -854,7 +855,7 @@ function scoreBug(m, a, opts){
       <button class="them" id="b-them">+1 ${esc(m.opp)}</button>
     </div>
     <div class="bug-foot">
-      <div class="setsel" role="group" aria-label="Set">${[1,2,3,4,5].map(n=>`<button data-set="${n}" aria-pressed="${S.set===n}">${n}</button>`).join('')}</div>
+      <div class="setsel" role="group" aria-label="Set">${Array.from({length:Math.max(LAST_SET, m.maxSet||1)}, (_,i)=>i+1).map(n=>`<button data-set="${n}" aria-pressed="${S.set===n}">${n}</button>`).join('')}</div>
       <button class="lnk" id="b-endset">End set ${s} ›</button>
     </div>` : ''}
   </section>`;
@@ -918,12 +919,12 @@ function whoBar(m){
   if (!S.who || S.who.mid !== m.id) return '';
   const e = m.log[S.who.i]; if (!e) return '';
   return `<div class="tagbar who" role="group" aria-label="Which player">
-    <div class="q" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>${esc(evLabel(e,m).t)}: who?</span><button class="skip" id="b-whoundo" style="height:32px;padding:0 12px;font-size:13px">Wrong tap, undo</button></div>
+    <div class="q" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>${esc(evLabel(e,m).t)}: who?</span>${S.who.fix ? '' : `<button class="skip" id="b-whoundo" style="height:32px;padding:0 12px;font-size:13px">Wrong tap, undo</button>`}</div>
     <div class="nums">${(m.roster||[]).map(p=>`<button data-who="${esc(p.num)}">${esc(p.num)}<small>${esc((p.name||'').split(/\s+/)[0])}</small></button>`).join('')}</div>
     <form class="more" id="whoform">
       <input id="who-other" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="Other number" aria-label="Other number">
       <button type="submit">Add</button>
-      <button type="button" class="skip" data-who="">Skip</button>
+      <button type="button" class="skip" data-who="">${S.who.fix ? 'Cancel' : 'Skip'}</button>
     </form>
   </div>`;
 }
@@ -946,7 +947,7 @@ function teamLive(m){
   </section>
   ${pads(all)}
   ${rows.length ? `<section class="sec"><div class="sec-h"><h3>Players</h3></div>${playerList(rows)}</section>` : ''}
-  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>Play by play</h3></div>${feedHTML(m, a.feed.slice(-8).reverse())}</section>` : ''}
+  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>Play by play</h3><span class="note">tap a line to change the player</span></div>${feedHTML(m, a.feed.slice(-8).reverse())}</section>` : ''}
   <section class="panel">
     <h2>Final whistle</h2>
     ${finishForm(m)}
@@ -979,13 +980,14 @@ function teamMatchView(m){
       <p class="m">${e ? `${e} error${e>1?'s':''}: ${listOf(cs, ERR_KEYS)}` : 'No errors'}</p>
     </div>`; }).join('')}</section>` : ''}
   <details class="more sec"><summary>Full table</summary>${boxTable(rows.map(r=>({label:pLabel(r), c:r.c})).concat({label:'Team', c, sum:true}), 'Player')}${LEGEND}</details>
-  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>Play by play</h3><span class="note">${a.feed.length} events</span></div><div style="max-height:320px;overflow-y:auto">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
+  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>Play by play</h3><span class="note">tap a line to change the player</span></div><div style="max-height:320px;overflow-y:auto">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
   <div class="row">
     <button class="btn btn-dk" id="b-resume" data-id="${m.id}">Keep tracking</button>
     <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${m.id}">${armed?'Tap again to delete':'Delete'}</button>
   </div>
   ${newMatchBtn()}
-  <button class="btn btn-dk" data-view="history">‹ Back to season</button>`;
+  <button class="btn btn-dk" data-view="history">‹ Back to season</button>
+  ${whoBar(m)}`;
 }
 function teamSeason(list, seg){
   if (!list.length) return `${seg}<section class="panel"><h2>Season</h2><p class="empty">No team matches yet.</p></section>${newMatchBtn()}`;
@@ -1104,12 +1106,13 @@ function tagBar(m){
     </form>
   </div>`;
 }
-// Volleyball rules: a set is won at 25 (15 in the fifth) with two clear, a match at three sets.
+// Best of three (Ian's league): a set is won at 25 (15 in the third) with two clear, a match at two sets.
+const WIN_SETS = 2, LAST_SET = 3;
 // Asked, never done by itself: some leagues play other lengths, and one wrong tap must not close a set.
 function setOver(m, a){
   const sc = a.score[S.set]; if (!sc || (m.ended||[]).includes(S.set)) return null;
   const hi = Math.max(sc.us, sc.them), lo = Math.min(sc.us, sc.them);
-  return hi >= (S.set === 5 ? 15 : 25) && hi - lo >= 2 ? sc : null;
+  return hi >= (S.set >= LAST_SET ? 15 : 25) && hi - lo >= 2 ? sc : null;
 }
 const overKey = m => { const {w, l} = setsWon(m); return m.id + ':' + w + '-' + l; };
 function setBar(m, a){
@@ -1121,7 +1124,7 @@ function setBar(m, a){
     <div class="two"><button id="b-setend">End set ${S.set}</button><button class="skip" id="b-setkeep" data-key="${key}">Keep playing</button></div></div>`;
   }
   const {w, l} = setsWon(m);
-  if ((w >= 3 || l >= 3) && S.keepOver !== overKey(m)) return `<div class="tagbar" role="group" aria-label="Match over">
+  if ((w >= WIN_SETS || l >= WIN_SETS) && S.keepOver !== overKey(m)) return `<div class="tagbar" role="group" aria-label="Match over">
     <div class="q">Match over: ${w}–${l} in sets</div>
     <div class="two"><button id="b-matchend">Save match</button><button class="skip" id="b-matchkeep">Keep tracking</button></div></div>`;
   return '';
@@ -1157,12 +1160,14 @@ function finishForm(m){
   const sv = savedResult(m, w, l), guess = sv.result;
   return `<div class="row">
       <label>Result<select id="fin-res"><option value="W" ${guess==='W'?'selected':''}>Won</option><option value="L" ${guess==='L'?'selected':''}>Lost</option><option value="" ${guess===''?'selected':''}>Not sure</option></select></label>
-      <label>Sets<input id="fin-score" placeholder="e.g. 3-1" autocomplete="off" value="${esc(sv.score)}"></label>
+      <label>Sets<input id="fin-score" placeholder="e.g. 2-1" autocomplete="off" value="${esc(sv.score)}"></label>
     </div>
     <button class="btn btn-or" id="b-finish">Save and see box score</button>`;
 }
 function feedHTML(m, rows){
-  return `<div class="pbp">${rows.map(r=>{ const L = evLabel(r.e, m); return `<div><span class="st">SET ${r.e.set}</span><span class="sc">${r.us}–${r.them}</span><span class="ev ${L.c}">${esc(L.t)}</span></div>`; }).join('')}</div>`;
+  // team match: a stat line is a button that asks for the player again (a number forgotten or wrong)
+  return `<div class="pbp">${rows.map(r=>{ const L = evLabel(r.e, m), cells = `<span class="st">SET ${r.e.set}</span><span class="sc">${r.us}–${r.them}</span><span class="ev ${L.c}">${esc(L.t)}${isTeam(m) && BYK[r.e.k] && !r.e.p ? ' · no player' : ''}</span>`;
+    return isTeam(m) && BYK[r.e.k] ? `<button data-fix="${m.log.indexOf(r.e)}">${cells}</button>` : `<div>${cells}</div>`; }).join('')}</div>`;
 }
 
 function boxTable(rows, head){
@@ -1531,7 +1536,13 @@ document.addEventListener('click', async e => {
   if (t.id !== 'b-del') S.armed = null;
   // any other button closes the "who passed" picker
   if (t.dataset.pass == null && t.dataset.who == null && !t.dataset.stat){ S.tag = null; S.who = null; clearTimeout(S.tagT); }
-  if (t.dataset.view){ S.view = t.dataset.view; S.openId = null; S.editList = false; S.teamDraft = null; render(); window.scrollTo(0,0); return; }
+  if (t.dataset.fix != null){
+    const m = S.matches[S.view === 'match' ? S.openId : S.activeId];
+    if (m){ S.who = {mid:m.id, i:+t.dataset.fix, fix:1}; S.barAt = Date.now(); }
+    return render();
+  }
+  // the team page opened from the new-match form: Save team leads back there
+  if (t.dataset.view){ S.teamFrom = t.dataset.view === 'team' && !!t.closest('#newform'); S.view = t.dataset.view; S.openId = null; S.editList = false; S.teamDraft = null; render(); window.scrollTo(0,0); return; }
   // Season list in remove mode: first tap arms the row, second tap deletes it
   if (t.dataset.xdel){
     const id = t.dataset.xdel;
@@ -1608,7 +1619,9 @@ document.addEventListener('submit', e => {
       d.players.forEach(p => { if (!have[p.num]) lm.roster = [...(lm.roster||[]), Object.assign({}, p)]; else if (p.name) have[p.num].name = p.name; });
       lm.roster.sort((a,b) => a.num - b.num); save(lm);
     }
-    saveTeam(); toast('Team saved · ' + d.players.length + ' player' + (d.players.length === 1 ? '' : 's')); document.activeElement?.blur(); return render();
+    saveTeam(); toast('Team saved · ' + d.players.length + ' player' + (d.players.length === 1 ? '' : 's')); document.activeElement?.blur();
+    if (S.teamFrom && d.players.length){ S.teamFrom = false; S.view = 'live'; S.track = 'team'; LS.set('ss.track', 'team'); window.scrollTo(0,0); }
+    return render();
   }
   if (e.target.id === 'newform' && trackMode() === 'team' && !S.team.players.length){ S.view = 'team'; return render(); }
   if (e.target.id === 'newform') startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:$('#f-starter').checked, mode:trackMode()});
