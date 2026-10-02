@@ -215,6 +215,9 @@ details.more summary::after{content:' ›'}details.more[open] summary::after{con
 .check{flex-direction:row!important;align-items:center;gap:10px;color:var(--ink)!important;font-size:15px!important}
 .check input{width:22px;height:22px;accent-color:var(--ink)}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:999px;font-size:14px;font-weight:500;z-index:10;white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
+/* a message must never sit on, or take the tap of, a number in an open bar */
+.toast{pointer-events:none}
+body:has(.tagbar) .toast{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}
 textarea{width:100%;height:150px;background:var(--soft);color:var(--ink);border:0;border-radius:12px;font:14px var(--font);padding:12px}
 /* phone fit: nested wraps must fill, never grow to their content */
 .wrap .wrap{margin:0;width:100%;max-width:none;min-width:0}
@@ -592,8 +595,9 @@ function tap(k){
   S.tag = null; S.who = null; clearTimeout(S.tagT);
   const team = isTeam(m);
   // a stat means the player is playing: put them on court if the tap was forgotten
-  if (team){} else if (!m.onCourt){ courtOn(m, true); toast(pName() + ' put on court'); } else resumeClock(m);
-  push(m, {k});
+  let rs = false;
+  if (team){} else if (!m.onCourt){ courtOn(m, true); toast(pName() + ' put on court'); } else rs = resumeClock(m);
+  push(m, rs ? {k, rs:1} : {k});
   const idx = m.log.length - 1;
   // the player's point wins the rally for the team; an error gives it to the other team
   if (PT_KEYS.includes(k)) push(m, {k:'us', auto:1});
@@ -601,10 +605,10 @@ function tap(k){
   // a spike or plasé: ask which number passed the ball
   // a team match: ask which number did it
   if (team){
-    S.who = {mid:m.id, i:idx};
+    S.who = {mid:m.id, i:idx}; S.barAt = Date.now();
     S.tagT = setTimeout(()=>{ if (!isTyping()){ S.who = null; render(); } }, 20000);
   } else if (TAG_KEYS.includes(k)){
-    S.tag = {mid:m.id, i:idx};
+    S.tag = {mid:m.id, i:idx}; S.barAt = Date.now();
     S.tagT = setTimeout(()=>{ if (!isTyping()){ S.tag = null; render(); } }, 20000);
   }
   save(m); buzz(); render();
@@ -620,7 +624,7 @@ function setPasser(n){
     const known = +n >= 1 && +n <= 20 || (S.player.extraNums||[]).includes(n);
     if (!known){ S.player.extraNums = [...(S.player.extraNums||[]), n].sort((a,b)=>a-b); savePlayer(); }
   }
-  S.tag = null; clearTimeout(S.tagT); render();
+  S.tag = null; S.barAt = S.barClosedAt = Date.now(); clearTimeout(S.tagT); render();
 }
 // n: a jersey number, or '' for "Skip". A number that is not on the roster joins it for this match.
 function setWho(n){
@@ -631,12 +635,12 @@ function setWho(n){
     if (!(m.roster||[]).some(p => p.num === n)) m.roster = [...(m.roster||[]), {num:n, name:''}];
     save(m);
   }
-  S.who = null; clearTimeout(S.tagT); render();
+  S.who = null; S.barAt = S.barClosedAt = Date.now(); clearTimeout(S.tagT); render();
 }
 function teamPoint(side){
   const m = S.matches[S.activeId]; if (!m) return;
-  S.tag = null; S.who = null; resumeClock(m);
-  push(m, {k:side}); save(m); buzz(); render();
+  S.tag = null; S.who = null;
+  push(m, resumeClock(m) ? {k:side, rs:1} : {k:side}); save(m); buzz(); render();
 }
 // Set break: the court clock stops when a set ends and starts again with the first tap of the next set.
 // The player stays "on court" (no bench event); stintMs is the time already counted in this spell.
@@ -645,7 +649,8 @@ function pauseClock(m){
   const seg = Date.now() - m.courtSince;
   m.playMs = (m.playMs||0) + seg; m.stintMs = (m.stintMs||0) + seg; m.courtSince = null;
 }
-function resumeClock(m){ if (m.onCourt && !m.courtSince) m.courtSince = Date.now(); }
+// true when this tap is the one that restarted the clock after a set break (the event is marked rs, so Undo can stop it again)
+function resumeClock(m){ if (m.onCourt && !m.courtSince){ m.courtSince = Date.now(); return true; } return false; }
 function courtOn(m, auto){ m.onCourt = true; m.courtSince = Date.now(); m.stintMs = 0; push(m, auto ? {k:'on', byStat:1} : {k:'on'}); }
 function toggleCourt(){
   const m = S.matches[S.activeId]; if (!m) return;
@@ -679,9 +684,12 @@ function undo(){
   // a stat's automatic team point goes with it
   S.tag = null;
   if ((last.k === 'us' || last.k === 'them') && last.auto && m.log.length && BYK[m.log[m.log.length-1].k]){ last = m.log[m.log.length-1]; m.log = m.log.slice(0,-1); }
-  if (last.k === 'on'){ m.onCourt = false; m.courtSince = null; m.stintMs = 0; }
+  // the tap that restarted the clock after a set break is taken back: the break goes on, clock stopped
+  if (last.rs && m.onCourt) m.courtSince = null;
+  const dropSpell = () => { m.playMs = Math.max(0, (m.playMs||0) - (m.stintMs||0)); m.onCourt = false; m.courtSince = null; m.stintMs = 0; };
+  if (last.k === 'on') dropSpell();
   // a stat that put the player on court by itself: take that back too
-  else if (BYK[last.k] && m.log.length && m.log[m.log.length-1].k === 'on' && m.log[m.log.length-1].byStat){ m.log = m.log.slice(0,-1); m.onCourt = false; m.courtSince = null; m.stintMs = 0; }
+  else if (BYK[last.k] && m.log.length && m.log[m.log.length-1].k === 'on' && m.log[m.log.length-1].byStat){ m.log = m.log.slice(0,-1); dropSpell(); }
   // the final whistle's own "to the bench" (after Keep tracking): the time up to the whistle stays counted,
   // the clock restarts now - never across the hours or days between finishing and resuming
   if (last.k === 'off' && last.fin){ m.onCourt = true; m.courtSince = Date.now(); m.stintMs = last.dur||0; }
@@ -701,7 +709,7 @@ function endSet(){
   const m = S.matches[S.activeId]; if (!m) return;
   const s = S.set;
   m.ended = [...new Set([...(m.ended||[]), s])].sort((a,b)=>a-b);
-  pauseClock(m);
+  pauseClock(m); S.barAt = Date.now();
   const sc = analyze(m).score[s] || {us:0,them:0};
   toast(`Set ${s}: ${sc.us}–${sc.them}`);
   pickSet(Math.min(s+1, 5));
@@ -894,7 +902,7 @@ function whoBar(m){
   if (!S.who || S.who.mid !== m.id) return '';
   const e = m.log[S.who.i]; if (!e) return '';
   return `<div class="tagbar who" role="group" aria-label="Which player">
-    <div class="q">${esc(evLabel(e,m).t)}: who?</div>
+    <div class="q" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>${esc(evLabel(e,m).t)}: who?</span><button class="skip" id="b-whoundo" style="height:32px;padding:0 12px;font-size:13px">Wrong tap, undo</button></div>
     <div class="nums">${(m.roster||[]).map(p=>`<button data-who="${esc(p.num)}">${esc(p.num)}<small>${esc((p.name||'').split(/\s+/)[0])}</small></button>`).join('')}</div>
     <form class="more" id="whoform">
       <input id="who-other" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="Other number" aria-label="Other number">
@@ -1013,6 +1021,10 @@ function teamView(){
     </form>
     <p class="note">With a team saved, a new match asks what to track: ${esc(pName())} only, or the whole team. In a team match you tap the stat, then the number of the player.</p>
   </section>`;
+}
+// as typed (nothing cleaned), for the draft kept while typing
+function readTeamRaw(){
+  return {name:$('#t-name').value, players:[...document.querySelectorAll('.rrow')].map(r => ({num:r.querySelector('.t-num').value, name:r.querySelector('.t-pn').value}))};
 }
 function readTeam(){
   return {name:$('#t-name').value.trim(), players:[...document.querySelectorAll('.rrow')].map(r => ({num:jnum(r.querySelector('.t-num').value), name:r.querySelector('.t-pn').value.trim()}))};
@@ -1486,6 +1498,12 @@ document.addEventListener('click', async e => {
   // a bar in the season chart (SVG, not a button)
   const cs = e.target.closest('[data-csel]'); if (cs){ S.chartSel = cs.dataset.csel; S.armed = null; return render(); }
   const t = e.target.closest('button'); if (!t || (t.type === 'submit' && t.form)) return;
+  // A bar opens or closes right under the finger: the second half of a double tap must not pick a number,
+  // end a set, save the match, or tap the stat that was under the bar.
+  const sinceBar = Date.now() - (S.barAt||0);
+  if ((t.dataset.who != null || t.dataset.pass != null) && sinceBar < 350) return;
+  if (['b-setend','b-setkeep','b-matchend','b-matchkeep'].includes(t.id) && sinceBar < 500) return;
+  if (t.dataset.stat && Date.now() - (S.barClosedAt||0) < 350) return;
   const wasArmed = S.armed;
   if (t.id !== 'b-del') S.armed = null;
   // any other button closes the "who passed" picker
@@ -1525,7 +1543,7 @@ document.addEventListener('click', async e => {
     case 'b-matchkeep': S.keepOver = overKey(S.matches[S.activeId]); return render();
     case 'b-matchend': { const {w, l} = setsWon(S.matches[S.activeId]); return finishMatch(w > l ? 'W' : 'L', w + '-' + l); }
     case 'b-court': return toggleCourt();
-    case 'b-undo': return undo();
+    case 'b-undo': case 'b-whoundo': return undo();
     case 'b-signin': return window.SS_auth ? window.SS_auth.signIn() : toast("Can't reach Google. Check the internet.");
     case 'b-signout':
       if (!window.SS_auth) return;
@@ -1569,6 +1587,7 @@ document.addEventListener('submit', e => {
     savePlayer(); toast('Player saved'); S.view = S.activeId || !Object.keys(S.matches).length ? 'live' : 'history'; render();
   }
 });
+document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#teamform')) S.teamDraft = readTeamRaw(); });
 window.addEventListener('pagehide', () => { backup(); flush(); });
 // the same phone has the app open twice (home-screen app and a browser tab): take the other one's
 // changes at once, so an old screen can never save over newer taps
