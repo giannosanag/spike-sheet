@@ -232,10 +232,18 @@ input::-webkit-date-and-time-value{text-align:left}
 .tagbar .more input{flex:1;height:44px;min-width:0;background:transparent;color:var(--bg);border:1.5px solid var(--faint);border-radius:12px;padding:0 12px;font-size:16px}
 .tagbar .more input::placeholder{color:var(--faint)}
 .tagbar .more button{padding:0 16px;font-size:15px}
+.tagbar.who .nums{grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
+.tagbar.who .nums button{height:54px;line-height:1.05}
+.tagbar.who .nums small{display:block;font-size:10px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 3px}
+.roster{display:flex;flex-direction:column;gap:8px}
+.rrow{display:grid;grid-template-columns:72px 1fr auto;gap:8px}
+.rrow .rm{padding:0 14px;border-radius:12px;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+@media (max-width:440px){.tabs{gap:14px}.brand{font-size:24px}}
 .tagbar .two{display:flex;gap:6px}.tagbar .two button{flex:1;font-size:15px}
 .tagbar button.skip{padding:0 18px;background:transparent;color:var(--bg);box-shadow:inset 0 0 0 1.5px var(--faint);font-size:15px}
 .mates{display:flex;flex-direction:column}
 .mate{display:grid;grid-template-columns:1fr auto auto auto;gap:16px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center}
+.mates button.mate{width:100%;text-align:left;font:inherit;font-size:14px}
 .mate b{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
 .mate small{display:block;font-size:11px;color:var(--muted);font-weight:400}
 @media (max-width:440px){
@@ -257,6 +265,7 @@ input::-webkit-date-and-time-value{text-align:left}
       <button data-view="live">Live</button>
       <button data-view="history">Season</button>
       <button data-view="player">Player</button>
+      <button data-view="team">Team</button>
     </nav>
   </header>
   <div id="syncnote" class="note" hidden></div>
@@ -288,17 +297,18 @@ const ERR_KEYS = ['serr','aerr','rerr','berr','ferr'];
 const TAG_KEYS = ['kill','plase'];
 const WEIGHT = {ace:1,kill:1,plase:1,block:1,dig:1,pass:.5,assist:.5,serve:0,att:0,serr:-1,aerr:-1,rerr:-1,berr:-.5,ferr:-1};
 
-const S = {matches:{}, player:{name:'', num:'', pos:''}, activeId:null, view:'live', openId:null, set:1, db:null, pending:{}, flushing:false, timer:null, armed:null, unsubs:[], user:null};
+const S = {matches:{}, player:{name:'', num:'', pos:''}, team:{name:'', players:[]}, activeId:null, view:'live', openId:null, set:1, db:null, pending:{}, flushing:false, timer:null, armed:null, unsubs:[], user:null};
 
 /* ---------- storage ---------- */
 const LS = {
   get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } },
   set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ if (!S.lsFail){ S.lsFail = true; setTimeout(()=>toast('This phone cannot save. Free some space.'), 0); } } },
 };
-function backup(){ LS.set('ss.matches', S.matches); LS.set('ss.active', S.activeId); LS.set('ss.player', S.player); }
+function backup(){ LS.set('ss.matches', S.matches); LS.set('ss.active', S.activeId); LS.set('ss.player', S.player); LS.set('ss.team', S.team); }
 function restore(){
   const m = LS.get('ss.matches'); if (m && typeof m === 'object') S.matches = m;
   const p = LS.get('ss.player'); if (p && typeof p === 'object') S.player = Object.assign(S.player, p);
+  const t = LS.get('ss.team'); if (t && typeof t === 'object') S.team = Object.assign({name:'', players:[]}, t);
   S.activeId = LS.get('ss.active');
   if (S.activeId && (!S.matches[S.activeId] || S.matches[S.activeId].done)) S.activeId = null;
   const a = S.activeId && S.matches[S.activeId];
@@ -309,6 +319,7 @@ function save(m){
   S.matches[m.id] = m;
   backup(); queue('matches/'+m.id);
 }
+function saveTeam(){ S.team.updatedAt = Date.now(); backup(); queue('settings/team'); }
 function savePlayer(){ S.player.updatedAt = Date.now(); backup(); queue('settings/player'); }
 function queue(path){
   if (!S.db) return;
@@ -317,6 +328,7 @@ function queue(path){
 }
 function bodyFor(path){
   if (path === 'settings/player') return S.player;
+  if (path === 'settings/team') return S.team;
   return S.matches[path.slice(8)];
 }
 async function flush(){
@@ -400,6 +412,13 @@ function connect(db){
     else if (firstP && !d.metadata?.fromCache && (S.player.updatedAt||0) > ((r && r.updatedAt)||0)) queue('settings/player');
     if (!d.metadata?.fromCache) firstP = false;
   }, () => {}));
+  let firstT = true;
+  S.unsubs.push(db.doc('settings/team').onSnapshot(d => {
+    const r = d.exists && d.data();
+    if (r && (r.updatedAt||0) > (S.team.updatedAt||0)) { S.team = Object.assign({name:'', players:[]}, r); backup(); if (!isTyping()) render(); }
+    else if (firstT && !d.metadata?.fromCache && (S.team.updatedAt||0) > ((r && r.updatedAt)||0)) queue('settings/team');
+    if (!d.metadata?.fromCache) firstT = false;
+  }, () => {}));
   flush();
 }
 function disconnect(){
@@ -407,16 +426,18 @@ function disconnect(){
   S.unsubs = []; S.db = null; S.pending = {}; S.saveFailed = false; clearTimeout(S.flushT);
 }
 // keepUnsaved: on sign-out, a match the account never took stays on the phone (it is the only copy)
-function clearLocal(keepUnsaved){
+function clearLocal(keepUnsaved, keepCards){
   const had = keepUnsaved && LS.get('ss.cloud'), keep = {};
   if (Array.isArray(had)) Object.values(S.matches).forEach(m => { if (!had.includes(m.id)) keep[m.id] = m; });
-  S.matches = keep; S.activeId = null; S.player = {name:'', num:'', pos:''};
+  S.matches = keep; S.activeId = null;
+  // keepCards: a save was being refused, so the player card and roster may exist only here
+  if (!keepCards){ S.player = {name:'', num:'', pos:''}; S.team = {name:'', players:[]}; }
   try{ localStorage.removeItem('ss.synced'); localStorage.removeItem('ss.deleted'); localStorage.removeItem('ss.cloud'); }catch(e){}
   backup();
 }
 // Called by the Firebase module whenever the signed-in account changes.
 window.SS_onUser = (u, db) => {
-  const prev = LS.get('ss.uid');
+  const prev = LS.get('ss.uid'), refused = S.saveFailed;
   disconnect();
   if (u){
     // another account used this phone before: never mix their matches in
@@ -427,7 +448,7 @@ window.SS_onUser = (u, db) => {
   } else {
     S.user = null;
     // signed out: take this account's matches off the phone (they stay in the cloud)
-    if (prev){ clearLocal(true); try{ localStorage.removeItem('ss.uid'); }catch(e){} }
+    if (prev){ clearLocal(true, refused); try{ localStorage.removeItem('ss.uid'); }catch(e){} }
   }
   syncNote(); render();
 };
@@ -456,9 +477,35 @@ const isTyping = () => ['INPUT','SELECT','TEXTAREA'].includes(document.activeEle
 /* ---------- analysis ---------- */
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function counts(m, set){
+// A team match (mode 'team'): each stat event has p = the jersey number; roster = the players at the start.
+const isTeam = m => !!m && m.mode === 'team';
+// a jersey number as typed -> digits only, no leading zeros ("07" and "7" are the same player)
+const jnum = n => String(n).replace(/\D/g,'').slice(0,3).replace(/^0+(?=\d)/,'');
+const trackMode = () => !S.team.players.length ? 'player' : S.track || LS.get('ss.track') || 'player';
+const zeroCounts = () => Object.fromEntries(STATS.map(s=>[s.k,0]));
+// One row per player over the given team matches, best scorer first. '' = taps left without a number.
+function playerRows(ms){
+  const by = {};
+  ms.forEach(m => {
+    const names = Object.fromEntries((m.roster||[]).map(p => [p.num, p.name]));
+    (m.log||[]).forEach(e => {
+      if (!BYK[e.k]) return;
+      const n = e.p || '', r = by[n] || (by[n] = {num:n, name:'', c:zeroCounts()});
+      r.c[e.k]++; if (!r.name && names[n]) r.name = names[n];
+    });
+  });
+  return Object.values(by).sort((a,b) => pts(b.c)-pts(a.c) || vir(b.c)-vir(a.c));
+}
+const pLabel = r => r.num ? '#' + r.num + (r.name ? ' ' + r.name : '') : 'No player';
+function whoTxt(e, m){
+  if (!e.p) return '';
+  const pl = (m.roster||[]).find(x => x.num === e.p);
+  return ' · #' + e.p + (pl && pl.name ? ' ' + pl.name : '');
+}
+// p: only the taps of that jersey number (team matches)
+function counts(m, set, p){
   const c = Object.fromEntries(STATS.map(s=>[s.k,0]));
-  (m.log||[]).forEach(e => { if (BYK[e.k] && (set == null || e.set === set)) c[e.k]++; });
+  (m.log||[]).forEach(e => { if (BYK[e.k] && (set == null || e.set === set) && (p == null || e.p === p)) c[e.k]++; });
   return c;
 }
 const pts = c => PT_KEYS.reduce((a,k)=>a+(c[k]||0),0);
@@ -521,7 +568,7 @@ const pWho = () => esc(S.player.name || 'the player');
 const pWhose = () => S.player.name ? esc(S.player.name) + "'s" : "the player's";
 const homeName = m => m.home || 'Us';
 function evLabel(e, m){
-  if (BYK[e.k]) return {t: (BYK[e.k].full || BYK[e.k].l + (BYK[e.k].g==='err' ? ' error' : '')) + (e.from ? ' · pass from ' + e.from : ''), c: BYK[e.k].g==='play' ? '' : BYK[e.k].g};
+  if (BYK[e.k]) return {t: (BYK[e.k].full || BYK[e.k].l + (BYK[e.k].g==='err' ? ' error' : '')) + (e.from ? ' · pass from ' + e.from : '') + whoTxt(e, m), c: BYK[e.k].g==='play' ? '' : BYK[e.k].g};
   if (e.k === 'us') return {t:'Point ' + homeName(m), c:'team'};
   if (e.k === 'them') return {t:'Point ' + (m.opp||'them'), c:'team'};
   if (e.k === 'on') return {t: pName() + ' on court', c:'sub'};
@@ -533,24 +580,30 @@ function evLabel(e, m){
 function startMatch(f){
   const id = 'm' + Date.now().toString(36);
   const m = {id, opp:f.opp||'Opponent', home:f.home||'', date:f.date||today(), team:f.team||'', log:[], playMs:0, onCourt:false, courtSince:null, curSet:1, maxSet:1, ended:[], result:'', score:'', done:false, createdAt:Date.now()};
+  if (f.mode === 'team'){ m.mode = 'team'; m.roster = JSON.parse(JSON.stringify(S.team.players)); if (!m.home) m.home = S.team.name || ''; }
   S.activeId = id; S.set = 1; S.choose = false;
   save(m);
-  if (f.starter) courtOn(m);
+  if (f.starter && !isTeam(m)) courtOn(m);
   keepAwake(); render();
 }
 function push(m, e){ m.log = (m.log||[]).concat(Object.assign({set:S.set, t:Date.now()}, e)); }
 function tap(k){
   const m = S.matches[S.activeId]; if (!m) return;
-  S.tag = null; clearTimeout(S.tagT);
+  S.tag = null; S.who = null; clearTimeout(S.tagT);
+  const team = isTeam(m);
   // a stat means the player is playing: put them on court if the tap was forgotten
-  if (!m.onCourt){ courtOn(m, true); toast(pName() + ' put on court'); } else resumeClock(m);
+  if (team){} else if (!m.onCourt){ courtOn(m, true); toast(pName() + ' put on court'); } else resumeClock(m);
   push(m, {k});
   const idx = m.log.length - 1;
   // the player's point wins the rally for the team; an error gives it to the other team
   if (PT_KEYS.includes(k)) push(m, {k:'us', auto:1});
   if (ERR_KEYS.includes(k)) push(m, {k:'them', auto:1});
   // a spike or plasé: ask which number passed the ball
-  if (TAG_KEYS.includes(k)){
+  // a team match: ask which number did it
+  if (team){
+    S.who = {mid:m.id, i:idx};
+    S.tagT = setTimeout(()=>{ if (!isTyping()){ S.who = null; render(); } }, 20000);
+  } else if (TAG_KEYS.includes(k)){
     S.tag = {mid:m.id, i:idx};
     S.tagT = setTimeout(()=>{ if (!isTyping()){ S.tag = null; render(); } }, 20000);
   }
@@ -569,9 +622,20 @@ function setPasser(n){
   }
   S.tag = null; clearTimeout(S.tagT); render();
 }
+// n: a jersey number, or '' for "Skip". A number that is not on the roster joins it for this match.
+function setWho(n){
+  const m = S.who && S.matches[S.who.mid], e = m && m.log[S.who.i];
+  n = jnum(n);
+  if (e && n){
+    e.p = n;
+    if (!(m.roster||[]).some(p => p.num === n)) m.roster = [...(m.roster||[]), {num:n, name:''}];
+    save(m);
+  }
+  S.who = null; clearTimeout(S.tagT); render();
+}
 function teamPoint(side){
   const m = S.matches[S.activeId]; if (!m) return;
-  S.tag = null; resumeClock(m);
+  S.tag = null; S.who = null; resumeClock(m);
   push(m, {k:side}); save(m); buzz(); render();
 }
 // Set break: the court clock stops when a set ends and starts again with the first tap of the next set.
@@ -601,7 +665,7 @@ function undoBack(m){
 }
 function undo(){
   const m = S.matches[S.activeId]; if (!m) return;
-  S.keepSet = null;
+  S.keepSet = null; S.who = null;
   const back = undoBack(m);
   if (back != null){
     // takes back "End set": that set is open again, and nothing is removed from it yet
@@ -685,11 +749,13 @@ function removeMatch(id){
 // "Tap again to delete" lets go after 4 s, so a later stray tap cannot delete
 function arm(key){ S.armed = key; clearTimeout(S.armT); S.armT = setTimeout(()=>{ if (S.armed === key){ S.armed = null; if (!isTyping()) render(); } }, 4000); render(); }
 function render(){
-  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || (S.view==='match' && b.dataset.view==='history'))));
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history'))));
   const app = $('#app');
   if (S.view === 'live') app.innerHTML = S.activeId && S.matches[S.activeId] ? (S.choose ? chooseView(S.matches[S.activeId]) : liveView(S.matches[S.activeId])) : newView();
   else if (S.view === 'player') app.innerHTML = playerView();
-  else if (S.view === 'match' && S.matches[S.openId]){ app.innerHTML = matchView(S.matches[S.openId]); prepPicture(S.matches[S.openId]); }
+  else if (S.view === 'team') app.innerHTML = teamView();
+  else if (S.view === 'tplayer' && S.tpNum) app.innerHTML = teamPlayerView(S.tpNum);
+  else if (S.view === 'match' && S.matches[S.openId]){ app.innerHTML = matchView(S.matches[S.openId]); if (!isTeam(S.matches[S.openId])) prepPicture(S.matches[S.openId]); }
   else { S.view = 'history'; app.innerHTML = historyView(); }
   clearInterval(S.timer);
   const m = S.activeId && S.matches[S.activeId];
@@ -723,14 +789,17 @@ function newView(){
     <h2>New match</h2>
     <form id="newform" class="wrap" style="max-width:none;gap:12px">
       <div class="row">
-        <label>Team<input id="f-home" autocomplete="off" placeholder="e.g. Panathinaikos" value="${esc(last?.home||'')}"></label>
+        <label>Team<input id="f-home" autocomplete="off" placeholder="e.g. Panathinaikos" value="${esc(last?.home || S.team.name || '')}"></label>
         <label>Opponent<input id="f-opp" autocomplete="off" placeholder="e.g. Olympiacos"></label>
       </div>
       <div class="row">
         <label>Date<input id="f-date" type="date" value="${today()}"></label>
         <label>Competition<input id="f-team" autocomplete="off" placeholder="League, cup, friendly" value="${esc(last?.team||'')}"></label>
       </div>
-      <label class="check"><input id="f-starter" type="checkbox"> ${esc(pName())} starts on court</label>
+      ${S.team.players.length ? `<div><div class="seg" role="group" aria-label="Track">
+        <button type="button" data-track="player" aria-pressed="${trackMode()==='player'}">${esc(pName())} only</button>
+        <button type="button" data-track="team" aria-pressed="${trackMode()==='team'}">Whole team</button></div></div>` : ''}
+      <label class="check" id="l-starter" ${trackMode()==='team'?'hidden':''}><input id="f-starter" type="checkbox"> ${esc(pName())} starts on court</label>
       <button class="btn btn-or" type="submit">Start match</button>
     </form>
     <p class="note">Count the score with the two big buttons. Tap ${pWhose()} stats as they happen: a point adds one to your team, an error adds one to the other team. Tap the court button each time ${pWho()} goes on or off.</p>
@@ -767,7 +836,189 @@ function scoreBug(m, a, opts){
   </section>`;
 }
 
+function pads(all){
+  return GROUPS.map(G=>`
+  <section class="sec"><h3>${G.h}</h3><div class="pad pad-${G.g}">
+    ${STATS.filter(s=>s.g===G.g).map(s=>`<button class="stat ${s.g}" data-stat="${s.k}" aria-label="${esc(s.l+' '+s.s)}, ${all[s.k]} so far"><span class="n">${all[s.k]}</span><span class="l">${esc(s.l)}</span><span class="s">${esc(s.s)}</span></button>`).join('')}
+  </div></section>`).join('');
+}
+// link: each row opens that player's own page (not on the live screen, where a stray tap would leave the match)
+function playerList(rows, link){
+  return `<div class="mates">${rows.map(r=>{
+    const cells = `<span style="color:var(--ink);font-size:15px;font-weight:600;overflow-wrap:anywhere">${esc(pLabel(r))}${link && r.num ? ' ›' : ''}</span><b>${pts(r.c)}<small>points</small></b><b>${errs(r.c)}<small>errors</small></b><b>${fmtVir(vir(r.c))}<small>rating</small></b>`;
+    return link && r.num ? `<button class="mate" data-tp="${esc(r.num)}">${cells}</button>` : `<div class="mate">${cells}</div>`; }).join('')}</div>`;
+}
+// One roster player over all team matches: the same kind of page as the single player's Season.
+function teamPlayerView(num){
+  const sorted = Object.values(S.matches).filter(isTeam).sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
+  const per = sorted.filter(m => (m.roster||[]).some(p => p.num === num) || (m.log||[]).some(e => e.p === num)).map(m => ({m, c:counts(m, null, num)}));
+  const back = `<button class="btn btn-dk" data-view="history">‹ Back to team season</button>`;
+  const name = (S.team.players.find(p => p.num === num) || {}).name || (per.map(x => (x.m.roster||[]).find(p => p.num === num)).find(p => p && p.name) || {}).name || '';
+  if (!per.length) return `<section class="panel"><h2>#${esc(num)} ${esc(name)}</h2><p class="empty">No team matches yet.</p></section>${back}`;
+  const total = zeroCounts(); let best = null;
+  per.forEach(({m, c}) => { STATS.forEach(s => total[s.k] += c[s.k]); if (!best || pts(c) > best.v) best = {v:pts(c), m}; });
+  const n = per.length, avg = v => (v/n).toFixed(1), pc = (a,b) => b ? Math.round(100*a/b)+'%' : '–';
+  const att = total.kill + total.plase + total.aerr + total.att, srv = total.ace + total.serve + total.serr, rec = total.pass + total.rerr;
+  return `
+  <section class="player">
+    <div class="jersey">${esc(num)}</div>
+    <div class="pinfo"><div class="pname">${esc(name || 'Player ' + num)}</div><div class="note">${esc(S.team.name || 'Team')} · ${n} team match${n>1?'es':''}</div>
+      <div class="pline">
+        <div><b>${avg(pts(total))}</b><span>Pts / match</span></div>
+        <div><b>${avg(vir(total))}</b><span>Rtg / match</span></div>
+        <div><b>${avg(errs(total))}</b><span>Err / match</span></div>
+      </div>
+    </div>
+  </section>
+  <div class="tiles">
+    <div class="tile hero"><b>${pts(total)}</b><span>Points</span><em>best ${best.v} vs ${esc(best.m.opp)}</em></div>
+    <div class="tile"><b>${fmtVir(vir(total))}</b><span>Rating</span><em>${avg(vir(total))} a match</em></div>
+    <div class="tile"><b>${total.kill+total.plase}</b><span>Spike + plasé</span><em>${pc(total.kill+total.plase, att)} of attacks</em></div>
+    <div class="tile"><b>${total.ace}</b><span>Aces</span><em>${pc(srv-total.serr, srv)} serves in</em></div>
+    <div class="tile"><b>${total.block}</b><span>Blocks</span><em>${total.dig} defences</em></div>
+    <div class="tile"><b>${errs(total)}</b><span>Errors</span><em>${pc(total.pass, rec)} clean receptions</em></div>
+  </div>
+  ${pctRows(total)}
+  <section class="sec"><div class="sec-h"><h3>Game log</h3><span class="note">tap for the team report</span></div>
+  <div class="mlist">${per.map(({m,c})=>{ const live = m.id===S.activeId; return `
+    <button class="mitem" data-open="${m.id}"><span class="res ${live?'live':(m.result||'')}">${live?'LIVE':(m.result||'–')}</span>
+      <span><div class="t">vs ${esc(m.opp)}</div><div class="d">${esc(fmtDate(m.date))}${m.score?' · '+esc(m.score):''} · ${errs(c)} error${errs(c)===1?'':'s'}</div></span>
+      <span class="p vir">${fmtVir(vir(c))}<small>RTG</small></span>
+      <span class="p">${pts(c)}<small>PTS</small></span>
+    </button>`; }).join('')}</div></section>
+  <section class="sec"><div class="sec-h"><h3>Box score</h3></div>${boxTable(per.map(({m,c})=>({label:fmtDate(m.date)+' '+m.opp, c})).concat({label:'Season', c:total, sum:true}), 'Match')}${LEGEND}</section>
+  <p class="note">Only what was tapped with number ${esc(num)} in team matches. No minutes or +/- here: a team match does not track who is on court.</p>
+  ${back}`;
+}
+function whoBar(m){
+  if (!S.who || S.who.mid !== m.id) return '';
+  const e = m.log[S.who.i]; if (!e) return '';
+  return `<div class="tagbar who" role="group" aria-label="Which player">
+    <div class="q">${esc(evLabel(e,m).t)}: who?</div>
+    <div class="nums">${(m.roster||[]).map(p=>`<button data-who="${esc(p.num)}">${esc(p.num)}<small>${esc((p.name||'').split(/\s+/)[0])}</small></button>`).join('')}</div>
+    <form class="more" id="whoform">
+      <input id="who-other" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="Other number" aria-label="Other number">
+      <button type="submit">Add</button>
+      <button type="button" class="skip" data-who="">Skip</button>
+    </form>
+  </div>`;
+}
+// Live screen of a team match: the same score and pad; every stat then asks for the number.
+function teamLive(m){
+  const a = analyze(m), all = counts(m), rows = playerRows([m]);
+  return `
+  ${scoreBug(m, a, {live:true})}
+  <section class="player">
+    <div class="jersey">${esc((homeName(m)[0]||'T').toUpperCase())}</div>
+    <div class="pinfo">
+      <div class="pname">${esc(homeName(m))}</div>
+      <div class="note">Whole team · tap a stat, then the number</div>
+      <div class="pline">
+        <div><b>${pts(all)}</b><span>Player pts</span></div>
+        <div><b>${errs(all)}</b><span>Errors</span></div>
+        <div><b>${fmtVir(vir(all))}</b><span>Rating</span></div>
+      </div>
+    </div>
+  </section>
+  ${pads(all)}
+  ${rows.length ? `<section class="sec"><div class="sec-h"><h3>Players</h3></div>${playerList(rows)}</section>` : ''}
+  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>Play by play</h3></div>${feedHTML(m, a.feed.slice(-8).reverse())}</section>` : ''}
+  <section class="panel">
+    <h2>Final whistle</h2>
+    ${finishForm(m)}
+  </section>
+  <button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?'Tap again to delete this match':'Delete this match'}</button>
+  ${undoFab(m)}
+  ${whoBar(m) || setBar(m, a)}`;
+}
+function teamMatchView(m){
+  const a = analyze(m), c = counts(m), rows = playerRows([m]), armed = S.armed === 'del-'+m.id;
+  const sets = scoredSets(a.score).sort((x,y)=>x-y), teamPts = sets.reduce((t,s)=>t+a.score[s].us, 0);
+  const srv = c.ace + c.serve + c.serr;
+  return `
+  <div class="row" style="align-items:center"><div><div class="kicker">${m.result==='W'?'Final · Win':m.result==='L'?'Final · Loss':'Final'}${m.score?' '+esc(m.score):''} · whole team</div><h2>${esc(homeName(m))} vs ${esc(m.opp)}</h2></div></div>
+  ${scoreBug(m, a, {live:false})}
+  <div class="tiles">
+    <div class="tile hero"><b>${pts(c)}</b><span>Points by players</span><em>of ${teamPts} team points</em></div>
+    <div class="tile"><b>${errs(c)}</b><span>Errors</span><em>points given away</em></div>
+    <div class="tile"><b>${c.ace}</b><span>Aces</span><em>${srv ? Math.round(100*(srv-c.serr)/srv)+'%' : '–'} serves in</em></div>
+    <div class="tile"><b>${c.block}</b><span>Blocks</span><em>${c.dig} defences</em></div>
+  </div>
+  ${pctRows(c)}
+  ${rows.length ? `<section class="sec"><div class="sec-h"><h3>Players</h3><span class="note">tap a player</span></div>${playerList(rows, true)}</section>` : ''}
+  ${sets.length ? `<section class="sec"><div class="sec-h"><h3>Set by set</h3></div>${sets.map(s => {
+    const cs = counts(m, s), x = a.score[s], p = pts(cs), e = errs(cs), good = listOf(cs, ['dig','pass','assist','serve','att']);
+    return `<div class="setc">
+      <div class="setc-h"><b>Set ${s}</b><span>${x.us}–${x.them} ${(m.ended||[]).includes(s) ? (x.us > x.them ? 'won' : x.them > x.us ? 'lost' : 'tied') : 'not finished'}</span></div>
+      <p>${p ? `<b>${p} point${p>1?'s':''}</b>: ${listOf(cs, PT_KEYS)}` : 'No points'}</p>
+      ${good ? `<p class="m">Good plays: ${good}</p>` : ''}
+      <p class="m">${e ? `${e} error${e>1?'s':''}: ${listOf(cs, ERR_KEYS)}` : 'No errors'}</p>
+    </div>`; }).join('')}</section>` : ''}
+  <details class="more sec"><summary>Full table</summary>${boxTable(rows.map(r=>({label:pLabel(r), c:r.c})).concat({label:'Team', c, sum:true}), 'Player')}${LEGEND}</details>
+  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>Play by play</h3><span class="note">${a.feed.length} events</span></div><div style="max-height:320px;overflow-y:auto">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
+  <div class="row">
+    <button class="btn btn-dk" id="b-resume" data-id="${m.id}">Keep tracking</button>
+    <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${m.id}">${armed?'Tap again to delete':'Delete'}</button>
+  </div>
+  ${newMatchBtn()}
+  <button class="btn btn-dk" data-view="history">‹ Back to season</button>`;
+}
+function teamSeason(list, seg){
+  if (!list.length) return `${seg}<section class="panel"><h2>Season</h2><p class="empty">No team matches yet.</p></section>${newMatchBtn()}`;
+  const total = zeroCounts(); let w = 0, l = 0;
+  const per = list.map(m => { const c = counts(m); STATS.forEach(s => total[s.k] += c[s.k]); if (m.result==='W') w++; if (m.result==='L') l++; return {m, c}; });
+  const n = list.length, rows = playerRows(list), avg = v => (v/n).toFixed(1);
+  return `${seg}
+  <section class="player">
+    <div class="jersey">${esc(((S.team.name||'T')[0]).toUpperCase())}</div>
+    <div class="pinfo"><div class="pname">${esc(S.team.name || 'Team')}</div><div class="note">${n} match${n>1?'es':''} · ${w}W ${l}L</div>
+      <div class="pline">
+        <div><b>${avg(pts(total))}</b><span>Pts / match</span></div>
+        <div><b>${avg(errs(total))}</b><span>Err / match</span></div>
+        <div><b>${rows.filter(r=>r.num).length}</b><span>Players</span></div>
+      </div>
+    </div>
+  </section>
+  ${pctRows(total)}
+  ${newMatchBtn()}
+  <section class="sec"><div class="sec-h"><h3>Players</h3><span class="note">whole season · tap a player</span></div>${playerList(rows, true)}</section>
+  <section class="sec"><div class="sec-h"><h3>Game log</h3><button class="lnk" id="b-editlist">${S.editList?'Done':'Remove matches'}</button></div>
+  <div class="mlist">${per.map(({m,c})=>{ const live = m.id===S.activeId, armed = S.armed==='x-'+m.id;
+    const info = `<span class="res ${live?'live':(m.result||'')}">${live?'LIVE':(m.result||'–')}</span>
+      <span><div class="t">vs ${esc(m.opp)}</div><div class="d">${esc(fmtDate(m.date))}${m.score?' · '+esc(m.score):''}</div></span>`;
+    return S.editList ? `
+    <div class="mitem medit">${info}
+      <button class="btn btn-del xdel ${armed?'armed':''}" data-xdel="${m.id}" aria-label="${armed?'Tap again to delete':'Delete'} vs ${esc(m.opp)}">${armed?'Sure?':'Delete'}</button>
+    </div>` : `
+    <button class="mitem" data-open="${m.id}">${info}
+      <span class="p vir">${errs(c)}<small>ERR</small></span>
+      <span class="p">${pts(c)}<small>PTS</small></span>
+    </button>`; }).join('')}</div>
+  ${S.editList ? `<p class="note">Tap Delete, then tap again to remove the match from every phone.</p>` : ''}</section>
+  <section class="sec"><div class="sec-h"><h3>Season box score</h3></div>${boxTable(rows.map(r=>({label:pLabel(r), c:r.c})).concat({label:'Team', c:total, sum:true}), 'Player')}${LEGEND}</section>`;
+}
+// The roster, typed once before the season. Each team match takes a copy when it starts.
+function teamView(){
+  const t = S.teamDraft || S.team, rows = t.players.length ? t.players : [{num:'', name:''}];
+  return `<section class="panel">
+    <div class="kicker">Roster</div><h2>Team</h2>
+    <form id="teamform" class="wrap" style="max-width:none;gap:12px">
+      <label>Team name<input id="t-name" autocomplete="off" value="${esc(t.name)}" placeholder="e.g. Panathinaikos U16"></label>
+      <div class="roster">${rows.map((p,i)=>`<div class="rrow">
+        <input class="t-num" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(p.num)}" placeholder="No" aria-label="Number">
+        <input class="t-pn" autocomplete="off" value="${esc(p.name)}" placeholder="Name" aria-label="Name">
+        <button type="button" class="rm" data-rm="${i}" aria-label="Remove this player">✕</button></div>`).join('')}</div>
+      <button type="button" class="btn btn-dk" id="b-addrow">+ Add player</button>
+      <button class="btn btn-or" type="submit">Save team</button>
+    </form>
+    <p class="note">With a team saved, a new match asks what to track: ${esc(pName())} only, or the whole team. In a team match you tap the stat, then the number of the player.</p>
+  </section>`;
+}
+function readTeam(){
+  return {name:$('#t-name').value.trim(), players:[...document.querySelectorAll('.rrow')].map(r => ({num:jnum(r.querySelector('.t-num').value), name:r.querySelector('.t-pn').value.trim()}))};
+}
 function liveView(m){
+  if (isTeam(m)) return teamLive(m);
   const a = analyze(m), all = counts(m);
   const lastE = m.log?.[m.log.length-1];
   const lastStint = a.stints[a.stints.length-1];
@@ -1132,6 +1383,7 @@ function savePicture(file){
 }
 
 function matchView(m){
+  if (isTeam(m)) return teamMatchView(m);
   const a = analyze(m), c = counts(m);
   const sets = [...new Set((m.log||[]).filter(e=>BYK[e.k]).map(e=>e.set))].sort((x,y)=>x-y);
   const rows = sets.map(s=>({label:'Set '+s, c:counts(m,s)})).concat({label:'Match', c, sum:true});
@@ -1159,15 +1411,21 @@ function matchView(m){
 }
 
 function historyView(){
-  const list = Object.values(S.matches).sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
-  if (!list.length) return `<section class="panel"><h2>Season</h2><p class="empty">No matches yet.</p></section>${newMatchBtn()}`;
+  const all = Object.values(S.matches).sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
+  // team matches have their own season, next to the player's
+  const hasTeam = all.some(isTeam), mode = hasTeam && (S.seasonMode ? S.seasonMode === 'team' : all.every(isTeam)) ? 'team' : 'player';
+  const seg = hasTeam ? `<div><div class="seg" role="group" aria-label="Season of">
+    <button data-season="player" aria-pressed="${mode==='player'}">${esc(pName())}</button><button data-season="team" aria-pressed="${mode==='team'}">${esc(S.team.name || 'Team')}</button></div></div>` : '';
+  if (mode === 'team') return teamSeason(all.filter(isTeam), seg);
+  const list = all.filter(m => !isTeam(m));
+  if (!list.length) return `${seg}<section class="panel"><h2>Season</h2><p class="empty">No matches yet.</p></section>${newMatchBtn()}`;
   const total = Object.fromEntries(STATS.map(s=>[s.k,0])); let time = 0, w = 0, l = 0, pm = 0, bestPts = null, bestVir = null;
   const per = list.map(m => { const c = counts(m), a = analyze(m); STATS.forEach(s=> total[s.k]+=c[s.k]); time += playMs(m); pm += a.pm; if (m.result==='W') w++; if (m.result==='L') l++;
     if (!bestPts || pts(c) > bestPts.v) bestPts = {v:pts(c), m}; if (!bestVir || vir(c) > bestVir.v) bestVir = {v:vir(c), m};
     return {m, c, a}; });
   const n = list.length, avg = v => (v/n).toFixed(1);
   const rows = per.map(p=>({label: fmtDate(p.m.date)+' '+p.m.opp, c:p.c})).concat({label:'Season', c:total, sum:true});
-  return `
+  return `${seg}
   <section class="player">
     <div class="jersey">${esc(S.player.num || '?')}</div>
     <div class="pinfo"><div class="pname">${esc(pName())}</div><div class="note">${esc(S.player.pos||'')}${S.player.pos?' · ':''}${n} match${n>1?'es':''} · ${w}W ${l}L</div>
@@ -1231,8 +1489,8 @@ document.addEventListener('click', async e => {
   const wasArmed = S.armed;
   if (t.id !== 'b-del') S.armed = null;
   // any other button closes the "who passed" picker
-  if (t.dataset.pass == null && !t.dataset.stat){ S.tag = null; clearTimeout(S.tagT); }
-  if (t.dataset.view){ S.view = t.dataset.view; S.openId = null; S.editList = false; render(); window.scrollTo(0,0); return; }
+  if (t.dataset.pass == null && t.dataset.who == null && !t.dataset.stat){ S.tag = null; S.who = null; clearTimeout(S.tagT); }
+  if (t.dataset.view){ S.view = t.dataset.view; S.openId = null; S.editList = false; S.teamDraft = null; render(); window.scrollTo(0,0); return; }
   // Season list in remove mode: first tap arms the row, second tap deletes it
   if (t.dataset.xdel){
     const id = t.dataset.xdel;
@@ -1240,6 +1498,18 @@ document.addEventListener('click', async e => {
     return arm('x-'+id);
   }
   if (t.dataset.pass != null) return setPasser(t.dataset.pass);
+  if (t.dataset.who != null) return setWho(t.dataset.who);
+  if (t.dataset.tp){ S.view = 'tplayer'; S.tpNum = t.dataset.tp; S.seasonMode = 'team'; render(); window.scrollTo(0,0); return; }
+  if (t.dataset.season){ S.seasonMode = t.dataset.season; S.editList = false; return render(); }
+  // new-match form: switch without redrawing, so what is typed stays
+  if (t.dataset.track){
+    S.track = t.dataset.track; LS.set('ss.track', S.track);
+    document.querySelectorAll('[data-track]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.track === S.track)));
+    const ls = $('#l-starter'); if (ls) ls.hidden = S.track === 'team';
+    return;
+  }
+  if (t.dataset.rm != null){ const d = readTeam(); d.players.splice(+t.dataset.rm, 1); S.teamDraft = d; return render(); }
+  if (t.id === 'b-addrow'){ const d = readTeam(); d.players.push({num:'', name:''}); S.teamDraft = d; render(); const r = document.querySelectorAll('.t-num'); if (r.length) r[r.length-1].focus(); return; }
   if (t.dataset.stat) return tap(t.dataset.stat);
   if (t.dataset.set) return pickSet(+t.dataset.set);
   if (t.dataset.metric){ S.chartMetric = t.dataset.metric; return render(); }
@@ -1278,7 +1548,22 @@ document.addEventListener('click', async e => {
 document.addEventListener('submit', e => {
   e.preventDefault();
   if (e.target.id === 'passform') return setPasser($('#pass-other').value);
-  if (e.target.id === 'newform') startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:$('#f-starter').checked});
+  if (e.target.id === 'whoform') return setWho($('#who-other').value);
+  if (e.target.id === 'teamform'){
+    const d = readTeam(), seen = new Set();
+    // one row per number, in number order; rows without a number are dropped
+    d.players = d.players.filter(p => p.num && !seen.has(p.num) && seen.add(p.num)).sort((a,b) => a.num - b.num);
+    S.team = Object.assign({}, S.team, d); S.teamDraft = null;
+    // a team match in play gets the new players and names too (nobody is taken out of it)
+    const lm = S.activeId && S.matches[S.activeId];
+    if (isTeam(lm)){
+      const have = Object.fromEntries((lm.roster||[]).map(p => [p.num, p]));
+      d.players.forEach(p => { if (!have[p.num]) lm.roster = [...(lm.roster||[]), Object.assign({}, p)]; else if (p.name) have[p.num].name = p.name; });
+      lm.roster.sort((a,b) => a.num - b.num); save(lm);
+    }
+    saveTeam(); toast('Team saved · ' + d.players.length + ' player' + (d.players.length === 1 ? '' : 's')); document.activeElement?.blur(); return render();
+  }
+  if (e.target.id === 'newform') startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:$('#f-starter').checked, mode:trackMode()});
   if (e.target.id === 'pform'){
     S.player = Object.assign({}, S.player, {name:$('#p-name').value.trim(), num:$('#p-num').value.trim(), pos:$('#p-pos').value});
     savePlayer(); toast('Player saved'); S.view = S.activeId || !Object.keys(S.matches).length ? 'live' : 'history'; render();
@@ -1288,7 +1573,7 @@ window.addEventListener('pagehide', () => { backup(); flush(); });
 // the same phone has the app open twice (home-screen app and a browser tab): take the other one's
 // changes at once, so an old screen can never save over newer taps
 window.addEventListener('storage', e => {
-  if (!['ss.matches','ss.active','ss.player'].includes(e.key)) return;
+  if (!['ss.matches','ss.active','ss.player','ss.team'].includes(e.key)) return;
   restore(); if (!isTyping()) render();
 });
 
