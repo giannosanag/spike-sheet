@@ -185,6 +185,10 @@ details.more summary::after{content:' ›'}details.more[open] summary::after{con
 .seg{display:inline-flex;background:var(--soft);border-radius:999px;padding:3px}
 .seg button{font-size:13px;font-weight:600;padding:6px 14px;border-radius:999px;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--bg);color:var(--ink)}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pick button{padding:18px 8px;border-radius:18px;border:1.5px solid var(--line);background:var(--bg);font-size:18px;font-weight:700;overflow-wrap:anywhere}
+.pick button small{display:block;font-size:12px;font-weight:500;margin-top:4px;opacity:.7}
+.pick button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
 .chart svg{display:block;width:100%;height:auto;overflow:visible}
 .chart .bar{fill:var(--muted)}.chart .bar.sel{fill:var(--hi)}
 .chart .base{stroke:var(--line);stroke-width:1}
@@ -745,6 +749,9 @@ const newMatchBtn = () => S.activeId && S.matches[S.activeId] ? '' : `<button cl
 function resume(id){
   const m = S.matches[id]; if (!m) return;
   if (S.activeId && S.activeId !== id && S.matches[S.activeId]) return toast('Finish the live match first');
+  // a match that was over (three sets won): carry on in the last set played, never in an empty extra set
+  const {w, l} = setsWon(m), log = m.log||[];
+  if ((w >= 3 || l >= 3) && log.length && !log.some(e => e.set === (m.curSet||1))) m.curSet = log[log.length-1].set;
   m.done = false; S.choose = false; S.keepOver = overKey(m); save(m);
   S.activeId = id; S.set = m.curSet || 1; S.view = 'live'; render(); window.scrollTo(0,0);
 }
@@ -800,9 +807,9 @@ function newView(){
     <div class="kicker">Tip-off</div>
     <h2>New match</h2>
     <form id="newform" class="wrap" style="max-width:none;gap:12px">
-      <div><div class="kicker" style="margin-bottom:6px">Team or player?</div><div class="seg" role="group" aria-label="Track">
-        <button type="button" data-track="player" aria-pressed="${trackMode()==='player'}">${esc(pName())} only</button>
-        <button type="button" data-track="team" aria-pressed="${trackMode()==='team'}">Whole team</button></div></div>
+      <div><div style="font-size:17px;font-weight:700;margin-bottom:10px">Team or player?</div><div class="pick" role="group" aria-label="Track">
+        <button type="button" data-track="player" aria-pressed="${trackMode()==='player'}">${esc(pName())}<small>one player's stats</small></button>
+        <button type="button" data-track="team" aria-pressed="${trackMode()==='team'}">Whole team<small>every player, by number</small></button></div></div>
       <div id="g-team" class="wrap" style="gap:8px" ${trackMode()==='team'?'':'hidden'}>${S.team.players.length
         ? `<p class="note">${esc(S.team.name || 'Your team')} · ${S.team.players.length} player${S.team.players.length === 1 ? '' : 's'}</p>
         <button type="button" class="btn btn-dk" data-view="team">Change the team</button>`
@@ -1028,7 +1035,7 @@ function teamView(){
       <button type="button" class="btn btn-dk" id="b-addrow">+ Add player</button>
       <button class="btn btn-or" type="submit">Save team</button>
     </form>
-    <p class="note">With a team saved, a new match asks what to track: ${esc(pName())} only, or the whole team. In a team match you tap the stat, then the number of the player.</p>
+    <p class="note">A new match asks what to track: ${esc(pName())} only, or the whole team. In a team match you tap the stat, then the number of the player.</p>
   </section>`;
 }
 // as typed (nothing cleaned), for the draft kept while typing
@@ -1586,9 +1593,13 @@ document.addEventListener('submit', e => {
   if (e.target.id === 'passform') return setPasser($('#pass-other').value);
   if (e.target.id === 'whoform') return setWho($('#who-other').value);
   if (e.target.id === 'teamform'){
-    const d = readTeam(), seen = new Set();
-    // one row per number, in number order; rows without a number are dropped
-    d.players = d.players.filter(p => p.num && !seen.has(p.num) && seen.add(p.num)).sort((a,b) => a.num - b.num);
+    const d = readTeam();
+    // nothing typed is thrown away without a word: a name needs a number, a number is used once
+    const noNum = d.players.find(p => !p.num && p.name), dup = d.players.find((p,i) => p.num && d.players.findIndex(x => x.num === p.num) !== i);
+    if (noNum) return toast(noNum.name + ' needs a number');
+    if (dup) return toast('Number ' + dup.num + ' is there twice');
+    // in number order; empty rows are dropped
+    d.players = d.players.filter(p => p.num).sort((a,b) => a.num - b.num);
     S.team = Object.assign({}, S.team, d); S.teamDraft = null;
     // a team match in play gets the new players and names too (nobody is taken out of it)
     const lm = S.activeId && S.matches[S.activeId];
