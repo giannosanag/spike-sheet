@@ -317,13 +317,16 @@ function restore(){
   const a = S.activeId && S.matches[S.activeId];
   if (a) S.set = a.curSet || 1;
 }
+// Always newer than the copy it was made from, even if this phone's clock is behind the phone that saved it last:
+// otherwise the older cloud copy would win and take the new taps away.
+const stamp = o => Math.max(Date.now(), (o.updatedAt||0) + 1);
 function save(m){
-  m.updatedAt = Date.now();
+  m.updatedAt = stamp(m);
   S.matches[m.id] = m;
   backup(); queue('matches/'+m.id);
 }
-function saveTeam(){ S.team.updatedAt = Date.now(); backup(); queue('settings/team'); }
-function savePlayer(){ S.player.updatedAt = Date.now(); backup(); queue('settings/player'); }
+function saveTeam(){ S.team.updatedAt = stamp(S.team); backup(); queue('settings/team'); }
+function savePlayer(){ S.player.updatedAt = stamp(S.player); backup(); queue('settings/player'); }
 function queue(path){
   if (!S.db) return;
   S.pending[path] = true;
@@ -618,7 +621,7 @@ function tap(k){
 // n: a jersey number, or '' for "None"
 function setPasser(n){
   const m = S.tag && S.matches[S.tag.mid], e = m && m.log[S.tag.i];
-  n = String(n).replace(/\D/g,'').slice(0,3);
+  n = jnum(n);
   if (e && n){
     e.from = '#' + n; save(m); toast('Pass from #' + n);
     const known = +n >= 1 && +n <= 20 || (S.player.extraNums||[]).includes(n);
@@ -732,7 +735,8 @@ function closeAndNew(){
   const m = S.matches[S.activeId]; if (!m) return;
   const {w, l} = setsWon(m, m.curSet || S.set), log = m.log||[];
   // a result saved before "Keep tracking" wins over the guess from sets won
-  finishMatch(m.result || (w > l ? 'W' : l > w ? 'L' : ''), m.score || (w||l ? w+'-'+l : ''), log.length ? log[log.length-1].t : m.createdAt);
+  const sv = savedResult(m, w, l);
+  finishMatch(sv.result, sv.score, log.length ? log[log.length-1].t : m.createdAt);
   S.view = 'live'; render(); window.scrollTo(0,0);
   toast('Saved. It is in Season.');
 }
@@ -755,7 +759,7 @@ function removeMatch(id){
 
 /* ---------- views ---------- */
 // "Tap again to delete" lets go after 4 s, so a later stray tap cannot delete
-function arm(key){ S.armed = key; clearTimeout(S.armT); S.armT = setTimeout(()=>{ if (S.armed === key){ S.armed = null; if (!isTyping()) render(); } }, 4000); render(); }
+function arm(key){ S.armed = key; S.armAt = Date.now(); clearTimeout(S.armT); S.armT = setTimeout(()=>{ if (S.armed === key){ S.armed = null; if (!isTyping()) render(); } }, 4000); render(); }
 function render(){
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history'))));
   const app = $('#app');
@@ -1129,12 +1133,19 @@ function passLine(m){
   const t = Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`${n} ${v}`).join(', ');
   return t ? `Points from passes by: ${t}` : '';
 }
+// The result saved before "Keep tracking" is kept, unless the match went on for more sets since:
+// then "2-1 Won" would be stale, and the count from the sets is right.
+function savedResult(m, w, l){
+  const sc = String(m.score||''), old = /^\d+-\d+$/.test(sc) ? sc.split('-').reduce((a,b) => a + +b, 0) : null;
+  const stale = old != null && w + l > old;
+  return {result: (!stale && m.result) || (w > l ? 'W' : l > w ? 'L' : ''), score: (!stale && sc) || (w||l ? w+'-'+l : '')};
+}
 function finishForm(m){
   const {w, l} = setsWon(m, S.set);
-  const guess = m.result || (w > l ? 'W' : l > w ? 'L' : '');
+  const sv = savedResult(m, w, l), guess = sv.result;
   return `<div class="row">
       <label>Result<select id="fin-res"><option value="W" ${guess==='W'?'selected':''}>Won</option><option value="L" ${guess==='L'?'selected':''}>Lost</option><option value="" ${guess===''?'selected':''}>Not sure</option></select></label>
-      <label>Sets<input id="fin-score" placeholder="e.g. 3-1" autocomplete="off" value="${esc(m.score || (w||l ? w+'-'+l : ''))}"></label>
+      <label>Sets<input id="fin-score" placeholder="e.g. 3-1" autocomplete="off" value="${esc(sv.score)}"></label>
     </div>
     <button class="btn btn-or" id="b-finish">Save and see box score</button>`;
 }
@@ -1512,7 +1523,7 @@ document.addEventListener('click', async e => {
   // Season list in remove mode: first tap arms the row, second tap deletes it
   if (t.dataset.xdel){
     const id = t.dataset.xdel;
-    if (wasArmed === 'x-'+id) return removeMatch(id);
+    if (wasArmed === 'x-'+id){ if (Date.now() - (S.armAt||0) < 400){ S.armed = wasArmed; return; } return removeMatch(id); }
     return arm('x-'+id);
   }
   if (t.dataset.pass != null) return setPasser(t.dataset.pass);
@@ -1549,7 +1560,7 @@ document.addEventListener('click', async e => {
       if (!window.SS_auth) return;
       // signing out takes the matches off this phone: the account must have them all first
       if (navigator.onLine === false) return toast('No internet. Sign out when it is back, so nothing is lost.');
-      clearTimeout(S.flushT); await flush();
+      clearTimeout(S.flushT); await flush(); toast('Signing out…');
       return window.SS_auth.signOut();
     case 'b-finish': return finishMatch($('#fin-res').value, $('#fin-score').value.trim());
     case 'b-resume': return resume(t.dataset.id);
@@ -1557,7 +1568,7 @@ document.addEventListener('click', async e => {
     case 'b-continue': S.choose = false; render(); window.scrollTo(0,0); return;
     case 'b-editlist': S.editList = !S.editList; return render();
     case 'b-del':
-      if (S.armed === 'del-'+t.dataset.id) { S.armed = null; return removeMatch(t.dataset.id); }
+      if (S.armed === 'del-'+t.dataset.id) { if (Date.now() - (S.armAt||0) < 400) return; S.armed = null; return removeMatch(t.dataset.id); }
       return arm('del-'+t.dataset.id);
     // the report as a picture, through the phone's share sheet (WhatsApp, Messages...)
     case 'b-share': return sharePicture(S.matches[t.dataset.id]);
@@ -1654,7 +1665,14 @@ window.SS_auth = {
     try{ await A.signInWithRedirect(auth, provider); }
     catch(e){ window.SS_toast('Sign-in failed (' + e.code + ')'); }
   },
-  signOut(){ return A.signOut(auth); },
+  // Signing out takes the matches off this phone, so first wait until the account has every tap (at most 6 s).
+  async signOut(){
+    try{
+      const done = await Promise.race([F.waitForPendingWrites(fs).then(() => true), new Promise(r => setTimeout(() => r(false), 6000))]);
+      if (!done) return window.SS_toast('Still saving to your account. Try again in a moment.');
+    }catch(e){}
+    return A.signOut(auth);
+  },
 };
 A.getRedirectResult(auth).catch(e => window.SS_toast('Sign-in failed (' + e.code + ')'));
 A.onAuthStateChanged(auth, u => window.SS_onUser(u ? {uid: u.uid, email: u.email} : null, u ? database(u.uid) : null));
