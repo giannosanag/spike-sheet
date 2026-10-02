@@ -487,7 +487,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const isTeam = m => !!m && m.mode === 'team';
 // a jersey number as typed -> digits only, no leading zeros ("07" and "7" are the same player)
 const jnum = n => String(n).replace(/\D/g,'').slice(0,3).replace(/^0+(?=\d)/,'');
-const trackMode = () => !S.team.players.length ? 'player' : S.track || LS.get('ss.track') || 'player';
+const trackMode = () => S.track || LS.get('ss.track') || 'player';
 const zeroCounts = () => Object.fromEntries(STATS.map(s=>[s.k,0]));
 // One row per player over the given team matches, best scorer first. '' = taps left without a number.
 function playerRows(ms){
@@ -800,6 +800,14 @@ function newView(){
     <div class="kicker">Tip-off</div>
     <h2>New match</h2>
     <form id="newform" class="wrap" style="max-width:none;gap:12px">
+      <div><div class="kicker" style="margin-bottom:6px">Team or player?</div><div class="seg" role="group" aria-label="Track">
+        <button type="button" data-track="player" aria-pressed="${trackMode()==='player'}">${esc(pName())} only</button>
+        <button type="button" data-track="team" aria-pressed="${trackMode()==='team'}">Whole team</button></div></div>
+      <div id="g-team" class="wrap" style="gap:8px" ${trackMode()==='team'?'':'hidden'}>${S.team.players.length
+        ? `<p class="note">${esc(S.team.name || 'Your team')} · ${S.team.players.length} player${S.team.players.length === 1 ? '' : 's'}</p>
+        <button type="button" class="btn btn-dk" data-view="team">Change the team</button>`
+        : `<p class="note">No team yet. Type the players first, then come back here.</p>
+        <button type="button" class="btn btn-or" data-view="team">Add the team</button>`}</div>
       <div class="row">
         <label>Team<input id="f-home" autocomplete="off" placeholder="e.g. Panathinaikos" value="${esc(last?.home || S.team.name || '')}"></label>
         <label>Opponent<input id="f-opp" autocomplete="off" placeholder="e.g. Olympiacos"></label>
@@ -808,11 +816,8 @@ function newView(){
         <label>Date<input id="f-date" type="date" value="${today()}"></label>
         <label>Competition<input id="f-team" autocomplete="off" placeholder="League, cup, friendly" value="${esc(last?.team||'')}"></label>
       </div>
-      ${S.team.players.length ? `<div><div class="seg" role="group" aria-label="Track">
-        <button type="button" data-track="player" aria-pressed="${trackMode()==='player'}">${esc(pName())} only</button>
-        <button type="button" data-track="team" aria-pressed="${trackMode()==='team'}">Whole team</button></div></div>` : ''}
       <label class="check" id="l-starter" ${trackMode()==='team'?'hidden':''}><input id="f-starter" type="checkbox"> ${esc(pName())} starts on court</label>
-      <button class="btn btn-or" type="submit">Start match</button>
+      <button class="btn btn-or" type="submit" id="b-start" ${trackMode()==='team' && !S.team.players.length ? 'hidden' : ''}>Start match</button>
     </form>
     <p class="note">Count the score with the two big buttons. Tap ${pWhose()} stats as they happen: a point adds one to your team, an error adds one to the other team. Tap the court button each time ${pWho()} goes on or off.</p>
   </section>
@@ -1535,6 +1540,8 @@ document.addEventListener('click', async e => {
     S.track = t.dataset.track; LS.set('ss.track', S.track);
     document.querySelectorAll('[data-track]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.track === S.track)));
     const ls = $('#l-starter'); if (ls) ls.hidden = S.track === 'team';
+    const gt = $('#g-team'); if (gt) gt.hidden = S.track !== 'team';
+    const bs = $('#b-start'); if (bs) bs.hidden = S.track === 'team' && !S.team.players.length;
     return;
   }
   if (t.dataset.rm != null){ const d = readTeam(); d.players.splice(+t.dataset.rm, 1); S.teamDraft = d; return render(); }
@@ -1592,6 +1599,7 @@ document.addEventListener('submit', e => {
     }
     saveTeam(); toast('Team saved · ' + d.players.length + ' player' + (d.players.length === 1 ? '' : 's')); document.activeElement?.blur(); return render();
   }
+  if (e.target.id === 'newform' && trackMode() === 'team' && !S.team.players.length){ S.view = 'team'; return render(); }
   if (e.target.id === 'newform') startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:$('#f-starter').checked, mode:trackMode()});
   if (e.target.id === 'pform'){
     S.player = Object.assign({}, S.player, {name:$('#p-name').value.trim(), num:$('#p-num').value.trim(), pos:$('#p-pos').value});
