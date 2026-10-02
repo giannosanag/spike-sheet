@@ -135,6 +135,7 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 
 /* stat pad */
 .pad{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.pad-err,.pad-play{grid-template-columns:repeat(5,1fr)}.pad-err .stat,.pad-play .stat{padding-inline:2px}
 .stat{background:var(--soft);border-radius:16px;min-height:88px;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:background .15s,transform .08s}
 .stat:active{transform:scale(.95)}
 .stat .n{font-size:36px;line-height:.9}
@@ -231,6 +232,7 @@ input::-webkit-date-and-time-value{text-align:left}
 .tagbar .more input{flex:1;height:44px;min-width:0;background:transparent;color:var(--bg);border:1.5px solid var(--faint);border-radius:12px;padding:0 12px;font-size:16px}
 .tagbar .more input::placeholder{color:var(--faint)}
 .tagbar .more button{padding:0 16px;font-size:15px}
+.tagbar .two{display:flex;gap:6px}.tagbar .two button{flex:1;font-size:15px}
 .tagbar button.skip{padding:0 18px;background:transparent;color:var(--bg);box-shadow:inset 0 0 0 1.5px var(--faint);font-size:15px}
 .mates{display:flex;flex-direction:column}
 .mate{display:grid;grid-template-columns:1fr auto auto auto;gap:16px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center}
@@ -272,24 +274,26 @@ const STATS = [
   {k:'pass',  l:'Reception',  s:'good pass',   g:'play',a:'REC'},
   {k:'serve', l:'Serve in',   s:'no point',    g:'play',a:'SRV'},
   {k:'assist',l:'Set',        s:'good set',    g:'play',a:'SET'},
+  {k:'att',   l:'Attack in',  s:'no point',    g:'play',a:'ATT'},
   {k:'serr',  l:'Serve',      s:'error',       g:'err', a:'SE'},
   {k:'aerr',  l:'Attack',     s:'error',       g:'err', a:'AE'},
   {k:'rerr',  l:'Reception',  s:'error',       g:'err', a:'RE'},
+  {k:'berr',  l:'Block out',  s:'their point', g:'err', a:'BO', full:'Block out'},
   {k:'ferr',  l:'Net / fault',s:'error',       g:'err', a:'NF'},
 ];
 const GROUPS = [{g:'pt',h:'Points won'},{g:'play',h:'Good plays'},{g:'err',h:'Errors'}];
 const BYK = Object.fromEntries(STATS.map(s=>[s.k,s]));
 const PT_KEYS = ['ace','kill','plase','block'];
-const ERR_KEYS = ['serr','aerr','rerr','ferr'];
+const ERR_KEYS = ['serr','aerr','rerr','berr','ferr'];
 const TAG_KEYS = ['kill','plase'];
-const WEIGHT = {ace:1,kill:1,plase:1,block:1,dig:1,pass:.5,assist:.5,serve:0,serr:-1,aerr:-1,rerr:-1,ferr:-1};
+const WEIGHT = {ace:1,kill:1,plase:1,block:1,dig:1,pass:.5,assist:.5,serve:0,att:0,serr:-1,aerr:-1,rerr:-1,berr:-.5,ferr:-1};
 
 const S = {matches:{}, player:{name:'', num:'', pos:''}, activeId:null, view:'live', openId:null, set:1, db:null, pending:{}, flushing:false, timer:null, armed:null, unsubs:[], user:null};
 
 /* ---------- storage ---------- */
 const LS = {
   get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } },
-  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ if (!S.lsFail){ S.lsFail = true; setTimeout(()=>toast('This phone cannot save. Free some space.'), 0); } } },
 };
 function backup(){ LS.set('ss.matches', S.matches); LS.set('ss.active', S.activeId); LS.set('ss.player', S.player); }
 function restore(){
@@ -322,14 +326,11 @@ async function flush(){
     for (const path of Object.keys(S.pending)){
       delete S.pending[path];
       const body = bodyFor(path);
+      // a refused write comes back through SS_writeFailed, which queues it again
       try{
         if (body) await S.db.doc(path).set(JSON.parse(JSON.stringify(body)));
         else await S.db.doc(path).delete();
-      }catch(e){
-        if (e && e.code === 'quota_exceeded') toast('Storage full. Delete old matches.');
-        else if (e && e.code === 'invalid_argument') { toast('Saving on this phone only'); S.db = null; }
-        else S.pending[path] = true;
-      }
+      }catch(e){ S.pending[path] = true; }
     }
   } finally { S.flushing = false; }
   if (S.db && Object.keys(S.pending).length) { clearTimeout(S.flushT); S.flushT = setTimeout(flush, 3000); }
@@ -340,6 +341,10 @@ function connect(db){
   // only after reading the shared copy, so an older phone never overwrites a newer one.
   let first = true;
   const lastSync = LS.get('ss.synced') || 0;
+  // ids the cloud has confirmed it holds. Only such a match may be dropped here when the cloud
+  // no longer has it (deleted on another phone). A match the cloud never took is uploaded, never dropped.
+  const hadList = Array.isArray(LS.get('ss.cloud'));
+  const known = new Set(LS.get('ss.cloud') || []);
   S.unsubs.push(db.collection('matches').onSnapshot(snap => {
     let changed = false;
     const seen = new Set();
@@ -349,6 +354,7 @@ function connect(db){
       const r = d.data(); if (!r) return;
       if (deleted.has(d.id)) { if (!S.matches[d.id]) queue('matches/'+d.id); return; }
       seen.add(d.id);
+      if (!snap.metadata?.fromCache && !d.pending) known.add(d.id);
       const local = S.matches[d.id];
       if (!local || (r.updatedAt||0) > (local.updatedAt||0)) { S.matches[d.id] = JSON.parse(JSON.stringify(r)); changed = true; }
       else if (reconcile && (local.updatedAt||0) > (r.updatedAt||0)) queue('matches/'+d.id);
@@ -358,7 +364,9 @@ function connect(db){
       // otherwise it was deleted on the other phone, so drop it here too
       Object.keys(S.matches).forEach(id => {
         if (seen.has(id)) return;
-        if ((S.matches[id].updatedAt||0) > lastSync) queue('matches/'+id);
+        // (a phone updated from an older version has no list yet: it falls back to the time of its last sync, once)
+        const gone = hadList ? known.has(id) : (S.matches[id].updatedAt||0) <= lastSync;
+        if (!gone) queue('matches/'+id);
         else { delete S.matches[id]; if (S.activeId === id) S.activeId = null; changed = true; }
       });
       first = false;
@@ -371,8 +379,16 @@ function connect(db){
       LS.set('ss.deleted', [...deleted]);
     }
     snap.docChanges().forEach(c => {
-      if (c.type === 'removed' && S.matches[c.doc.id] && !S.pending['matches/'+c.doc.id]) { delete S.matches[c.doc.id]; changed = true; }
+      if (c.type !== 'removed') return;
+      const id = c.doc.id, was = known.delete(id);
+      // gone from the cloud: drop it here only if the cloud really had it (another phone deleted it).
+      // A new match whose upload was refused also shows as "removed": that one stays on the phone.
+      if (was && S.matches[id] && !S.pending['matches/'+id]) { delete S.matches[id]; changed = true; }
     });
+    if (!snap.metadata?.fromCache){
+      [...known].forEach(id => { if (!seen.has(id) && !deleted.has(id)) known.delete(id); });
+      LS.set('ss.cloud', [...known]);
+    }
     const act = S.activeId && S.matches[S.activeId];
     if (S.activeId && (!act || act.done)) { S.activeId = null; S.choose = false; changed = true; }
     if (changed){ backup(); if (!isTyping()) render(); }
@@ -388,11 +404,14 @@ function connect(db){
 }
 function disconnect(){
   S.unsubs.forEach(u => { try{ u(); }catch(e){} });
-  S.unsubs = []; S.db = null; S.pending = {};
+  S.unsubs = []; S.db = null; S.pending = {}; S.saveFailed = false; clearTimeout(S.flushT);
 }
-function clearLocal(){
-  S.matches = {}; S.activeId = null; S.player = {name:'', num:'', pos:''};
-  try{ localStorage.removeItem('ss.synced'); localStorage.removeItem('ss.deleted'); }catch(e){}
+// keepUnsaved: on sign-out, a match the account never took stays on the phone (it is the only copy)
+function clearLocal(keepUnsaved){
+  const had = keepUnsaved && LS.get('ss.cloud'), keep = {};
+  if (Array.isArray(had)) Object.values(S.matches).forEach(m => { if (!had.includes(m.id)) keep[m.id] = m; });
+  S.matches = keep; S.activeId = null; S.player = {name:'', num:'', pos:''};
+  try{ localStorage.removeItem('ss.synced'); localStorage.removeItem('ss.deleted'); localStorage.removeItem('ss.cloud'); }catch(e){}
   backup();
 }
 // Called by the Firebase module whenever the signed-in account changes.
@@ -408,19 +427,28 @@ window.SS_onUser = (u, db) => {
   } else {
     S.user = null;
     // signed out: take this account's matches off the phone (they stay in the cloud)
-    if (prev){ clearLocal(); try{ localStorage.removeItem('ss.uid'); }catch(e){} }
+    if (prev){ clearLocal(true); try{ localStorage.removeItem('ss.uid'); }catch(e){} }
   }
   syncNote(); render();
 };
-window.SS_writeFailed = e => {
-  if (e && e.code === 'permission-denied') toast('Not allowed to save. Sign in again.');
+// The cloud refused a write: keep the match on the phone, say so once, and try again every 20 s.
+window.SS_writeFailed = (e, path) => {
+  if (!S.db) return;
+  if (path) S.pending[path] = true;
+  if (!S.saveFailed){
+    S.saveFailed = true; syncNote();
+    toast(e && e.code === 'permission-denied' ? 'Not saved to your account. Sign out and in again.' : 'Not saved to your account yet. Trying again.');
+  }
+  clearTimeout(S.flushT); S.flushT = setTimeout(flush, 20000);
 };
+window.SS_writeOk = () => { if (S.saveFailed){ S.saveFailed = false; syncNote(); } };
 window.SS_toast = t => toast(t);
 function syncNote(){
   const n = document.getElementById('syncnote');
   n.hidden = false;
   n.innerHTML = S.user
-    ? `<span class="dot-ok"></span>Synced to ${esc(S.user.email || 'your account')}`
+    ? (S.saveFailed ? `Saved on this phone. Not in your account yet (${esc(S.user.email || 'your account')}). Trying again.`
+      : `<span class="dot-ok"></span>Synced to ${esc(S.user.email || 'your account')}`)
     : `Saving on this phone only. <button class="lnk" id="b-signin">Sign in with Google</button> to sync and back up.`;
 }
 const isTyping = () => ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName);
@@ -461,13 +489,14 @@ function analyze(m){
   });
   return {score, stints, plus, minus, pm: plus - minus, feed, onNow: !!on};
 }
-// open: also count the set in play, as the final whistle will end it
+// open: also count every set with a score that was not ended, as the final whistle will end it
 function setsWon(m, open){
   const {score} = analyze(m); let w = 0, l = 0;
-  const ended = open && !(m.ended||[]).includes(open) ? [...(m.ended||[]), open] : (m.ended||[]);
+  const ended = open ? [...new Set([...(m.ended||[]), ...scoredSets(score)])] : (m.ended||[]);
   ended.forEach(s => { const x = score[s]; if (!x) return; if (x.us > x.them) w++; else if (x.them > x.us) l++; });
   return {w, l};
 }
+const scoredSets = score => Object.keys(score).map(Number).filter(s => score[s].us || score[s].them);
 function playMs(m){ return (m.playMs||0) + (m.onCourt && m.courtSince ? Date.now() - m.courtSince : 0); }
 function fmtTime(ms){
   const t = Math.floor(ms/1000), h = Math.floor(t/3600), mi = Math.floor(t%3600/60), s = t%60;
@@ -492,7 +521,7 @@ const pWho = () => esc(S.player.name || 'the player');
 const pWhose = () => S.player.name ? esc(S.player.name) + "'s" : "the player's";
 const homeName = m => m.home || 'Us';
 function evLabel(e, m){
-  if (BYK[e.k]) return {t: BYK[e.k].l + (BYK[e.k].g==='err' ? ' error' : '') + (e.from ? ' · pass from ' + e.from : ''), c: BYK[e.k].g==='play' ? '' : BYK[e.k].g};
+  if (BYK[e.k]) return {t: (BYK[e.k].full || BYK[e.k].l + (BYK[e.k].g==='err' ? ' error' : '')) + (e.from ? ' · pass from ' + e.from : ''), c: BYK[e.k].g==='play' ? '' : BYK[e.k].g};
   if (e.k === 'us') return {t:'Point ' + homeName(m), c:'team'};
   if (e.k === 'them') return {t:'Point ' + (m.opp||'them'), c:'team'};
   if (e.k === 'on') return {t: pName() + ' on court', c:'sub'};
@@ -514,7 +543,7 @@ function tap(k){
   const m = S.matches[S.activeId]; if (!m) return;
   S.tag = null; clearTimeout(S.tagT);
   // a stat means the player is playing: put them on court if the tap was forgotten
-  if (!m.onCourt){ courtOn(m, true); toast(pName() + ' put on court'); }
+  if (!m.onCourt){ courtOn(m, true); toast(pName() + ' put on court'); } else resumeClock(m);
   push(m, {k});
   const idx = m.log.length - 1;
   // the player's point wins the rally for the team; an error gives it to the other team
@@ -542,39 +571,64 @@ function setPasser(n){
 }
 function teamPoint(side){
   const m = S.matches[S.activeId]; if (!m) return;
-  S.tag = null;
+  S.tag = null; resumeClock(m);
   push(m, {k:side}); save(m); buzz(); render();
 }
-function courtOn(m, auto){ m.onCourt = true; m.courtSince = Date.now(); push(m, auto ? {k:'on', byStat:1} : {k:'on'}); }
+// Set break: the court clock stops when a set ends and starts again with the first tap of the next set.
+// The player stays "on court" (no bench event); stintMs is the time already counted in this spell.
+function pauseClock(m){
+  if (!m.onCourt || !m.courtSince) return;
+  const seg = Date.now() - m.courtSince;
+  m.playMs = (m.playMs||0) + seg; m.stintMs = (m.stintMs||0) + seg; m.courtSince = null;
+}
+function resumeClock(m){ if (m.onCourt && !m.courtSince) m.courtSince = Date.now(); }
+function courtOn(m, auto){ m.onCourt = true; m.courtSince = Date.now(); m.stintMs = 0; push(m, auto ? {k:'on', byStat:1} : {k:'on'}); }
 function toggleCourt(){
   const m = S.matches[S.activeId]; if (!m) return;
   if (m.onCourt){
-    const dur = Date.now() - m.courtSince;
-    push(m, {k:'off', dur, onAt:m.courtSince});
-    m.playMs = (m.playMs||0) + dur; m.onCourt = false; m.courtSince = null;
+    const seg = m.courtSince ? Date.now() - m.courtSince : 0, pre = m.stintMs||0;
+    push(m, {k:'off', dur:pre+seg, onAt:m.courtSince, pre});
+    m.playMs = (m.playMs||0) + seg; m.onCourt = false; m.courtSince = null; m.stintMs = 0;
   } else courtOn(m);
   save(m); buzz(); render();
 }
+// The set Undo must first go back to: the last tap is in another set than the one on screen
+// (straight after "End set", or after looking at an earlier set). null = the last tap is in this set.
+function undoBack(m){
+  const log = m.log||[], last = log[log.length-1];
+  if (last) return last.set !== S.set ? last.set : null;
+  return S.set > 1 ? S.set - 1 : null;
+}
 function undo(){
-  const m = S.matches[S.activeId]; if (!m || !m.log?.length) return;
+  const m = S.matches[S.activeId]; if (!m) return;
+  S.keepSet = null;
+  const back = undoBack(m);
+  if (back != null){
+    // takes back "End set": that set is open again, and nothing is removed from it yet
+    m.ended = (m.ended||[]).filter(s => s !== back);
+    S.set = back; m.curSet = back; S.tag = null; resumeClock(m);
+    save(m); render(); return toast('Back in set ' + back);
+  }
+  if (!m.log?.length) return;
   let last = m.log[m.log.length-1];
   m.log = m.log.slice(0,-1);
   // a stat's automatic team point goes with it
   S.tag = null;
   if ((last.k === 'us' || last.k === 'them') && last.auto && m.log.length && BYK[m.log[m.log.length-1].k]){ last = m.log[m.log.length-1]; m.log = m.log.slice(0,-1); }
-  if (last.k === 'on'){ m.onCourt = false; m.courtSince = null; }
+  if (last.k === 'on'){ m.onCourt = false; m.courtSince = null; m.stintMs = 0; }
   // a stat that put the player on court by itself: take that back too
-  else if (BYK[last.k] && m.log.length && m.log[m.log.length-1].k === 'on' && m.log[m.log.length-1].byStat){ m.log = m.log.slice(0,-1); m.onCourt = false; m.courtSince = null; }
+  else if (BYK[last.k] && m.log.length && m.log[m.log.length-1].k === 'on' && m.log[m.log.length-1].byStat){ m.log = m.log.slice(0,-1); m.onCourt = false; m.courtSince = null; m.stintMs = 0; }
   // the final whistle's own "to the bench" (after Keep tracking): the time up to the whistle stays counted,
   // the clock restarts now - never across the hours or days between finishing and resuming
-  if (last.k === 'off' && last.fin){ m.onCourt = true; m.courtSince = Date.now(); }
-  else if (last.k === 'off'){ m.playMs = Math.max(0,(m.playMs||0) - (last.dur||0)); m.onCourt = true; m.courtSince = last.onAt || Date.now(); }
+  if (last.k === 'off' && last.fin){ m.onCourt = true; m.courtSince = Date.now(); m.stintMs = last.dur||0; }
+  // 'pre' = time already counted before a set break; a spell taken off during the break comes back still stopped
+  else if (last.k === 'off'){ m.playMs = Math.max(0,(m.playMs||0) - ((last.dur||0) - (last.pre||0))); m.onCourt = true; m.stintMs = last.pre||0; m.courtSince = 'pre' in last ? last.onAt : (last.onAt || Date.now()); }
   save(m); render(); toast('Undone: ' + evLabel(last, m).t);
 }
 function pickSet(n){
   const m = S.matches[S.activeId];
   // going forward with the set buttons instead of "End set": the set that was played is over
-  if (m && n > S.set && !(m.ended||[]).includes(S.set)){ const sc = analyze(m).score[S.set]; if (sc && (sc.us || sc.them)) m.ended = [...(m.ended||[]), S.set].sort((a,b)=>a-b); }
+  if (m && n > S.set && !(m.ended||[]).includes(S.set)){ const sc = analyze(m).score[S.set]; if (sc && (sc.us || sc.them)){ m.ended = [...(m.ended||[]), S.set].sort((a,b)=>a-b); pauseClock(m); } }
   S.set = n;
   if (m){ m.curSet = n; m.maxSet = Math.max(m.maxSet||1, n); save(m); }
   render();
@@ -583,6 +637,7 @@ function endSet(){
   const m = S.matches[S.activeId]; if (!m) return;
   const s = S.set;
   m.ended = [...new Set([...(m.ended||[]), s])].sort((a,b)=>a-b);
+  pauseClock(m);
   const sc = analyze(m).score[s] || {us:0,them:0};
   toast(`Set ${s}: ${sc.us}–${sc.them}`);
   pickSet(Math.min(s+1, 5));
@@ -592,8 +647,9 @@ function finishMatch(result, score, endAt){
   // the final whistle belongs to the last set that was played, not an empty next set
   const cur = analyze(m).score[S.set], log = m.log||[];
   const offSet = (cur && (cur.us || cur.them)) || !log.length ? S.set : log[log.length-1].set;
-  if (m.onCourt){ const end = Math.max(endAt || Date.now(), m.courtSince), dur = end-m.courtSince; push(m,{k:'off',dur,onAt:m.courtSince,set:offSet,t:end,fin:1}); m.playMs=(m.playMs||0)+dur; m.onCourt=false; m.courtSince=null; }
-  if (!(m.ended||[]).includes(S.set)){ const sc = analyze(m).score[S.set]; if (sc && (sc.us||sc.them)) m.ended = [...(m.ended||[]), S.set]; }
+  if (m.onCourt){ const end = Math.max(endAt || Date.now(), m.courtSince||0), seg = m.courtSince ? end-m.courtSince : 0, pre = m.stintMs||0; push(m,{k:'off',dur:pre+seg,onAt:m.courtSince,pre,set:offSet,t:end,fin:1}); m.playMs=(m.playMs||0)+seg; m.onCourt=false; m.courtSince=null; m.stintMs=0; }
+  // every set with a score is over now, also one left open by going back with the set buttons
+  m.ended = [...new Set([...(m.ended||[]), ...scoredSets(analyze(m).score)])].sort((a,b)=>a-b);
   m.result = result; m.score = score; m.done = true;
   save(m);
   S.activeId = null; backup();
@@ -613,7 +669,7 @@ const newMatchBtn = () => S.activeId && S.matches[S.activeId] ? '' : `<button cl
 function resume(id){
   const m = S.matches[id]; if (!m) return;
   if (S.activeId && S.activeId !== id && S.matches[S.activeId]) return toast('Finish the live match first');
-  m.done = false; S.choose = false; save(m);
+  m.done = false; S.choose = false; S.keepOver = overKey(m); save(m);
   S.activeId = id; S.set = m.curSet || 1; S.view = 'live'; render(); window.scrollTo(0,0);
 }
 function removeMatch(id){
@@ -626,6 +682,8 @@ function removeMatch(id){
 }
 
 /* ---------- views ---------- */
+// "Tap again to delete" lets go after 4 s, so a later stray tap cannot delete
+function arm(key){ S.armed = key; clearTimeout(S.armT); S.armT = setTimeout(()=>{ if (S.armed === key){ S.armed = null; if (!isTyping()) render(); } }, 4000); render(); }
 function render(){
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || (S.view==='match' && b.dataset.view==='history'))));
   const app = $('#app');
@@ -728,12 +786,12 @@ function liveView(m){
       </div>
     </div>
     <div class="court ${m.onCourt?'is-on':''}">
-      <div class="cst"><b>${m.onCourt?'On court':'On bench'}</b><span>${m.onCourt?'Playing now':'Not playing'} · <span id="clock">${fmtTime(playMs(m))}</span> played</span></div>
+      <div class="cst"><b>${m.onCourt?'On court':'On bench'}</b><span>${m.onCourt?(m.courtSince?'Playing now':'Set break, clock stopped'):'Not playing'} · <span id="clock">${fmtTime(playMs(m))}</span> played</span></div>
       <button id="b-court">${m.onCourt?'Take off court':'Put on court'}</button>
     </div>
   </section>
   ${GROUPS.map(G=>`
-  <section class="sec"><h3>${G.h}</h3><div class="pad">
+  <section class="sec"><h3>${G.h}</h3><div class="pad pad-${G.g}">
     ${STATS.filter(s=>s.g===G.g).map(s=>`<button class="stat ${s.g}" data-stat="${s.k}" aria-label="${esc(s.l+' '+s.s)}, ${all[s.k]} so far"><span class="n">${all[s.k]}</span><span class="l">${esc(s.l)}</span><span class="s">${esc(s.s)}</span></button>`).join('')}
   </div></section>`).join('')}
   ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>Play by play</h3></div>${feedHTML(m, a.feed.slice(-8).reverse())}</section>` : ''}
@@ -743,14 +801,15 @@ function liveView(m){
   </section>
   <button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?'Tap again to delete this match':'Delete this match'}</button>
   ${undoFab(m)}
-  ${tagBar(m)}`;
+  ${tagBar(m) || setBar(m, a)}`;
 }
 // Always-visible undo, naming the tap it will take back.
 function undoFab(m){
   const log = m.log||[]; let e = log[log.length-1];
   if (e && e.auto && log.length > 1) e = log[log.length-2];
-  return `<button class="fab" id="b-undo" ${e?'':'disabled'} aria-label="Undo ${e?esc(evLabel(e,m).t):''}">
-    <span class="fab-i" aria-hidden="true">↶</span><span>Undo<small>${e?esc(evLabel(e,m).t):'nothing yet'}</small></span></button>`;
+  const back = undoBack(m), what = back != null ? 'back to set ' + back : e ? evLabel(e,m).t : '';
+  return `<button class="fab" id="b-undo" ${what?'':'disabled'} aria-label="Undo ${esc(what)}">
+    <span class="fab-i" aria-hidden="true">↶</span><span>Undo<small>${what?esc(what):'nothing yet'}</small></span></button>`;
 }
 function tagBar(m){
   if (!S.tag || S.tag.mid !== m.id) return '';
@@ -765,6 +824,28 @@ function tagBar(m){
       <button type="button" class="skip" data-pass="">None</button>
     </form>
   </div>`;
+}
+// Volleyball rules: a set is won at 25 (15 in the fifth) with two clear, a match at three sets.
+// Asked, never done by itself: some leagues play other lengths, and one wrong tap must not close a set.
+function setOver(m, a){
+  const sc = a.score[S.set]; if (!sc || (m.ended||[]).includes(S.set)) return null;
+  const hi = Math.max(sc.us, sc.them), lo = Math.min(sc.us, sc.them);
+  return hi >= (S.set === 5 ? 15 : 25) && hi - lo >= 2 ? sc : null;
+}
+const overKey = m => { const {w, l} = setsWon(m); return m.id + ':' + w + '-' + l; };
+function setBar(m, a){
+  const sc = setOver(m, a);
+  if (sc){
+    const key = m.id + ':' + S.set + ':' + sc.us + '-' + sc.them;
+    return S.keepSet === key ? '' : `<div class="tagbar" role="group" aria-label="Set over">
+    <div class="q">Set ${S.set} is over: ${sc.us}–${sc.them}</div>
+    <div class="two"><button id="b-setend">End set ${S.set}</button><button class="skip" id="b-setkeep" data-key="${key}">Keep playing</button></div></div>`;
+  }
+  const {w, l} = setsWon(m);
+  if ((w >= 3 || l >= 3) && S.keepOver !== overKey(m)) return `<div class="tagbar" role="group" aria-label="Match over">
+    <div class="q">Match over: ${w}–${l} in sets</div>
+    <div class="two"><button id="b-matchend">Save match</button><button class="skip" id="b-matchkeep">Keep tracking</button></div></div>`;
+  return '';
 }
 // Attacks by who passed to the player: attempts, points, errors.
 function passTable(matches){
@@ -804,10 +885,10 @@ function boxTable(rows, head){
     <tbody>${rows.map(r=>`<tr class="${r.sum?'sum':''}"><td>${esc(r.label)}</td><td class="k">${pts(r.c)}</td><td>${fmtVir(vir(r.c))}</td>${STATS.map(s=>`<td>${r.c[s.k]||0}</td>`).join('')}</tr>`).join('')}</tbody>
   </table></div>`;
 }
-const LEGEND = `<p class="note">SPK spike · PLA plasé · BLK block · DEF defence · REC good reception · SRV serve in · SET good set · SE / AE / RE serve, attack, reception error · NF net or fault. Rating: +1 for every point, block or defence, +0.5 for a good reception or set, −1 for every error.</p>`;
+const LEGEND = `<p class="note">SPK spike · PLA plasé · BLK block · DEF defence · REC good reception · SRV serve in · SET good set · ATT attack kept in play, no point · SE / AE / RE serve, attack, reception error · BO block out (the ball goes out off the player's block, their point) · NF net or fault. Rating: +1 for every point, block or defence, +0.5 for a good reception or set, −1 for every error, −0.5 for a block out.</p>`;
 
 function tiles(c, x){
-  const att = c.kill + c.plase + c.aerr, srv = c.ace + c.serve + c.serr, rec = c.pass + c.rerr;
+  const att = c.kill + c.plase + c.aerr + c.att, srv = c.ace + c.serve + c.serr, rec = c.pass + c.rerr;
   const pct = (a,b) => b ? Math.round(100*a/b)+'%' : '–';
   return `<div class="tiles">
     <div class="tile hero"><b>${x.pts ?? pts(c)}</b><span>Points</span>${x.ptsNote||''}</div>
@@ -823,14 +904,14 @@ function tiles(c, x){
 
 /* ---------- match report ---------- */
 const WORDS = {ace:['ace','aces'], kill:['spike','spikes'], plase:['plasé','plasés'], block:['block','blocks'],
-  dig:['defence','defences'], pass:['good reception','good receptions'], serve:['serve in','serves in'], assist:['good set','good sets'],
-  serr:['serve','serve'], aerr:['attack','attack'], rerr:['reception','reception'], ferr:['net / fault','net / fault']};
+  dig:['defence','defences'], pass:['good reception','good receptions'], serve:['serve in','serves in'], assist:['good set','good sets'], att:['attack in','attacks in'],
+  serr:['serve','serve'], aerr:['attack','attack'], rerr:['reception','reception'], berr:['block out','block out'], ferr:['net / fault','net / fault']};
 const nWord = (n, k) => n + ' ' + WORDS[k][n === 1 ? 0 : 1];
 const listOf = (c, keys) => keys.filter(k => c[k]).map(k => nWord(c[k], k)).join(', ');
 // Attack / serve / reception as "x of y" and a percentage. Only what was tapped counts.
 function pctParts(c){
   return [
-    {l:'Attack', a:c.kill + c.plase, b:c.kill + c.plase + c.aerr, n:'points from attacks'},
+    {l:'Attack', a:c.kill + c.plase, b:c.kill + c.plase + c.aerr + c.att, n:'points from attacks'},
     {l:'Serve', a:c.ace + c.serve, b:c.ace + c.serve + c.serr, n:c.ace ? nWord(c.ace,'ace') : 'serves in'},
     {l:'Reception', a:c.pass, b:c.pass + c.rerr, n:'good receptions'},
   ].map(r => Object.assign(r, {p: r.b ? Math.round(100*r.a/r.b) : null}));
@@ -861,7 +942,7 @@ function setCards(m, a){
     const c = counts(m, s), x = a.score[s], cr = court[s] || {rallies:0, onR:0, pm:0};
     const ended = (m.ended||[]).includes(s);
     const res = ended ? (x.us > x.them ? 'won' : x.them > x.us ? 'lost' : 'tied') : 'not finished';
-    const p = pts(c), e = errs(c), good = listOf(c, ['dig','pass','assist','serve']);
+    const p = pts(c), e = errs(c), good = listOf(c, ['dig','pass','assist','serve','att']);
     const onTxt = !cr.rallies ? '' : cr.onR === cr.rallies ? 'On court the whole set' : cr.onR ? `On court for ${cr.onR} of ${cr.rallies} rallies` : 'On the bench this set';
     return `<div class="setc">
       <div class="setc-h"><b>Set ${s}</b><span>${x.us}–${x.them} ${res}</span></div>
@@ -1156,7 +1237,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.xdel){
     const id = t.dataset.xdel;
     if (wasArmed === 'x-'+id) return removeMatch(id);
-    S.armed = 'x-'+id; render(); return;
+    return arm('x-'+id);
   }
   if (t.dataset.pass != null) return setPasser(t.dataset.pass);
   if (t.dataset.stat) return tap(t.dataset.stat);
@@ -1169,11 +1250,19 @@ document.addEventListener('click', async e => {
   switch (t.id){
     case 'b-us': return teamPoint('us');
     case 'b-them': return teamPoint('them');
-    case 'b-endset': return endSet();
+    case 'b-endset': case 'b-setend': return endSet();
+    case 'b-setkeep': S.keepSet = t.dataset.key; return render();
+    case 'b-matchkeep': S.keepOver = overKey(S.matches[S.activeId]); return render();
+    case 'b-matchend': { const {w, l} = setsWon(S.matches[S.activeId]); return finishMatch(w > l ? 'W' : 'L', w + '-' + l); }
     case 'b-court': return toggleCourt();
     case 'b-undo': return undo();
     case 'b-signin': return window.SS_auth ? window.SS_auth.signIn() : toast("Can't reach Google. Check the internet.");
-    case 'b-signout': return window.SS_auth && window.SS_auth.signOut();
+    case 'b-signout':
+      if (!window.SS_auth) return;
+      // signing out takes the matches off this phone: the account must have them all first
+      if (navigator.onLine === false) return toast('No internet. Sign out when it is back, so nothing is lost.');
+      clearTimeout(S.flushT); await flush();
+      return window.SS_auth.signOut();
     case 'b-finish': return finishMatch($('#fin-res').value, $('#fin-score').value.trim());
     case 'b-resume': return resume(t.dataset.id);
     case 'b-closenew': S.choose = false; return closeAndNew();
@@ -1181,7 +1270,7 @@ document.addEventListener('click', async e => {
     case 'b-editlist': S.editList = !S.editList; return render();
     case 'b-del':
       if (S.armed === 'del-'+t.dataset.id) { S.armed = null; return removeMatch(t.dataset.id); }
-      S.armed = 'del-'+t.dataset.id; render(); return;
+      return arm('del-'+t.dataset.id);
     // the report as a picture, through the phone's share sheet (WhatsApp, Messages...)
     case 'b-share': return sharePicture(S.matches[t.dataset.id]);
   }
@@ -1196,6 +1285,12 @@ document.addEventListener('submit', e => {
   }
 });
 window.addEventListener('pagehide', () => { backup(); flush(); });
+// the same phone has the app open twice (home-screen app and a browser tab): take the other one's
+// changes at once, so an old screen can never save over newer taps
+window.addEventListener('storage', e => {
+  if (!['ss.matches','ss.active','ss.player'].includes(e.key)) return;
+  restore(); if (!isTyping()) render();
+});
 
 restore();
 S.choose = idleLong();
@@ -1231,18 +1326,18 @@ catch(e){ fs = F.getFirestore(app); }
 // Writes return at once: Firestore keeps them queued on the phone until there is signal.
 function database(uid){
   const base = 'users/' + uid + '/';
-  const fail = e => window.SS_writeFailed(e);
+  const fail = (e, p) => window.SS_writeFailed(e, p);
   const meta = {includeMetadataChanges: true};
   return {
     doc: p => ({
-      set: body => { F.setDoc(F.doc(fs, base + p), body).catch(fail); return Promise.resolve(); },
-      delete: () => { F.deleteDoc(F.doc(fs, base + p)).catch(fail); return Promise.resolve(); },
+      set: body => { F.setDoc(F.doc(fs, base + p), body).then(window.SS_writeOk, e => fail(e, p)); return Promise.resolve(); },
+      delete: () => { F.deleteDoc(F.doc(fs, base + p)).then(window.SS_writeOk, e => fail(e, p)); return Promise.resolve(); },
       onSnapshot: (cb, err) => F.onSnapshot(F.doc(fs, base + p), meta,
         s => cb({exists: s.exists(), data: () => s.data(), metadata: s.metadata}), err),
     }),
     collection: p => ({
       onSnapshot: (cb, err) => F.onSnapshot(F.collection(fs, base + p), meta,
-        s => cb({docs: s.docs.map(d => ({id: d.id, data: () => d.data()})),
+        s => cb({docs: s.docs.map(d => ({id: d.id, data: () => d.data(), pending: d.metadata.hasPendingWrites})),
                  docChanges: () => s.docChanges().map(c => ({type: c.type, doc: {id: c.doc.id}})),
                  metadata: s.metadata}), err),
     }),
