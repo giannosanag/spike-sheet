@@ -185,6 +185,8 @@ details.more summary::after{content:' ›'}details.more[open] summary::after{con
 .seg{display:inline-flex;background:var(--soft);border-radius:999px;padding:3px}
 .seg button{font-size:13px;font-weight:600;padding:6px 14px;border-radius:999px;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--bg);color:var(--ink)}
+.flab{font-size:13px;font-weight:500;color:var(--muted);margin-bottom:6px}
+.tagbar .more input.sm{flex:0 1 80px;text-align:center}
 .pick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .pick button{padding:18px 8px;border-radius:18px;border:1.5px solid var(--line);background:var(--bg);font-size:18px;font-weight:700;overflow-wrap:anywhere}
 .pick button small{display:block;font-size:12px;font-weight:500;margin-top:4px;opacity:.7}
@@ -304,18 +306,25 @@ const ERR_KEYS = ['serr','aerr','rerr','berr','ferr'];
 const TAG_KEYS = ['kill','plase'];
 const WEIGHT = {ace:1,kill:1,plase:1,block:1,dig:1,pass:.5,assist:.5,serve:0,att:0,serr:-1,aerr:-1,rerr:-1,berr:-.5,ferr:-1};
 
-const S = {matches:{}, player:{name:'', num:'', pos:''}, team:{name:'', players:[]}, activeId:null, view:'live', openId:null, set:1, db:null, pending:{}, flushing:false, timer:null, armed:null, unsubs:[], user:null};
+const S = {matches:{}, player:{name:'', num:'', pos:''}, teams:{team:{name:'', players:[]}, team2:{name:'', players:[]}}, slot:'team', activeId:null, view:'live', openId:null, set:1, db:null, pending:{}, flushing:false, timer:null, armed:null, unsubs:[], user:null};
+// Two saved teams per account (settings/team and settings/team2). S.team is the one chosen now.
+const SLOTS = ['team', 'team2'];
+Object.defineProperty(S, 'team', {get(){ return S.teams[S.slot]; }, set(v){ S.teams[S.slot] = v; }});
+const teamOf = slot => S.teams[slot] || S.teams.team;
+const slotOf = m => m && m.teamSlot === 'team2' ? 'team2' : 'team';
+const teamLabel = slot => teamOf(slot).name || (slot === 'team2' ? 'Team 2' : 'Team 1');
 
 /* ---------- storage ---------- */
 const LS = {
   get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } },
   set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ if (!S.lsFail){ S.lsFail = true; setTimeout(()=>toast('This phone cannot save. Free some space.'), 0); } } },
 };
-function backup(){ LS.set('ss.matches', S.matches); LS.set('ss.active', S.activeId); LS.set('ss.player', S.player); LS.set('ss.team', S.team); }
+function backup(){ LS.set('ss.matches', S.matches); LS.set('ss.active', S.activeId); LS.set('ss.player', S.player); LS.set('ss.team', S.teams.team); LS.set('ss.team2', S.teams.team2); }
 function restore(){
   const m = LS.get('ss.matches'); if (m && typeof m === 'object') S.matches = m;
   const p = LS.get('ss.player'); if (p && typeof p === 'object') S.player = Object.assign(S.player, p);
-  const t = LS.get('ss.team'); if (t && typeof t === 'object') S.team = Object.assign({name:'', players:[]}, t);
+  SLOTS.forEach(k => { const t = LS.get('ss.' + k); if (t && typeof t === 'object') S.teams[k] = Object.assign({name:'', players:[]}, t); });
+  S.slot = LS.get('ss.slot') === 'team2' ? 'team2' : 'team';
   S.activeId = LS.get('ss.active');
   if (S.activeId && (!S.matches[S.activeId] || S.matches[S.activeId].done)) S.activeId = null;
   const a = S.activeId && S.matches[S.activeId];
@@ -329,7 +338,7 @@ function save(m){
   S.matches[m.id] = m;
   backup(); queue('matches/'+m.id);
 }
-function saveTeam(){ S.team.updatedAt = stamp(S.team); backup(); queue('settings/team'); }
+function saveTeam(){ S.team.updatedAt = stamp(S.team); backup(); queue('settings/' + S.slot); }
 function savePlayer(){ S.player.updatedAt = stamp(S.player); backup(); queue('settings/player'); }
 function queue(path){
   if (!S.db) return;
@@ -338,7 +347,7 @@ function queue(path){
 }
 function bodyFor(path){
   if (path === 'settings/player') return S.player;
-  if (path === 'settings/team') return S.team;
+  if (path === 'settings/team' || path === 'settings/team2') return S.teams[path.slice(9)];
   return S.matches[path.slice(8)];
 }
 async function flush(){
@@ -422,13 +431,15 @@ function connect(db){
     else if (firstP && !d.metadata?.fromCache && (S.player.updatedAt||0) > ((r && r.updatedAt)||0)) queue('settings/player');
     if (!d.metadata?.fromCache) firstP = false;
   }, () => {}));
-  let firstT = true;
-  S.unsubs.push(db.doc('settings/team').onSnapshot(d => {
-    const r = d.exists && d.data();
-    if (r && (r.updatedAt||0) > (S.team.updatedAt||0)) { S.team = Object.assign({name:'', players:[]}, r); backup(); if (!isTyping()) render(); }
-    else if (firstT && !d.metadata?.fromCache && (S.team.updatedAt||0) > ((r && r.updatedAt)||0)) queue('settings/team');
-    if (!d.metadata?.fromCache) firstT = false;
-  }, () => {}));
+  SLOTS.forEach(k => {
+    let firstT = true;
+    S.unsubs.push(db.doc('settings/' + k).onSnapshot(d => {
+      const r = d.exists && d.data();
+      if (r && (r.updatedAt||0) > (S.teams[k].updatedAt||0)) { S.teams[k] = Object.assign({name:'', players:[]}, r); backup(); if (!isTyping()) render(); }
+      else if (firstT && !d.metadata?.fromCache && (S.teams[k].updatedAt||0) > ((r && r.updatedAt)||0)) queue('settings/' + k);
+      if (!d.metadata?.fromCache) firstT = false;
+    }, () => {}));
+  });
   flush();
 }
 function disconnect(){
@@ -441,7 +452,7 @@ function clearLocal(keepUnsaved, keepCards){
   if (Array.isArray(had)) Object.values(S.matches).forEach(m => { if (!had.includes(m.id)) keep[m.id] = m; });
   S.matches = keep; S.activeId = null;
   // keepCards: a save was being refused, so the player card and roster may exist only here
-  if (!keepCards){ S.player = {name:'', num:'', pos:''}; S.team = {name:'', players:[]}; }
+  if (!keepCards){ S.player = {name:'', num:'', pos:''}; S.teams = {team:{name:'', players:[]}, team2:{name:'', players:[]}}; }
   try{ localStorage.removeItem('ss.synced'); localStorage.removeItem('ss.deleted'); localStorage.removeItem('ss.cloud'); }catch(e){}
   backup();
 }
@@ -515,6 +526,8 @@ function whoTxt(e, m){
 // p: only the taps of that jersey number (team matches)
 function counts(m, set, p){
   const c = Object.fromEntries(STATS.map(s=>[s.k,0]));
+  // a team match switched to the player: only that player's number counts
+  if (p == null && !isTeam(m) && m.soloNum) p = m.soloNum;
   (m.log||[]).forEach(e => { if (BYK[e.k] && (set == null || e.set === set) && (p == null || e.p === p)) c[e.k]++; });
   return c;
 }
@@ -533,6 +546,8 @@ function analyze(m){
     const s = sc(e.set);
     if (e.k === 'us' || e.k === 'them'){
       s[e.k]++;
+      // missed points (arrived late, Fix score): only the score, never the player's +/-, not one line each in the feed
+      if (e.late){ const f = feed[feed.length-1]; if (f && f.e.late === e.late){ f.us = s.us; f.them = s.them; } else feed.push({e, us:s.us, them:s.them}); return; }
       if (on){ if (e.k === 'us'){ on.plus++; plus++; } else { on.minus++; minus++; } }
     } else if (e.k === 'on'){
       on = {inSet:e.set, inUs:s.us, inThem:s.them, plus:0, minus:0, t:e.t};
@@ -578,6 +593,8 @@ const pWho = () => esc(S.player.name || 'the player');
 const pWhose = () => S.player.name ? esc(S.player.name) + "'s" : "the player's";
 const homeName = m => m.home || 'Us';
 function evLabel(e, m){
+  if (e.late) return {t:'Score typed in', c:'team'};
+  if (e.k === 'to') return {t:'Time-out ' + (e.side === 'us' ? homeName(m) : (m.opp||'them')), c:'sub'};
   if (BYK[e.k]) return {t: (BYK[e.k].full || BYK[e.k].l + (BYK[e.k].g==='err' ? ' error' : '')) + (e.from ? ' · pass from ' + e.from : '') + whoTxt(e, m), c: BYK[e.k].g==='play' ? '' : BYK[e.k].g};
   if (e.k === 'us') return {t:'Point ' + homeName(m), c:'team'};
   if (e.k === 'them') return {t:'Point ' + (m.opp||'them'), c:'team'};
@@ -587,14 +604,35 @@ function evLabel(e, m){
 }
 
 /* ---------- actions ---------- */
+// the last choice is kept for the next match
+const nfBestOf = () => +(S.nfBestOf || LS.get('ss.bestof') || 3);
+function pickSlot(k){ S.slot = k; LS.set('ss.slot', k); }
+// "25-20, 22-25" -> [[25,20],[22,25]]; null when something typed is not a score
+function parseScores(t){
+  const parts = String(t||'').split(/[,;\s]+/).filter(Boolean);
+  const out = parts.map(p => { const x = p.match(/^(\d{1,2})[-–:./](\d{1,2})$/); return x ? [+x[1], +x[2]] : null; });
+  return out.every(Boolean) ? out : null;
+}
+// Points that were missed (arrived late, or a gap): only the score, marked `late` with one batch id,
+// so they carry no stats, no +/- and no court time, and one Undo takes the whole batch back.
+function pushLate(m, set, us, them){
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  for (let i = 0; i < us; i++) push(m, {k:'us', set, late:id});
+  for (let i = 0; i < them; i++) push(m, {k:'them', set, late:id});
+}
 function startMatch(f){
   const id = 'm' + Date.now().toString(36);
-  const m = {id, opp:f.opp||'Opponent', home:f.home||'', date:f.date||today(), team:f.team||'', log:[], playMs:0, onCourt:false, courtSince:null, curSet:1, maxSet:1, ended:[], result:'', score:'', done:false, createdAt:Date.now()};
-  if (f.mode === 'team'){ m.mode = 'team'; m.roster = JSON.parse(JSON.stringify(S.team.players)); if (!m.home) m.home = S.team.name || ''; }
-  S.activeId = id; S.set = 1; S.choose = false;
+  const m = {id, opp:f.opp||'Opponent', home:f.home||'', date:f.date||today(), team:f.team||'', log:[], playMs:0, onCourt:false, courtSince:null, curSet:1, maxSet:1, ended:[], result:'', score:'', done:false, createdAt:Date.now(), bestOf:f.bestOf === 5 ? 5 : 3};
+  if (f.away) m.away = true;
+  if (f.mode === 'team'){ m.mode = 'team'; m.teamSlot = S.slot; m.roster = JSON.parse(JSON.stringify(S.team.players)); if (!m.home) m.home = S.team.name || ''; }
+  // started late: the sets already played are over, the match carries on in the next one
+  (f.sets||[]).forEach(([u, t], i) => { pushLate(m, i+1, u, t); m.ended.push(i+1); });
+  S.set = (f.sets||[]).length + 1; m.curSet = m.maxSet = S.set;
+  if (f.now) pushLate(m, S.set, f.now[0], f.now[1]);
+  S.activeId = id; S.choose = false; S.nfAway = false; S.nfDraft = null;
   save(m);
   if (f.starter && !isTeam(m)) courtOn(m);
-  keepAwake(); render();
+  keepAwake(); render(); window.scrollTo(0,0);
 }
 function push(m, e){ m.log = (m.log||[]).concat(Object.assign({set:S.set, t:Date.now()}, e)); }
 function tap(k){
@@ -604,7 +642,7 @@ function tap(k){
   // a stat means the player is playing: put them on court if the tap was forgotten
   let rs = false;
   if (team){} else if (!m.onCourt){ courtOn(m, true); toast(pName() + ' put on court'); } else rs = resumeClock(m);
-  push(m, rs ? {k, rs:1} : {k});
+  push(m, Object.assign(rs ? {k, rs:1} : {k}, m.soloNum && !team ? {p:m.soloNum} : {}));
   const idx = m.log.length - 1;
   // the player's point wins the rally for the team; an error gives it to the other team
   if (PT_KEYS.includes(k)) push(m, {k:'us', auto:1});
@@ -646,8 +684,48 @@ function setWho(n){
 }
 function teamPoint(side){
   const m = S.matches[S.activeId]; if (!m) return;
+  // a double tap is one point: no rally is over in 0.4 s
+  if (S.lastPt && S.lastPt.side === side && Date.now() - S.lastPt.at < 400) return;
+  S.lastPt = {side, at:Date.now()};
   S.tag = null; S.who = null;
   push(m, resumeClock(m) ? {k:side, rs:1} : {k:side}); save(m); buzz(); render();
+}
+// A time-out: noted with the score, and the court clock stops until the next tap (like a set break).
+// seg / onAt let Undo put the clock back exactly.
+function timeOut(side){
+  const m = S.matches[S.activeId]; if (!m) return;
+  S.toAsk = false; S.barClosedAt = Date.now();
+  const e = {k:'to', side};
+  if (m.onCourt && m.courtSince){ const before = m.playMs||0; e.onAt = m.courtSince; pauseClock(m); e.seg = m.playMs - before; }
+  push(m, e); save(m); buzz(); render();
+  const n = (m.log||[]).filter(x => x.k === 'to' && x.side === side && x.set === S.set).length;
+  toast(`Time-out ${side === 'us' ? homeName(m) : m.opp} · ${n} in set ${S.set}`);
+}
+// Fix score: rallies were missed, the current set jumps to the score typed (points only go up; Undo takes points back)
+function fixScore(us, them){
+  const m = S.matches[S.activeId]; if (!m) return;
+  const sc = analyze(m).score[S.set] || {us:0, them:0};
+  if (!(us >= 0 && them >= 0)) return toast('Type both scores');
+  if (us < sc.us || them < sc.them) return toast('Lower than now: use Undo to take points back');
+  if (us === sc.us && them === sc.them){ S.fixAsk = false; return render(); }
+  pushLate(m, S.set, us - sc.us, them - sc.them);
+  S.fixAsk = false; S.barClosedAt = Date.now(); save(m); render(); toast(`Set ${S.set} now ${us}–${them}`);
+}
+function timeoutBar(m){
+  if (S.toAsk) return `<div class="tagbar" role="group" aria-label="Time-out">
+    <div class="q">Time-out: which team?</div>
+    <div class="two">${m.away ? `<button data-to="them">${esc(m.opp)}</button><button data-to="us">${esc(homeName(m))}</button>` : `<button data-to="us">${esc(homeName(m))}</button><button data-to="them">${esc(m.opp)}</button>`}</div>
+    <div class="two"><button class="skip" data-to="">Cancel</button></div></div>`;
+  if (S.fixAsk){ const sc = analyze(m).score[S.set] || {us:0, them:0};
+    return `<div class="tagbar" role="group" aria-label="Fix score">
+    <div class="q">Set ${S.set} score now: ${esc(m.away ? m.opp + ' – ' + homeName(m) : homeName(m) + ' – ' + m.opp)}<br><span style="font-weight:400;opacity:.7">Missed rallies count only for the score.</span></div>
+    <form class="more" id="fixform">
+      ${(i => m.away ? i[1] + i[0] : i[0] + i[1])([
+        `<input class="sm" id="fix-us" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="${sc.us}" aria-label="${esc(homeName(m))}">`,
+        `<input class="sm" id="fix-them" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="${sc.them}" aria-label="${esc(m.opp)}">`])}
+      <button type="submit">Set</button><button type="button" class="skip" id="b-fixno">Cancel</button>
+    </form></div>`; }
+  return '';
 }
 // Set break: the court clock stops when a set ends and starts again with the first tap of the next set.
 // The player stays "on court" (no bench event); stintMs is the time already counted in this spell.
@@ -688,8 +766,12 @@ function undo(){
   if (!m.log?.length) return;
   let last = m.log[m.log.length-1];
   m.log = m.log.slice(0,-1);
-  // a stat's automatic team point goes with it
   S.tag = null;
+  // typed-in points go back as one batch
+  if (last.late){ while (m.log.length && m.log[m.log.length-1].late === last.late) m.log = m.log.slice(0,-1); save(m); render(); return toast('Undone: score typed in'); }
+  // a time-out that stopped the clock: put the clock back as if it never stopped
+  if (last.k === 'to'){ if (last.seg != null && m.onCourt && !m.courtSince){ m.playMs = Math.max(0, (m.playMs||0) - last.seg); m.stintMs = Math.max(0, (m.stintMs||0) - last.seg); m.courtSince = last.onAt; } save(m); render(); return toast('Undone: ' + evLabel(last, m).t); }
+  // a stat's automatic team point goes with it
   if ((last.k === 'us' || last.k === 'them') && last.auto && m.log.length && BYK[m.log[m.log.length-1].k]){ last = m.log[m.log.length-1]; m.log = m.log.slice(0,-1); }
   // the tap that restarted the clock after a set break is taken back: the break goes on, clock stopped
   if (last.rs && m.onCourt) m.courtSince = null;
@@ -720,7 +802,7 @@ function endSet(){
   m.ended = [...new Set([...(m.ended||[]), s])].sort((a,b)=>a-b);
   pauseClock(m); S.barAt = Date.now();
   toast(`Set ${s}: ${sc.us}–${sc.them}`);
-  pickSet(s >= LAST_SET ? s : s+1);
+  pickSet(s >= lastSet(m) ? s : s+1);
 }
 function finishMatch(result, score, endAt){
   const m = S.matches[S.activeId]; if (!m) return;
@@ -745,6 +827,29 @@ function closeAndNew(){
   S.view = 'live'; render(); window.scrollTo(0,0);
   toast('Saved. It is in Season.');
 }
+// Player match -> team match: the player's taps so far go to their number, the chosen team's roster is copied in.
+function switchToTeam(){
+  const m = S.matches[S.activeId]; if (!m || isTeam(m)) return;
+  const num = jnum(S.player.num || '');
+  if (!num) return toast("Add the player's number first (Player tab)");
+  if (!S.team.players.length) return toast('Add the team first (Team tab)');
+  // the court clock is for one player only: close the spell now
+  if (m.onCourt){ const seg = m.courtSince ? Date.now() - m.courtSince : 0, pre = m.stintMs||0; push(m, {k:'off', dur:pre+seg, onAt:m.courtSince, pre}); m.playMs = (m.playMs||0) + seg; m.onCourt = false; m.courtSince = null; m.stintMs = 0; }
+  m.log.forEach(e => { if (BYK[e.k] && !e.p) e.p = num; });
+  m.mode = 'team'; m.teamSlot = S.slot; delete m.soloNum;
+  m.roster = JSON.parse(JSON.stringify(S.team.players));
+  if (!m.roster.some(p => p.num === num)) m.roster = [...m.roster, {num, name:S.player.name||''}].sort((a,b) => a.num - b.num);
+  if (!m.home) m.home = S.team.name || '';
+  S.tag = null; save(m); render(); window.scrollTo(0,0); toast('Now the whole team · ' + pName() + "'s taps are #" + num);
+}
+// Team match -> player match: every tap is kept, only the player's number is shown and counts in the player Season.
+function switchToPlayer(){
+  const m = S.matches[S.activeId]; if (!m || !isTeam(m)) return;
+  const num = jnum(S.player.num || '');
+  if (!num) return toast("Add the player's number first (Player tab)");
+  delete m.mode; m.soloNum = num;
+  S.who = null; save(m); render(); window.scrollTo(0,0); toast('Now ' + pName() + ' only (#' + num + ')');
+}
 // Hidden while a match is live: that match's screen is where Live leads.
 const newMatchBtn = () => S.activeId && S.matches[S.activeId] ? '' : `<button class="btn btn-or" data-view="live">+ New match</button>`;
 function resume(id){
@@ -752,7 +857,7 @@ function resume(id){
   if (S.activeId && S.activeId !== id && S.matches[S.activeId]) return toast('Finish the live match first');
   // a match that was over (two sets won): carry on in the last set played, never in an empty extra set
   const {w, l} = setsWon(m), log = m.log||[];
-  if ((w >= WIN_SETS || l >= WIN_SETS) && log.length && !log.some(e => e.set === (m.curSet||1))) m.curSet = log[log.length-1].set;
+  if ((w >= winSets(m) || l >= winSets(m)) && log.length && !log.some(e => e.set === (m.curSet||1))) m.curSet = log[log.length-1].set;
   m.done = false; S.choose = false; S.keepOver = overKey(m); save(m);
   S.activeId = id; S.set = m.curSet || 1; S.view = 'live'; render(); window.scrollTo(0,0);
 }
@@ -802,7 +907,7 @@ function chooseView(m){
   </section>`;
 }
 function newView(){
-  const last = Object.values(S.matches).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];
+  const last = Object.values(S.matches).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0], nd = S.nfDraft || {};
   return `
   <section class="panel">
     <div class="kicker">Tip-off</div>
@@ -811,20 +916,35 @@ function newView(){
       <div><div style="font-size:17px;font-weight:700;margin-bottom:10px">Team or player?</div><div class="pick" role="group" aria-label="Track">
         <button type="button" data-track="player" aria-pressed="${trackMode()==='player'}">${esc(pName())}<small>one player's stats</small></button>
         <button type="button" data-track="team" aria-pressed="${trackMode()==='team'}">Whole team<small>every player, by number</small></button></div></div>
-      <div id="g-team" class="wrap" style="gap:8px" ${trackMode()==='team'?'':'hidden'}>${S.team.players.length
-        ? `<p class="note">${esc(S.team.name || 'Your team')} · ${S.team.players.length} player${S.team.players.length === 1 ? '' : 's'}</p>
+      <div id="g-team" class="wrap" style="gap:8px" ${trackMode()==='team'?'':'hidden'}>
+        <div class="seg" role="group" aria-label="Which team">${SLOTS.map(k => `<button type="button" data-slot="${k}" aria-pressed="${S.slot===k}">${esc(teamLabel(k))}</button>`).join('')}</div>
+        ${S.team.players.length
+        ? `<p class="note">${esc(teamLabel(S.slot))} · ${S.team.players.length} player${S.team.players.length === 1 ? '' : 's'}</p>
         <button type="button" class="btn btn-dk" data-view="team">Change the team</button>`
-        : `<p class="note">No team yet. Type the players first, then come back here.</p>
+        : `<p class="note">No players in ${esc(teamLabel(S.slot))} yet. Type them first, then come back here.</p>
         <button type="button" class="btn btn-or" data-view="team">Add the team</button>`}</div>
       <div class="row">
-        <label>Team<input id="f-home" autocomplete="off" placeholder="e.g. Panathinaikos" value="${esc(last?.home || S.team.name || '')}"></label>
-        <label>Opponent<input id="f-opp" autocomplete="off" placeholder="e.g. Olympiacos"></label>
+        <label>Your team<input id="f-home" autocomplete="off" placeholder="e.g. Panathinaikos" value="${esc(trackMode()==='team' && S.team.name ? S.team.name : (last?.home || S.team.name || ''))}"></label>
+        <label>Opponent<input id="f-opp" autocomplete="off" placeholder="e.g. Olympiacos" value="${esc(nd['f-opp']||'')}"></label>
       </div>
       <div class="row">
-        <label>Date<input id="f-date" type="date" value="${today()}"></label>
-        <label>Competition<input id="f-team" autocomplete="off" placeholder="League, cup, friendly" value="${esc(last?.team||'')}"></label>
+        <div><div class="flab">We play</div><div class="seg" role="group" aria-label="Home or away">
+          <button type="button" data-ha="home" aria-pressed="${!S.nfAway}">Home</button><button type="button" data-ha="away" aria-pressed="${!!S.nfAway}">Away</button></div></div>
+        <div><div class="flab">Best of</div><div class="seg" role="group" aria-label="Best of">
+          ${[3,5].map(n => `<button type="button" data-bo="${n}" aria-pressed="${nfBestOf()===n}">${n} sets</button>`).join('')}</div></div>
+      </div>
+      <div class="row">
+        <label>Date<input id="f-date" type="date" value="${esc(nd['f-date'] || today())}"></label>
+        <label>Competition<input id="f-team" autocomplete="off" placeholder="League, cup, friendly" value="${esc(nd['f-team'] ?? last?.team ?? '')}"></label>
       </div>
       <label class="check" id="l-starter" ${trackMode()==='team'?'hidden':''}><input id="f-starter" type="checkbox"> ${esc(pName())} starts on court</label>
+      <details class="more" id="f-late" ${nd['f-sets'] || nd['f-now'] ? 'open' : ''}><summary>Started late?</summary>
+        <div class="row" style="margin-top:10px">
+          <label>Sets already played<input id="f-sets" autocomplete="off" placeholder="e.g. 25-20, 22-25" value="${esc(nd['f-sets']||'')}"></label>
+          <label>Score now<input id="f-now" autocomplete="off" placeholder="e.g. 10-12" value="${esc(nd['f-now']||'')}"></label>
+        </div>
+        <p class="note">Your team first. These points are only the score: no stats, no time on court.</p>
+      </details>
       <button class="btn btn-or" type="submit" id="b-start" ${trackMode()==='team' && !S.team.players.length ? 'hidden' : ''}>Start match</button>
     </form>
     <p class="note">Count the score with the two big buttons. Tap ${pWhose()} stats as they happen: a point adds one to your team, an error adds one to the other team. Tap the court button each time ${pWho()} goes on or off.</p>
@@ -834,29 +954,37 @@ function newView(){
 
 // a long word (PANATHINAIKOS) would split mid-word on a phone: shrink it instead
 const nmLong = n => String(n).split(/\s+/).some(w => w.length > 9) ? ' long' : '';
+const teamCell = (name, sets, side) => `<div class="team${side}"><span class="nm${nmLong(name)}">${esc(name)}</span><span class="sw">Sets ${sets}</span></div>`;
 function scoreBug(m, a, opts){
   const {w, l} = setsWon(m);
   // live: the current set's rally score; finished: sets won
   const s = S.set, sc = opts.live ? (a.score[s] || {us:0,them:0}) : {us:w, them:l};
+  // away: the home team (the opponent) is on the left, like the hall's scoreboard. Taps still count for your team.
+  const ord = (a2, b2) => m.away ? b2 + a2 : a2 + b2;
+  const us = {name:homeName(m), sets:w, pts:sc.us}, them = {name:m.opp, sets:l, pts:sc.them};
+  const L = m.away ? them : us, R = m.away ? us : them;
   const pips = Object.keys(a.score).map(Number).sort((x,y)=>x-y).filter(n => (m.ended||[]).includes(n))
-    .map(n => { const x = a.score[n]; return `<span class="pip ${x.us>x.them?'w':x.them>x.us?'l':''}">S${n} ${x.us}–${x.them}</span>`; }).join('');
+    .map(n => { const x = a.score[n]; return `<span class="pip ${x.us>x.them?'w':x.them>x.us?'l':''}">S${n} ${m.away ? x.them+'–'+x.us : x.us+'–'+x.them}</span>`; }).join('');
   return `
   <section class="bug">
     <div class="bug-top"><span class="comp">${esc(fmtDate(m.date))}${m.team?' · '+esc(m.team):''}</span><span class="setflag">${opts.live ? 'Set '+s : 'Sets'}</span></div>
     <div class="score">
-      <div class="team"><span class="nm${nmLong(homeName(m))}">${esc(homeName(m))}</span><span class="sw">Sets ${w}</span></div>
-      <div class="big"><span class="${sc.us>=sc.them?'hi':''}">${sc.us}</span><i>:</i><span class="${sc.them>sc.us?'hi':''}">${sc.them}</span></div>
-      <div class="team away"><span class="nm${nmLong(m.opp)}">${esc(m.opp)}</span><span class="sw">Sets ${l}</span></div>
+      ${teamCell(L.name, L.sets, '')}
+      <div class="big"><span class="${L.pts>=R.pts?'hi':''}">${L.pts}</span><i>:</i><span class="${R.pts>L.pts?'hi':''}">${R.pts}</span></div>
+      ${teamCell(R.name, R.sets, ' away')}
     </div>
     ${pips ? `<div class="pips">${pips}</div>` : ''}
     ${opts.live ? `
     <div class="plus">
-      <button class="us" id="b-us">+1 ${esc(homeName(m))}</button>
-      <button class="them" id="b-them">+1 ${esc(m.opp)}</button>
+      ${ord(`<button class="us" id="b-us">+1 ${esc(homeName(m))}</button>`, `<button class="them" id="b-them">+1 ${esc(m.opp)}</button>`)}
     </div>
     <div class="bug-foot">
-      <div class="setsel" role="group" aria-label="Set">${Array.from({length:Math.max(LAST_SET, m.maxSet||1)}, (_,i)=>i+1).map(n=>`<button data-set="${n}" aria-pressed="${S.set===n}">${n}</button>`).join('')}</div>
+      <div class="setsel" role="group" aria-label="Set">${Array.from({length:Math.max(lastSet(m), m.maxSet||1)}, (_,i)=>i+1).map(n=>`<button data-set="${n}" aria-pressed="${S.set===n}">${n}</button>`).join('')}</div>
       <button class="lnk" id="b-endset">End set ${s} ›</button>
+    </div>
+    <div class="bug-foot" style="padding-top:0">
+      <button class="lnk" id="b-timeout">Time-out</button>
+      <button class="lnk" id="b-fix">Fix score</button>
     </div>` : ''}
   </section>`;
 }
@@ -875,10 +1003,11 @@ function playerList(rows, link){
 }
 // One roster player over all team matches: the same kind of page as the single player's Season.
 function teamPlayerView(num){
-  const sorted = Object.values(S.matches).filter(isTeam).sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
+  const slot = SLOTS.includes(S.seasonMode) ? S.seasonMode : 'team', tm = teamOf(slot);
+  const sorted = Object.values(S.matches).filter(m => isTeam(m) && slotOf(m) === slot).sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
   const per = sorted.filter(m => (m.roster||[]).some(p => p.num === num) || (m.log||[]).some(e => e.p === num)).map(m => ({m, c:counts(m, null, num)}));
   const back = `<button class="btn btn-dk" data-view="history">‹ Back to team season</button>`;
-  const name = (S.team.players.find(p => p.num === num) || {}).name || (per.map(x => (x.m.roster||[]).find(p => p.num === num)).find(p => p && p.name) || {}).name || '';
+  const name = (tm.players.find(p => p.num === num) || {}).name || (per.map(x => (x.m.roster||[]).find(p => p.num === num)).find(p => p && p.name) || {}).name || '';
   if (!per.length) return `<section class="panel"><h2>#${esc(num)} ${esc(name)}</h2><p class="empty">No team matches yet.</p></section>${back}`;
   const total = zeroCounts(); let best = null;
   per.forEach(({m, c}) => { STATS.forEach(s => total[s.k] += c[s.k]); if (!best || pts(c) > best.v) best = {v:pts(c), m}; });
@@ -887,7 +1016,7 @@ function teamPlayerView(num){
   return `
   <section class="player">
     <div class="jersey">${esc(num)}</div>
-    <div class="pinfo"><div class="pname">${esc(name || 'Player ' + num)}</div><div class="note">${esc(S.team.name || 'Team')} · ${n} team match${n>1?'es':''}</div>
+    <div class="pinfo"><div class="pname">${esc(name || 'Player ' + num)}</div><div class="note">${esc(teamLabel(slot))} · ${n} team match${n>1?'es':''}</div>
       <div class="pline">
         <div><b>${avg(pts(total))}</b><span>Pts / match</span></div>
         <div><b>${avg(vir(total))}</b><span>Rtg / match</span></div>
@@ -952,9 +1081,10 @@ function teamLive(m){
     <h2>Final whistle</h2>
     ${finishForm(m)}
   </section>
+  <button class="btn btn-dk" id="b-toplayer">Switch to ${esc(pName())} only</button>
   <button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?'Tap again to delete this match':'Delete this match'}</button>
   ${undoFab(m)}
-  ${whoBar(m) || setBar(m, a)}`;
+  ${whoBar(m) || timeoutBar(m) || setBar(m, a)}`;
 }
 function teamMatchView(m){
   const a = analyze(m), c = counts(m), rows = playerRows([m]), armed = S.armed === 'del-'+m.id;
@@ -975,9 +1105,10 @@ function teamMatchView(m){
     const cs = counts(m, s), x = a.score[s], p = pts(cs), e = errs(cs), good = listOf(cs, ['dig','pass','assist','serve','att']);
     return `<div class="setc">
       <div class="setc-h"><b>Set ${s}</b><span>${x.us}–${x.them} ${(m.ended||[]).includes(s) ? (x.us > x.them ? 'won' : x.them > x.us ? 'lost' : 'tied') : 'not finished'}</span></div>
-      <p>${p ? `<b>${p} point${p>1?'s':''}</b>: ${listOf(cs, PT_KEYS)}` : 'No points'}</p>
+      ${typedOnly(m, s) ? TYPED : `<p>${p ? `<b>${p} point${p>1?'s':''}</b>: ${listOf(cs, PT_KEYS)}` : 'No points'}</p>
       ${good ? `<p class="m">Good plays: ${good}</p>` : ''}
-      <p class="m">${e ? `${e} error${e>1?'s':''}: ${listOf(cs, ERR_KEYS)}` : 'No errors'}</p>
+      <p class="m">${e ? `${e} error${e>1?'s':''}: ${listOf(cs, ERR_KEYS)}` : 'No errors'}</p>`}
+      ${toLine(m, a, s)}
     </div>`; }).join('')}</section>` : ''}
   <details class="more sec"><summary>Full table</summary>${boxTable(rows.map(r=>({label:pLabel(r), c:r.c})).concat({label:'Team', c, sum:true}), 'Player')}${LEGEND}</details>
   ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>Play by play</h3><span class="note">tap a line to change the player</span></div><div style="max-height:320px;overflow-y:auto">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
@@ -989,15 +1120,15 @@ function teamMatchView(m){
   <button class="btn btn-dk" data-view="history">‹ Back to season</button>
   ${whoBar(m)}`;
 }
-function teamSeason(list, seg){
+function teamSeason(list, seg, slot){
   if (!list.length) return `${seg}<section class="panel"><h2>Season</h2><p class="empty">No team matches yet.</p></section>${newMatchBtn()}`;
   const total = zeroCounts(); let w = 0, l = 0;
   const per = list.map(m => { const c = counts(m); STATS.forEach(s => total[s.k] += c[s.k]); if (m.result==='W') w++; if (m.result==='L') l++; return {m, c}; });
   const n = list.length, rows = playerRows(list), avg = v => (v/n).toFixed(1);
   return `${seg}
   <section class="player">
-    <div class="jersey">${esc(((S.team.name||'T')[0]).toUpperCase())}</div>
-    <div class="pinfo"><div class="pname">${esc(S.team.name || 'Team')}</div><div class="note">${n} match${n>1?'es':''} · ${w}W ${l}L</div>
+    <div class="jersey">${esc((teamLabel(slot)[0]).toUpperCase())}</div>
+    <div class="pinfo"><div class="pname">${esc(teamLabel(slot))}</div><div class="note">${n} match${n>1?'es':''} · ${w}W ${l}L</div>
       <div class="pline">
         <div><b>${avg(pts(total))}</b><span>Pts / match</span></div>
         <div><b>${avg(errs(total))}</b><span>Err / match</span></div>
@@ -1028,16 +1159,18 @@ function teamView(){
   const t = S.teamDraft || S.team, rows = t.players.length ? t.players : [{num:'', name:''}];
   return `<section class="panel">
     <div class="kicker">Roster</div><h2>Team</h2>
+    <div><div class="seg" role="group" aria-label="Which team">${SLOTS.map(k => `<button type="button" data-slot="${k}" aria-pressed="${S.slot===k}">${esc(teamLabel(k))}</button>`).join('')}</div></div>
     <form id="teamform" class="wrap" style="max-width:none;gap:12px">
       <label>Team name<input id="t-name" autocomplete="off" value="${esc(t.name)}" placeholder="e.g. Panathinaikos U16"></label>
       <div class="roster">${rows.map((p,i)=>`<div class="rrow">
         <input class="t-num" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(p.num)}" placeholder="No" aria-label="Number">
         <input class="t-pn" autocomplete="off" value="${esc(p.name)}" placeholder="Name" aria-label="Name">
         <button type="button" class="rm" data-rm="${i}" aria-label="Remove this player">✕</button></div>`).join('')}</div>
+      <p id="t-err" class="note" style="color:var(--neg);font-weight:600" role="alert" hidden></p>
       <button type="button" class="btn btn-dk" id="b-addrow">+ Add player</button>
       <button class="btn btn-or" type="submit">Save team</button>
     </form>
-    <p class="note">A new match asks what to track: ${esc(pName())} only, or the whole team. In a team match you tap the stat, then the number of the player.</p>
+    <p class="note">You can keep two teams. Every player needs a number and a name. A new match asks what to track: ${esc(pName())} only, or a whole team. In a team match you tap the stat, then the number of the player.</p>
   </section>`;
 }
 // as typed (nothing cleaned), for the draft kept while typing
@@ -1047,6 +1180,32 @@ function readTeamRaw(){
 function readTeam(){
   return {name:$('#t-name').value.trim(), players:[...document.querySelectorAll('.rrow')].map(r => ({num:jnum(r.querySelector('.t-num').value), name:r.querySelector('.t-pn').value.trim()}))};
 }
+// Save what is on the team page. Refused (false, with the reason) unless every player has a number and a name,
+// and no number is used twice: nothing typed is thrown away without a word.
+function saveTeamForm(){
+  const d = readTeam();
+  const noNum = d.players.find(p => !p.num && p.name), noName = d.players.find(p => p.num && !p.name), dup = d.players.find((p,i) => p.num && d.players.findIndex(x => x.num === p.num) !== i);
+  // said on the page too (a toast can hide behind the keyboard), and the box to fill gets the cursor
+  const refuse = (msg, p, cls) => { toast(msg); const e = $('#t-err'); if (e){ e.textContent = msg; e.hidden = false; }
+    const row = document.querySelectorAll('.rrow')[d.players.lastIndexOf(p)]; row?.querySelector(cls)?.focus(); return false; };
+  if (noNum) return refuse(noNum.name + ' needs a number', noNum, '.t-num');
+  if (noName) return refuse('Number ' + noName.num + ' needs a name', noName, '.t-pn');
+  if (dup) return refuse('Number ' + dup.num + ' is there twice', dup, '.t-num');
+  // in number order; empty rows are dropped
+  d.players = d.players.filter(p => p.num).sort((a,b) => a.num - b.num);
+  S.team = Object.assign({}, S.team, d); S.teamDraft = null;
+  // a team match in play with this team gets the new players and names too (nobody is taken out of it)
+  const lm = S.activeId && S.matches[S.activeId];
+  if (isTeam(lm) && slotOf(lm) === S.slot){
+    const have = Object.fromEntries((lm.roster||[]).map(p => [p.num, p]));
+    d.players.forEach(p => { if (!have[p.num]) lm.roster = [...(lm.roster||[]), Object.assign({}, p)]; else if (p.name) have[p.num].name = p.name; });
+    lm.roster.sort((a,b) => a.num - b.num); save(lm);
+  }
+  saveTeam(); toast('Team saved · ' + d.players.length + ' player' + (d.players.length === 1 ? '' : 's')); document.activeElement?.blur();
+  return true;
+}
+// typed on the team page and not saved yet
+const teamDirty = () => { if (!$('#teamform')) return false; const d = readTeam(); d.players = d.players.filter(p => p.num || p.name); return JSON.stringify(d) !== JSON.stringify({name:S.team.name||'', players:(S.team.players||[]).map(p => ({num:p.num, name:p.name||''}))}); };
 function liveView(m){
   if (isTeam(m)) return teamLive(m);
   const a = analyze(m), all = counts(m);
@@ -1080,9 +1239,10 @@ function liveView(m){
     <h2>Final whistle</h2>
     ${finishForm(m)}
   </section>
+  <button class="btn btn-dk" id="b-toteam">Switch to the whole team</button>
   <button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?'Tap again to delete this match':'Delete this match'}</button>
   ${undoFab(m)}
-  ${tagBar(m) || setBar(m, a)}`;
+  ${tagBar(m) || timeoutBar(m) || setBar(m, a)}`;
 }
 // Always-visible undo, naming the tap it will take back.
 function undoFab(m){
@@ -1106,13 +1266,14 @@ function tagBar(m){
     </form>
   </div>`;
 }
-// Best of three (Ian's league): a set is won at 25 (15 in the third) with two clear, a match at two sets.
-const WIN_SETS = 2, LAST_SET = 3;
+// Best of three (Ian's league) or five, chosen per match: a set is won at 25 (15 in the last) with two clear.
+// Older matches have no bestOf and are best of three.
+const winSets = m => m && m.bestOf === 5 ? 3 : 2, lastSet = m => m && m.bestOf === 5 ? 5 : 3;
 // Asked, never done by itself: some leagues play other lengths, and one wrong tap must not close a set.
 function setOver(m, a){
   const sc = a.score[S.set]; if (!sc || (m.ended||[]).includes(S.set)) return null;
   const hi = Math.max(sc.us, sc.them), lo = Math.min(sc.us, sc.them);
-  return hi >= (S.set >= LAST_SET ? 15 : 25) && hi - lo >= 2 ? sc : null;
+  return hi >= (S.set >= lastSet(m) ? 15 : 25) && hi - lo >= 2 ? sc : null;
 }
 const overKey = m => { const {w, l} = setsWon(m); return m.id + ':' + w + '-' + l; };
 function setBar(m, a){
@@ -1120,12 +1281,12 @@ function setBar(m, a){
   if (sc){
     const key = m.id + ':' + S.set + ':' + sc.us + '-' + sc.them;
     return S.keepSet === key ? '' : `<div class="tagbar" role="group" aria-label="Set over">
-    <div class="q">Set ${S.set} is over: ${sc.us}–${sc.them}</div>
+    <div class="q">Set ${S.set} is over: ${esc(homeName(m))} ${sc.us > sc.them ? 'won' : 'lost'} ${sc.us}–${sc.them}</div>
     <div class="two"><button id="b-setend">End set ${S.set}</button><button class="skip" id="b-setkeep" data-key="${key}">Keep playing</button></div></div>`;
   }
   const {w, l} = setsWon(m);
-  if ((w >= WIN_SETS || l >= WIN_SETS) && S.keepOver !== overKey(m)) return `<div class="tagbar" role="group" aria-label="Match over">
-    <div class="q">Match over: ${w}–${l} in sets</div>
+  if ((w >= winSets(m) || l >= winSets(m)) && S.keepOver !== overKey(m)) return `<div class="tagbar" role="group" aria-label="Match over">
+    <div class="q">Match over: ${esc(homeName(m))} ${w > l ? 'won' : 'lost'} ${w}–${l} in sets</div>
     <div class="two"><button id="b-matchend">Save match</button><button class="skip" id="b-matchkeep">Keep tracking</button></div></div>`;
   return '';
 }
@@ -1155,8 +1316,17 @@ function savedResult(m, w, l){
   const stale = old != null && w + l > old;
   return {result: (!stale && m.result) || (w > l ? 'W' : l > w ? 'L' : ''), score: (!stale && sc) || (w||l ? w+'-'+l : '')};
 }
+// The final-whistle guess: ended sets, plus an open set only when its score already finishes it
+// (a set left at 10-12 in the middle of the match is not a lost set).
+function setsDone(m){
+  const {score} = analyze(m); let w = 0, l = 0;
+  scoredSets(score).forEach(s => { const x = score[s], hi = Math.max(x.us, x.them), lo = Math.min(x.us, x.them);
+    if (!(m.ended||[]).includes(s) && !(hi >= (s >= lastSet(m) ? 15 : 25) && hi - lo >= 2)) return;
+    if (x.us > x.them) w++; else if (x.them > x.us) l++; });
+  return {w, l};
+}
 function finishForm(m){
-  const {w, l} = setsWon(m, S.set);
+  const {w, l} = setsDone(m);
   const sv = savedResult(m, w, l), guess = sv.result;
   return `<div class="row">
       <label>Result<select id="fin-res"><option value="W" ${guess==='W'?'selected':''}>Won</option><option value="L" ${guess==='L'?'selected':''}>Lost</option><option value="" ${guess===''?'selected':''}>Not sure</option></select></label>
@@ -1221,7 +1391,7 @@ function setCourt(m){
     const o = out[e.set] || (out[e.set] = {rallies:0, onR:0, pm:0});
     if (e.k === 'on') on = true;
     else if (e.k === 'off') on = false;
-    else if (e.k === 'us' || e.k === 'them'){ o.rallies++; if (on){ o.onR++; o.pm += e.k === 'us' ? 1 : -1; } }
+    else if ((e.k === 'us' || e.k === 'them') && !e.late){ o.rallies++; if (on){ o.onR++; o.pm += e.k === 'us' ? 1 : -1; } }
   });
   return out;
 }
@@ -1237,13 +1407,23 @@ function setCards(m, a){
     const onTxt = !cr.rallies ? '' : cr.onR === cr.rallies ? 'On court the whole set' : cr.onR ? `On court for ${cr.onR} of ${cr.rallies} rallies` : 'On the bench this set';
     return `<div class="setc">
       <div class="setc-h"><b>Set ${s}</b><span>${x.us}–${x.them} ${res}</span></div>
-      <p>${p ? `<b>${p} point${p>1?'s':''}</b>: ${listOf(c, PT_KEYS)}` : 'No points'}</p>
+      ${typedOnly(m, s) ? TYPED : `<p>${p ? `<b>${p} point${p>1?'s':''}</b>: ${listOf(c, PT_KEYS)}` : 'No points'}</p>
       ${good ? `<p class="m">Good plays: ${good}</p>` : ''}
       <p class="m">${e ? `${e} error${e>1?'s':''}: ${listOf(c, ERR_KEYS)}` : 'No errors'}</p>
-      ${onTxt ? `<p class="m">${onTxt}${cr.onR ? ` · <span class="${pmClass(cr.pm)}">${fmtPM(cr.pm)}</span>` : ''}</p>` : ''}
+      ${onTxt ? `<p class="m">${onTxt}${cr.onR ? ` · <span class="${pmClass(cr.pm)}">${fmtPM(cr.pm)}</span>` : ''}</p>` : ''}`}
+      ${toLine(m, a, s)}
     </div>`; }).join('')}</section>`;
 }
-function setsPlayed(m){ const a = analyze(m); return Object.values(a.score).filter(x => x.us || x.them).length || 1; }
+// a set whose score was only typed in (arrived late / Fix score) and nothing was tapped
+const typedOnly = (m, s) => { const es = (m.log||[]).filter(e => e.set === s && (e.k === 'us' || e.k === 'them' || BYK[e.k])); return es.length > 0 && es.every(e => e.late); };
+const TYPED = '<p class="m">Score typed in (missed). No stats for this set.</p>';
+// "Time-outs: Us at 12–15, Them at 20–18" for one set (the score when it was called), '' when none
+function toLine(m, a, s){
+  const t = a.feed.filter(f => f.e.k === 'to' && f.e.set === s).map(f => `${f.e.side === 'us' ? homeName(m) : m.opp} at ${f.us}–${f.them}`);
+  return t.length ? `<p class="m">Time-out${t.length > 1 ? 's' : ''}: ${esc(t.join(', '))}</p>` : '';
+}
+// sets that were watched: a set only typed in (arrived late) does not lower the per-set average
+function setsPlayed(m){ const a = analyze(m); return scoredSets(a.score).filter(s => !typedOnly(m, s)).length || 1; }
 
 // Season: one bar per match (oldest left), points or rating. Tap a bar to read it.
 function seasonChart(list){
@@ -1374,6 +1554,7 @@ function drawReport(m){
     ctx.fillStyle = PIC.soft; picRound(ctx, P, y-40, W-2*P, 54, 14); ctx.fill();
     picText(ctx, `SET ${n}`, P+22, y-4, {w:800, size:34, head:true});
     picText(ctx, `${x.us}–${x.them}`, P+170, y-4, {w:700, size:30});
+    if (typedOnly(m, n)){ picText(ctx, 'score typed in, no stats', P+330, y-4, {size:30, color:PIC.muted}); y += 64; return; }
     picText(ctx, `${p} pt${p === 1 ? '' : 's'} · ${e} error${e === 1 ? '' : 's'}`, P+330, y-4, {size:30, color:PIC.muted});
     if (cr.onR) picText(ctx, fmtPM(cr.pm), W-P-22, y-4, {w:700, size:30, align:'right', color:cr.pm > 0 ? PIC.pos : cr.pm < 0 ? PIC.neg : PIC.ink});
     else picText(ctx, 'bench', W-P-22, y-4, {size:28, align:'right', color:PIC.muted});
@@ -1453,10 +1634,12 @@ function matchView(m){
 function historyView(){
   const all = Object.values(S.matches).sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
   // team matches have their own season, next to the player's
-  const hasTeam = all.some(isTeam), mode = hasTeam && (S.seasonMode ? S.seasonMode === 'team' : all.every(isTeam)) ? 'team' : 'player';
-  const seg = hasTeam ? `<div><div class="seg" role="group" aria-label="Season of">
-    <button data-season="player" aria-pressed="${mode==='player'}">${esc(pName())}</button><button data-season="team" aria-pressed="${mode==='team'}">${esc(S.team.name || 'Team')}</button></div></div>` : '';
-  if (mode === 'team') return teamSeason(all.filter(isTeam), seg);
+  // each saved team has its own season; a team shows here once it has a match
+  const slots = SLOTS.filter(k => all.some(m => isTeam(m) && slotOf(m) === k));
+  const mode = slots.includes(S.seasonMode) ? S.seasonMode : S.seasonMode !== 'player' && slots.length && all.every(isTeam) ? slots[0] : 'player';
+  const seg = slots.length ? `<div><div class="seg" role="group" aria-label="Season of">
+    <button data-season="player" aria-pressed="${mode==='player'}">${esc(pName())}</button>${slots.map(k => `<button data-season="${k}" aria-pressed="${mode===k}">${esc(teamLabel(k))}</button>`).join('')}</div></div>` : '';
+  if (mode !== 'player') return teamSeason(all.filter(m => isTeam(m) && slotOf(m) === mode), seg, mode);
   const list = all.filter(m => !isTeam(m));
   if (!list.length) return `${seg}<section class="panel"><h2>Season</h2><p class="empty">No matches yet.</p></section>${newMatchBtn()}`;
   const total = Object.fromEntries(STATS.map(s=>[s.k,0])); let time = 0, w = 0, l = 0, pm = 0, bestPts = null, bestVir = null;
@@ -1529,19 +1712,39 @@ document.addEventListener('click', async e => {
   // A bar opens or closes right under the finger: the second half of a double tap must not pick a number,
   // end a set, save the match, or tap the stat that was under the bar.
   const sinceBar = Date.now() - (S.barAt||0);
-  if ((t.dataset.who != null || t.dataset.pass != null) && sinceBar < 350) return;
+  if ((t.dataset.who != null || t.dataset.pass != null || t.dataset.to != null) && sinceBar < 350) return;
   if (['b-setend','b-setkeep','b-matchend','b-matchkeep'].includes(t.id) && sinceBar < 500) return;
   if (t.dataset.stat && Date.now() - (S.barClosedAt||0) < 350) return;
   const wasArmed = S.armed;
   if (t.id !== 'b-del') S.armed = null;
   // any other button closes the "who passed" picker
   if (t.dataset.pass == null && t.dataset.who == null && !t.dataset.stat){ S.tag = null; S.who = null; clearTimeout(S.tagT); }
+  if (t.dataset.to == null && t.form?.id !== 'fixform'){ S.toAsk = false; S.fixAsk = false; }
+  if (t.dataset.to != null){ if (t.dataset.to) return timeOut(t.dataset.to); S.barClosedAt = Date.now(); return render(); }
+  // new-match form: these switch in place, so what is typed stays
+  if (t.dataset.ha){ S.nfAway = t.dataset.ha === 'away'; document.querySelectorAll('[data-ha]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ha === t.dataset.ha))); return; }
+  if (t.dataset.bo){ S.nfBestOf = +t.dataset.bo; LS.set('ss.bestof', S.nfBestOf); document.querySelectorAll('[data-bo]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.bo === t.dataset.bo))); return; }
+  if (t.dataset.slot){
+    const keep = {}; document.querySelectorAll('#newform input').forEach(i => keep[i.id] = i.type === 'checkbox' ? i.checked : i.value);
+    const late = $('#f-late')?.open;
+    if (S.view === 'team' && teamDirty() && !saveTeamForm()) return;
+    pickSlot(t.dataset.slot);
+    if (S.view === 'team'){ S.teamDraft = null; return render(); }
+    render();
+    Object.entries(keep).forEach(([id, v]) => { const i = document.getElementById(id); if (i){ if (i.type === 'checkbox') i.checked = v; else if (id !== 'f-home') i.value = v; } });
+    if (late) $('#f-late').open = true;
+    return;
+  }
   if (t.dataset.fix != null){
     const m = S.matches[S.view === 'match' ? S.openId : S.activeId];
     if (m){ S.who = {mid:m.id, i:+t.dataset.fix, fix:1}; S.barAt = Date.now(); }
     return render();
   }
   // the team page opened from the new-match form: Save team leads back there
+  // leaving the team page: what was typed is saved first, or the page stays and says what is missing
+  if (t.dataset.view && S.view === 'team' && teamDirty() && !saveTeamForm()) return;
+  // going to the team page from the new-match form: what was typed there is waiting on the way back
+  if (t.dataset.view && t.closest('#newform')) S.nfDraft = Object.fromEntries(['f-opp','f-date','f-team','f-sets','f-now'].map(id => [id, $('#'+id).value]));
   if (t.dataset.view){ S.teamFrom = t.dataset.view === 'team' && !!t.closest('#newform'); S.view = t.dataset.view; S.openId = null; S.editList = false; S.teamDraft = null; render(); window.scrollTo(0,0); return; }
   // Season list in remove mode: first tap arms the row, second tap deletes it
   if (t.dataset.xdel){
@@ -1551,7 +1754,8 @@ document.addEventListener('click', async e => {
   }
   if (t.dataset.pass != null) return setPasser(t.dataset.pass);
   if (t.dataset.who != null) return setWho(t.dataset.who);
-  if (t.dataset.tp){ S.view = 'tplayer'; S.tpNum = t.dataset.tp; S.seasonMode = 'team'; render(); window.scrollTo(0,0); return; }
+  if (t.dataset.tp){ const slot = S.view === 'match' ? slotOf(S.matches[S.openId]) : SLOTS.includes(S.seasonMode) ? S.seasonMode : 'team';
+    S.view = 'tplayer'; S.tpNum = t.dataset.tp; S.seasonMode = slot; render(); window.scrollTo(0,0); return; }
   if (t.dataset.season){ S.seasonMode = t.dataset.season; S.editList = false; return render(); }
   // new-match form: switch without redrawing, so what is typed stays
   if (t.dataset.track){
@@ -1560,6 +1764,7 @@ document.addEventListener('click', async e => {
     const ls = $('#l-starter'); if (ls) ls.hidden = S.track === 'team';
     const gt = $('#g-team'); if (gt) gt.hidden = S.track !== 'team';
     const bs = $('#b-start'); if (bs) bs.hidden = S.track === 'team' && !S.team.players.length;
+    const fh = $('#f-home'); if (fh && S.track === 'team' && S.team.name) fh.value = S.team.name;
     return;
   }
   if (t.dataset.rm != null){ const d = readTeam(); d.players.splice(+t.dataset.rm, 1); S.teamDraft = d; return render(); }
@@ -1579,6 +1784,11 @@ document.addEventListener('click', async e => {
     case 'b-matchkeep': S.keepOver = overKey(S.matches[S.activeId]); return render();
     case 'b-matchend': { const {w, l} = setsWon(S.matches[S.activeId]); return finishMatch(w > l ? 'W' : 'L', w + '-' + l); }
     case 'b-court': return toggleCourt();
+    case 'b-toteam': return switchToTeam();
+    case 'b-toplayer': return switchToPlayer();
+    case 'b-timeout': S.toAsk = true; S.barAt = Date.now(); return render();
+    case 'b-fix': S.fixAsk = true; S.barAt = Date.now(); render(); $('#fix-us')?.select(); return;
+    case 'b-fixno': S.fixAsk = false; S.barClosedAt = Date.now(); return render();
     case 'b-undo': case 'b-whoundo': return undo();
     case 'b-signin': return window.SS_auth ? window.SS_auth.signIn() : toast("Can't reach Google. Check the internet.");
     case 'b-signout':
@@ -1604,27 +1814,19 @@ document.addEventListener('submit', e => {
   if (e.target.id === 'passform') return setPasser($('#pass-other').value);
   if (e.target.id === 'whoform') return setWho($('#who-other').value);
   if (e.target.id === 'teamform'){
-    const d = readTeam();
-    // nothing typed is thrown away without a word: a name needs a number, a number is used once
-    const noNum = d.players.find(p => !p.num && p.name), dup = d.players.find((p,i) => p.num && d.players.findIndex(x => x.num === p.num) !== i);
-    if (noNum) return toast(noNum.name + ' needs a number');
-    if (dup) return toast('Number ' + dup.num + ' is there twice');
-    // in number order; empty rows are dropped
-    d.players = d.players.filter(p => p.num).sort((a,b) => a.num - b.num);
-    S.team = Object.assign({}, S.team, d); S.teamDraft = null;
-    // a team match in play gets the new players and names too (nobody is taken out of it)
-    const lm = S.activeId && S.matches[S.activeId];
-    if (isTeam(lm)){
-      const have = Object.fromEntries((lm.roster||[]).map(p => [p.num, p]));
-      d.players.forEach(p => { if (!have[p.num]) lm.roster = [...(lm.roster||[]), Object.assign({}, p)]; else if (p.name) have[p.num].name = p.name; });
-      lm.roster.sort((a,b) => a.num - b.num); save(lm);
-    }
-    saveTeam(); toast('Team saved · ' + d.players.length + ' player' + (d.players.length === 1 ? '' : 's')); document.activeElement?.blur();
-    if (S.teamFrom && d.players.length){ S.teamFrom = false; S.view = 'live'; S.track = 'team'; LS.set('ss.track', 'team'); window.scrollTo(0,0); }
+    if (!saveTeamForm()) return;
+    if (S.teamFrom && S.team.players.length){ S.teamFrom = false; S.view = 'live'; S.track = 'team'; LS.set('ss.track', 'team'); window.scrollTo(0,0); }
     return render();
   }
+  if (e.target.id === 'fixform') return fixScore(+jnum($('#fix-us').value || 0), +jnum($('#fix-them').value || 0));
   if (e.target.id === 'newform' && trackMode() === 'team' && !S.team.players.length){ S.view = 'team'; return render(); }
-  if (e.target.id === 'newform') startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:$('#f-starter').checked, mode:trackMode()});
+  if (e.target.id === 'newform'){
+    const bestOf = nfBestOf(), sets = parseScores($('#f-sets').value), now = parseScores($('#f-now').value);
+    if (!sets) return toast('Sets already played: type them like 25-20, 22-25');
+    if (!now || now.length > 1) return toast('Score now: type it like 10-12');
+    if (sets.length >= bestOf) return toast(`Best of ${bestOf}: at most ${bestOf - 1} sets already played`);
+    startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:$('#f-starter').checked, mode:trackMode(), bestOf, away:!!S.nfAway, sets, now:now[0]});
+  }
   if (e.target.id === 'pform'){
     S.player = Object.assign({}, S.player, {name:$('#p-name').value.trim(), num:$('#p-num').value.trim(), pos:$('#p-pos').value});
     savePlayer(); toast('Player saved'); S.view = S.activeId || !Object.keys(S.matches).length ? 'live' : 'history'; render();
@@ -1635,7 +1837,7 @@ window.addEventListener('pagehide', () => { backup(); flush(); });
 // the same phone has the app open twice (home-screen app and a browser tab): take the other one's
 // changes at once, so an old screen can never save over newer taps
 window.addEventListener('storage', e => {
-  if (!['ss.matches','ss.active','ss.player','ss.team'].includes(e.key)) return;
+  if (!['ss.matches','ss.active','ss.player','ss.team','ss.team2'].includes(e.key)) return;
   restore(); if (!isTyping()) render();
 });
 
