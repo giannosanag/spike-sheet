@@ -336,6 +336,7 @@ function restore(){
   const p = LS.get('ss.player'); if (p && typeof p === 'object') S.player = Object.assign(S.player, p);
   SLOTS.forEach(k => { const t = LS.get('ss.' + k); if (t && typeof t === 'object') S.teams[k] = Object.assign({name:'', players:[]}, t); });
   S.slot = LS.get('ss.slot') === 'team2' ? 'team2' : 'team';
+  const td = LS.get('ss.teamDraft'); if (td && td.d && Array.isArray(td.d.players)){ S.teamDraft = td.d; S.draftSlot = td.slot; }
   S.activeId = LS.get('ss.active');
   if (S.activeId && (!S.matches[S.activeId] || S.matches[S.activeId].done)) S.activeId = null;
   const a = S.activeId && S.matches[S.activeId];
@@ -461,7 +462,7 @@ function disconnect(){
 function clearLocal(keepUnsaved, keepCards){
   const had = keepUnsaved && LS.get('ss.cloud'), keep = {};
   if (Array.isArray(had)) Object.values(S.matches).forEach(m => { if (!had.includes(m.id)) keep[m.id] = m; });
-  S.matches = keep; S.activeId = null;
+  S.matches = keep; S.activeId = null; dropDraft();
   // keepCards: a save was being refused, so the player card and roster may exist only here
   if (!keepCards){ S.player = {name:'', num:'', pos:''}; S.teams = {team:{name:'', players:[]}, team2:{name:'', players:[]}}; }
   try{ localStorage.removeItem('ss.synced'); localStorage.removeItem('ss.deleted'); localStorage.removeItem('ss.cloud'); }catch(e){}
@@ -662,10 +663,11 @@ function tap(k){
   // a team match: ask which number did it
   if (team){
     S.who = {mid:m.id, i:idx}; S.barAt = Date.now();
-    S.tagT = setTimeout(()=>{ if (!isTyping()){ S.who = null; render(); } }, 20000);
+    // closes under a finger reaching for a number: that tap must not hit what is underneath
+    S.tagT = setTimeout(()=>{ if (!isTyping()){ S.who = null; S.barAt = S.barClosedAt = Date.now(); render(); } }, 20000);
   } else if (TAG_KEYS.includes(k)){
     S.tag = {mid:m.id, i:idx}; S.barAt = Date.now();
-    S.tagT = setTimeout(()=>{ if (!isTyping()){ S.tag = null; render(); } }, 20000);
+    S.tagT = setTimeout(()=>{ if (!isTyping()){ S.tag = null; S.barAt = S.barClosedAt = Date.now(); render(); } }, 20000);
   }
   save(m); buzz(); render();
   const el = document.querySelector(`[data-stat="${k}"]`);
@@ -869,12 +871,13 @@ function switchToTeam(){
   if (!S.team.players.length) return toast('Add the team first (Team tab)');
   // the court clock is for one player only: close the spell now
   if (m.onCourt){ const seg = m.courtSince ? Date.now() - m.courtSince : 0, pre = m.stintMs||0; push(m, {k:'off', dur:pre+seg, onAt:m.courtSince, pre}); m.playMs = (m.playMs||0) + seg; m.onCourt = false; m.courtSince = null; m.stintMs = 0; }
-  m.log.forEach(e => { if (BYK[e.k] && !e.p) e.p = num; });
-  m.mode = 'team'; m.teamSlot = S.slot; delete m.soloNum;
-  m.roster = JSON.parse(JSON.stringify(S.team.players));
+  // a match that was a team match before (soloNum): its "no player" taps are teammates', its roster and team stay
+  const back = !!m.soloNum;
+  if (!back){ m.log.forEach(e => { if (BYK[e.k] && !e.p) e.p = num; }); m.teamSlot = S.slot; m.roster = JSON.parse(JSON.stringify(S.team.players)); }
+  m.mode = 'team'; delete m.soloNum;
   if (!m.roster.some(p => p.num === num)) m.roster = [...m.roster, {num, name:S.player.name||''}].sort((a,b) => a.num - b.num);
   if (!m.home) m.home = S.team.name || '';
-  S.tag = null; save(m); render(); window.scrollTo(0,0); toast('Now the whole team · ' + pName() + "'s taps are #" + num);
+  S.tag = null; save(m); render(); window.scrollTo(0,0); toast('Now ' + teamLabel(slotOf(m)) + ' · ' + pName() + "'s taps are #" + num);
 }
 // Team match -> player match: every tap is kept, only the player's number is shown and counts in the player Season.
 function switchToPlayer(){
@@ -958,7 +961,7 @@ function newView(){
         <button type="button" class="btn btn-dk" data-view="team">Change the team</button>`
         : `<p class="note">No players in ${esc(teamLabel(S.slot))} yet. Type them first, then come back here.</p>
         <button type="button" class="btn btn-or" data-view="team">Add the team</button>`}</div>
-      <label class="qh ours">Your team<input id="f-home" autocomplete="off" placeholder="e.g. Panathinaikos" value="${esc(trackMode()==='team' && S.team.name ? S.team.name : (last?.home || S.team.name || ''))}"><span class="note">The team you keep the stats for</span></label>
+      <label class="qh ours">Your team<input id="f-home" autocomplete="off" placeholder="e.g. Panathinaikos" value="${esc(trackMode()==='team' ? S.team.name || '' : (last?.home || S.team.name || ''))}"><span class="note">The team you keep the stats for</span></label>
       <label>Opponent<input id="f-opp" autocomplete="off" placeholder="e.g. Olympiacos" value="${esc(nd['f-opp']||'')}"></label>
       <div><div class="qh">Home or away?</div><div class="pick" role="group" aria-label="Home or away">
         <button type="button" data-ha="home" aria-pressed="${!S.nfAway}">Home<small>we play in our gym</small></button><button type="button" data-ha="away" aria-pressed="${!!S.nfAway}">Away<small>we play in their gym</small></button></div></div>
@@ -1184,8 +1187,12 @@ function teamSeason(list, seg, slot){
   <section class="sec"><div class="sec-h"><h3>Season box score</h3></div>${boxTable(rows.map(r=>({label:pLabel(r), c:r.c})).concat({label:'Team', c:total, sum:true}), 'Player')}${LEGEND}</section>`;
 }
 // The roster, typed once before the season. Each team match takes a copy when it starts.
+// What is typed on the team page and not saved yet. Kept on the phone too: iOS can reload a page
+// in the background while someone is typing twelve players.
+function keepDraft(d){ S.teamDraft = d; S.draftSlot = S.slot; LS.set('ss.teamDraft', {slot:S.slot, d}); }
+function dropDraft(){ S.teamDraft = null; LS.set('ss.teamDraft', null); }
 function teamView(){
-  const t = S.teamDraft || S.team, rows = t.players.length ? t.players : [{num:'', name:''}];
+  const t = S.teamDraft && S.draftSlot === S.slot ? S.teamDraft : S.team, rows = t.players.length ? t.players : [{num:'', name:''}];
   return `<section class="panel">
     <div class="kicker">Roster</div><h2>Team</h2>
     <div><div class="seg" role="group" aria-label="Which team">${SLOTS.map(k => `<button type="button" data-slot="${k}" aria-pressed="${S.slot===k}">${esc(teamLabel(k))}</button>`).join('')}</div></div>
@@ -1222,7 +1229,7 @@ function saveTeamForm(){
   if (dup) return refuse('Number ' + dup.num + ' is there twice', dup, '.t-num');
   // in number order; empty rows are dropped
   d.players = d.players.filter(p => p.num).sort((a,b) => a.num - b.num);
-  S.team = Object.assign({}, S.team, d); S.teamDraft = null;
+  S.team = Object.assign({}, S.team, d); dropDraft();
   // a team match in play with this team gets the new players and names too (nobody is taken out of it)
   const lm = S.activeId && S.matches[S.activeId];
   if (isTeam(lm) && slotOf(lm) === S.slot){
@@ -1744,7 +1751,8 @@ document.addEventListener('click', async e => {
   const sinceBar = Date.now() - (S.barAt||0);
   if ((t.dataset.who != null || t.dataset.pass != null || t.dataset.to != null) && sinceBar < 350) return;
   if (['b-setend','b-setkeep','b-matchend','b-matchkeep','b-resumeplay','b-toundo'].includes(t.id) && sinceBar < 500) return;
-  if ((t.dataset.stat || ['b-court','b-us','b-them'].includes(t.id)) && Date.now() - (S.barClosedAt||0) < 350) return;
+  // (Undo sits where Skip was: a double tap on Skip must not take the stat back)
+  if ((t.dataset.stat || ['b-court','b-us','b-them','b-undo'].includes(t.id)) && Date.now() - (S.barClosedAt||0) < 350) return;
   const wasArmed = S.armed;
   if (t.id !== 'b-del') S.armed = null;
   // any other button closes the "who passed" picker
@@ -1758,7 +1766,7 @@ document.addEventListener('click', async e => {
     const late = $('#f-late')?.open;
     if (S.view === 'team' && teamDirty() && !saveTeamForm()) return;
     pickSlot(t.dataset.slot);
-    if (S.view === 'team'){ S.teamDraft = null; return render(); }
+    if (S.view === 'team'){ dropDraft(); return render(); }
     render();
     Object.entries(keep).forEach(([id, v]) => { const i = document.getElementById(id); if (i){ if (i.type === 'checkbox') i.checked = v; else if (id !== 'f-home') i.value = v; } });
     if (late) $('#f-late').open = true;
@@ -1770,11 +1778,20 @@ document.addEventListener('click', async e => {
     return render();
   }
   // the team page opened from the new-match form: Save team leads back there
-  // leaving the team page: what was typed is saved first, or the page stays and says what is missing
-  if (t.dataset.view && S.view === 'team' && teamDirty() && !saveTeamForm()) return;
+  // leaving the team page: what was typed is saved first, or the page stays and says what is missing.
+  // Back to a live match is never blocked: the rally goes on, the typing waits on the team page.
+  let waits = false;
+  if (t.dataset.view && S.view === 'team' && teamDirty() && !saveTeamForm()){ if (!(t.dataset.view === 'live' && S.activeId)) return; waits = true; }
   // going to the team page from the new-match form: what was typed there is waiting on the way back
   if (t.dataset.view && t.closest('#newform')) S.nfDraft = Object.fromEntries(['f-opp','f-date','f-team','f-sets','f-now'].map(id => [id, $('#'+id).value]));
-  if (t.dataset.view){ S.teamFrom = t.dataset.view === 'team' && !!t.closest('#newform'); S.view = t.dataset.view; S.openId = null; S.editList = false; S.teamDraft = null; render(); window.scrollTo(0,0); return; }
+  if (t.dataset.view){
+    // during a team match the team page shows that match's team, so a late player reaches the who bar
+    const lm = S.activeId && S.matches[S.activeId];
+    if (t.dataset.view === 'team' && isTeam(lm) && slotOf(lm) !== S.slot) pickSlot(slotOf(lm));
+    if (S.view === 'team' && !waits) dropDraft();
+    S.teamFrom = t.dataset.view === 'team' && !!t.closest('#newform'); S.view = t.dataset.view; S.openId = null; S.editList = false; render(); window.scrollTo(0,0);
+    if (waits) toast('Team not saved yet: finish it on the Team page');
+    return; }
   // Season list in remove mode: first tap arms the row, second tap deletes it
   if (t.dataset.xdel){
     const id = t.dataset.xdel;
@@ -1793,11 +1810,11 @@ document.addEventListener('click', async e => {
     const ls = $('#l-starter'); if (ls) ls.hidden = S.track === 'team';
     const gt = $('#g-team'); if (gt) gt.hidden = S.track !== 'team';
     const bs = $('#b-start'); if (bs) bs.hidden = S.track === 'team' && !S.team.players.length;
-    const fh = $('#f-home'); if (fh && S.track === 'team' && S.team.name) fh.value = S.team.name;
+    const fh = $('#f-home'); if (fh && S.track === 'team') fh.value = S.team.name || '';
     return;
   }
-  if (t.dataset.rm != null){ const d = readTeam(); d.players.splice(+t.dataset.rm, 1); S.teamDraft = d; return render(); }
-  if (t.id === 'b-addrow'){ const d = readTeam(); d.players.push({num:'', name:''}); S.teamDraft = d; render(); const r = document.querySelectorAll('.t-num'); if (r.length) r[r.length-1].focus(); return; }
+  if (t.dataset.rm != null){ const d = readTeamRaw(); d.players.splice(+t.dataset.rm, 1); keepDraft(d); return render(); }
+  if (t.id === 'b-addrow'){ const d = readTeamRaw(); d.players.push({num:'', name:''}); keepDraft(d); render(); const r = document.querySelectorAll('.t-num'); if (r.length) r[r.length-1].focus(); return; }
   if (t.dataset.stat) return tap(t.dataset.stat);
   if (t.dataset.set) return pickSet(+t.dataset.set);
   if (t.dataset.metric){ S.chartMetric = t.dataset.metric; return render(); }
@@ -1866,7 +1883,7 @@ document.addEventListener('submit', e => {
     savePlayer(); toast('Player saved'); S.view = S.activeId || !Object.keys(S.matches).length ? 'live' : 'history'; render();
   }
 });
-document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#teamform')) S.teamDraft = readTeamRaw(); });
+document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#teamform')) keepDraft(readTeamRaw()); });
 window.addEventListener('pagehide', () => { backup(); flush(); });
 // the same phone has the app open twice (home-screen app and a browser tab): take the other one's
 // changes at once, so an old screen can never save over newer taps
