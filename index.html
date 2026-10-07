@@ -2050,10 +2050,14 @@ function goBack(){
 history.pushState({ss:1}, '');
 window.addEventListener('popstate', () => {
   if (goBack()) return history.pushState({ss:1}, '');
-  // nothing to close: a second Back within 2 s leaves the app, a stray one does not
+  // nothing to close: a second Back straight after (within 2 s, no tap between) leaves the app, a stray one does not
   toast('Press Back again to leave');
-  setTimeout(() => history.pushState({ss:1}, ''), 2000);
+  S.guardOff = true; clearTimeout(S.guardT); S.guardT = setTimeout(rearm, 2000);
 });
+function rearm(){ if (S.guardOff){ S.guardOff = false; history.pushState({ss:1}, ''); } }
+// any tap after the warning: Back is a "close" again, never a "leave"
+document.addEventListener('pointerdown', rearm, true);
+document.addEventListener('click', rearm, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !isTyping()) goBack(); });
 // the same phone has the app open twice (home-screen app and a browser tab): take the other one's
 // changes at once, so an old screen can never save over newer taps
