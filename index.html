@@ -600,7 +600,7 @@ const EL = {
   'Time on court': 'Χρόνος στο γήπεδο', 'Rallies': 'Φάσεις', 'from the line-up and subs': 'από την εξάδα και τις αλλαγές', 'sets with a line-up only': 'μόνο τα σετ με εξάδα',
   '{n} set': '{n} σετ', '{n} sets': '{n} σετ', '{n} rally': '{n} φάση', '{n} rallies': '{n} φάσεις',
   'Subs {n} of {max}': 'Αλλαγές {n} από {max}', 'Time-outs {n} of {max}': 'Τάιμ άουτ {n} από {max}', '{n} left|one': 'μένει {n}', '{n} left': 'μένουν {n}',
-  '{n} sub left': 'μένει {n} αλλαγή', '{n} subs left': 'μένουν {n} αλλαγές', 'Score flow, set {n}': 'Πορεία σκορ, σετ {n}',
+  '{n} sub left': 'μένει {n} αλλαγή', 'Serve card': 'Σερβίς ανά αριθμό', 'Points: won while serving': 'Πόντοι: όσο σέρβιρε', '{n} subs left': 'μένουν {n} αλλαγές', 'Score flow, set {n}': 'Πορεία σκορ, σετ {n}',
   'Rotations': 'Περιστροφές', 'Rotation': 'Περιστροφή', 'Setter in {r}': 'Πάσα στο {r}', 'by where the setter stands': 'ανά θέση της πάσας', 'by the player at I (the server)': 'ανά αριθμό στη θέση I (σερβίς)', 'At I': 'Στο I', 'Side-out': 'Σάιντ άουτ', 'Break pts': 'Μπρέικ',
   'Sets that became points': 'Πάσες που έγιναν πόντοι', 'from "set by"': 'από το «πάσα από»', 'graded 3 / 2 / 1 / 0': 'βαθμός 3 / 2 / 1 / 0',
   // reports
@@ -1767,10 +1767,10 @@ function libBar(m){
   const i = [1, 2, 3].find(j => rosterP(m, st.pos[j]).pos === 'L'); if (i == null) return '';
   const lib = rosterP(m, st.pos[i]), key = m.id + ':' + S.set + ':' + st.pos.join(','); if (S.libSkip === key) return '';
   const subs = (m.log||[]).filter(e => e.k === 'sub' && e.set === S.set && e.in === lib.num), was = subs.length ? subs[subs.length - 1].out : null;
-  const bench = (m.roster||[]).filter(p => !st.pos.includes(p.num)).sort((a, b) => (b.num === was) - (a.num === was));
+  const bench = (m.roster||[]).filter(p => !st.pos.includes(p.num)).sort((a, b) => (b.num === was) - (a.num === was)), pt = playTime([m]);
   return `<div class="tagbar who" role="group" aria-label="${L('Substitution')}">
     <div class="q">${L('Libero #{n} {name} is in the front row: who comes in?', {n:lib.num, name:esc(first(lib.name))})}</div>
-    <div class="nums">${bench.map(p => `<button data-libin="${esc(p.num)}" data-libout="${esc(lib.num)}"${p.num === was ? ' class="hint"' : ''}>${esc(p.num)}<small>${esc(first(p.name))}</small></button>`).join('')}<button type="button" class="skip" data-libin="" data-libkey="${key}">${L('Later')}</button></div>
+    <div class="nums">${bench.map(p => `<button data-libin="${esc(p.num)}" data-libout="${esc(lib.num)}"${p.num === was ? ' class="hint"' : ''}>${esc(p.num)}<small>${esc(first(p.name))}</small><small>${minutes((pt[p.num] || {ms:0}).ms)}′</small></button>`).join('')}<button type="button" class="skip" data-libin="" data-libkey="${key}">${L('Later')}</button></div>
   </div>`;
 }
 function teamMatchView(m){
@@ -1796,7 +1796,7 @@ function teamMatchView(m){
   ${rows.length ? `<section class="sec"><div class="sec-h"><h3>${L('Players')}</h3><span class="note">${L('tap a player')}</span></div>${playerList(rows, true)}</section>` : ''}
   ${playTimeHTML([m])}
   ${teamMore([m])}
-  ${attackServeHTML(rows, c)}
+  ${attackServeHTML(rows, c, [m])}
   ${receptionHTML(rows, c)}
   ${setByHTML([m])}
   ${sets.length ? `<section class="sec"><div class="sec-h"><h3>${L('Set by set')}</h3></div>${sets.map(s => {
@@ -1846,7 +1846,7 @@ function teamSeason(list, seg, slot){
   ${rotationHTML(list)}
   <section class="sec"><div class="sec-h"><h3>${L('Players')}</h3><span class="note">${L('whole season · tap a player')}</span></div>${playerList(rows, true)}</section>
   ${playTimeHTML(list)}
-  ${attackServeHTML(rows, total)}
+  ${attackServeHTML(rows, total, list)}
   ${receptionHTML(rows, total)}
   ${setByHTML(list)}
   ${teamMore(list, true)}
@@ -2288,9 +2288,9 @@ function flowHTML(ms){
   </div></section>`;
 }
 // Per player: hitting (kills, errors, attempts, efficiency) and serving (aces, errors, in %, ace:error)
-function attackServeHTML(rows, total){
+function attackServeHTML(rows, total, ms){
   const hit = rows.filter(r => r.num && attempts(r.c)).sort((a,b) => attempts(b.c) - attempts(a.c));
-  const srv = rows.filter(r => r.num && (r.c.ace + r.c.serve + r.c.serr)).sort((a,b) => (b.c.ace + b.c.serve + b.c.serr) - (a.c.ace + a.c.serve + a.c.serr));
+  const card = ms ? serveCardHTML(ms) : '', srv = card ? [] : rows.filter(r => r.num && (r.c.ace + r.c.serve + r.c.serr)).sort((a,b) => (b.c.ace + b.c.serve + b.c.serr) - (a.c.ace + a.c.serve + a.c.serr));
   const inPct = c => c.serve ? pct100(c.ace + c.serve, c.ace + c.serve + c.serr) + '%' : '–';
   const ae = c => c.ace + ' : ' + c.serr;
   const noAtt = !total.att;
@@ -2300,7 +2300,18 @@ function attackServeHTML(rows, total){
     <tr class="sum"><td>${L('Team')}</td><td>${total.kill + total.plase}</td><td>${total.aerr}</td><td>${noAtt ? '–' : attempts(total)}</td><td>${noAtt ? '–' : fmtEff(total)}</td></tr></tbody></table></div></section>` : '')
   + (srv.length ? `<section class="sec"><div class="sec-h"><h3>${L('Serving')}</h3><span class="note">${L('in % only when "serve in" is tapped')}</span></div>
     <div class="tbl"><table><thead><tr><th>${L('Player')}</th><th>${L('Aces')}</th><th>${L('Err')}</th><th>${L('In %')}</th><th>${L('A:E')}</th></tr></thead>
-    <tbody>${srv.map(r => `<tr><td>${esc(pLabel(r))}</td><td>${r.c.ace}</td><td>${r.c.serr}</td><td>${inPct(r.c)}</td><td class="k">${ae(r.c)}</td></tr>`).join('')}</tbody></table></div></section>` : '');
+    <tbody>${srv.map(r => `<tr><td>${esc(pLabel(r))}</td><td>${r.c.ace}</td><td>${r.c.serr}</td><td>${inPct(r.c)}</td><td class="k">${ae(r.c)}</td></tr>`).join('')}</tbody></table></div></section>` : card);
+}
+// With a line-up every serve is known: each server's serves, the points won on them, aces, errors and in %
+function serveCardHTML(ms){
+  const card = Object.values(serverCard(ms)).sort((a, b) => b.serves - a.serves); if (!card.length) return '';
+  const names = {}; ms.forEach(m => (m.roster||[]).forEach(p => { if (p.name) names[p.num] = p.name; }));
+  const part = ms.some(m => scoredSets(analyze(m).score).some(n => !lineupOf(m, n) && !typedOnly(m, n)));
+  const t = card.reduce((a, r) => { ['serves', 'won', 'ace', 'serr'].forEach(k => a[k] += r[k]); return a; }, {serves:0, won:0, ace:0, serr:0});
+  const row = (label, r, cl) => `<tr${cl}><td>${label}</td><td>${r.serves}</td><td>${r.won}</td><td>${r.ace}</td><td>${r.serr}</td><td class="k">${pct100(r.serves - r.serr, r.serves)}%</td></tr>`;
+  return `<section class="sec"><div class="sec-h"><h3>${L('Serve card')}</h3><span class="note">${part ? L('sets with a line-up only') : L('from the line-up and subs')} · ${L('Points: won while serving')}</span></div>
+    <div class="tbl"><table><thead><tr><th>${L('Player')}</th><th>${L('Serves')}</th><th>${L('Points')}</th><th>${L('Aces')}</th><th>${L('Err')}</th><th>${L('In %')}</th></tr></thead>
+    <tbody>${card.map(r => row(esc(pLabel({num:r.num, name:names[r.num]||''})), r, '')).join('')}${row(L('Team'), t, ' class="sum"')}</tbody></table></div></section>`;
 }
 /* ---------- line-up, rotation and the court ---------- */
 // A line-up is [I, II, III, IV, V, VI]; I serves. Drawn with the net on top: front row IV III II, back row V VI I.
@@ -2353,6 +2364,15 @@ function playTime(ms){
   return by;
 }
 const minutes = ms => Math.round(ms / 60e3);
+// Per server, from the line-ups: the rallies she served, the points won on them, and the aces and serve errors
+// (the stat tapped just before the rally's point); the player at I serves
+function serverCard(ms){
+  const by = {};
+  ms.forEach(m => courtWalk(m, null, (e, st, i) => { if (st.serving !== 'us' || st.unsure || !st.pos[0]) return;
+    const r = by[st.pos[0]] || (by[st.pos[0]] = {num:st.pos[0], serves:0, won:0, ace:0, serr:0}), x = e.auto && m.log[i - 1];
+    r.serves++; if (e.k === 'us') r.won++; if (x && x.k === 'ace') r.ace++; if (x && x.k === 'serr') r.serr++; }));
+  return by;
+}
 function playTimeHTML(ms){
   const rows = Object.values(playTime(ms)).sort((a, b) => b.ms - a.ms || b.rallies - a.rallies); if (!rows.length) return '';
   const names = {}; ms.forEach(m => (m.roster||[]).forEach(p => { if (p.name) names[p.num] = p.name; }));
@@ -2416,10 +2436,11 @@ function saveLineup(){
 function subBar(m){
   if (!S.sub || S.sub.mid !== m.id) return '';
   const st = court(m, S.set); if (!st) return '';
-  const out = rosterP(m, st.pos[S.sub.i]), bench = (m.roster||[]).filter(p => !st.pos.includes(p.num));
+  // each bench player's minutes so far, to keep playing time fair
+  const out = rosterP(m, st.pos[S.sub.i]), bench = (m.roster||[]).filter(p => !st.pos.includes(p.num)), pt = playTime([m]);
   return `<div class="tagbar who" role="group" aria-label="${L('Substitution')}">
     <div class="q">${L('Sub for #{n} {name}: who comes in?', {n:out.num, name:first(out.name)})} <small style="font-weight:400;opacity:.7">(${(n => nL(n, '{n} sub left', '{n} subs left'))(Math.max(0, SUBS - subsUsed(m, S.set)))})</small></div>
-    <div class="nums">${bench.map(p => `<button data-subin="${esc(p.num)}">${esc(p.num)}<small>${p.pos === 'L' ? posAb('L') + ' · ' : ''}${esc(first(p.name))}</small></button>`).join('')}<button type="button" class="skip" data-subin="">${L('Cancel')}</button></div>
+    <div class="nums">${bench.map(p => `<button data-subin="${esc(p.num)}">${esc(p.num)}<small>${p.pos === 'L' ? posAb('L') + ' · ' : ''}${esc(first(p.name))}</small><small>${minutes((pt[p.num] || {ms:0}).ms)}′</small></button>`).join('')}<button type="button" class="skip" data-subin="">${L('Cancel')}</button></div>
   </div>`;
 }
 // Side-out and break points by rotation (who stood at I), over the given matches
