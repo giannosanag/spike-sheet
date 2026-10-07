@@ -654,7 +654,8 @@ const EL = {
   'Points per match home : away': 'Πόντοι ανά αγώνα εντός : εκτός', 'of our rally points in these matches': 'σε αυτούς τους αγώνες',
   // team page
   'Roster': 'Ρόστερ', 'Team name': 'Όνομα ομάδας', 'e.g. Panathinaikos U16': 'π.χ. Παναθηναϊκός Κ16', 'Remove this player': 'Αφαίρεση', 'Add player': 'Προσθήκη μέλους',
-  'Save team': 'Αποθήκευση ομάδας', 'Tap again to delete {team}': 'Πάτα ξανά για διαγραφή: {team}', 'Delete this team': 'Διαγραφή ομάδας',
+  'Save team': 'Αποθήκευση ομάδας', 'Ask who set each spike': 'Ερώτηση «πάσα από;» σε κάθε καρφί',
+  'After the number of a spike or plasé, the app asks who passed the ball (for "Sets that became points").': 'Μετά τον αριθμό σε καρφί ή πλασέ, η εφαρμογή ρωτά ποιος έδωσε την πάσα (για τις «Πάσες που έγιναν πόντοι»).', 'Tap again to delete {team}': 'Πάτα ξανά για διαγραφή: {team}', 'Delete this team': 'Διαγραφή ομάδας',
   'You can keep two teams. Every player needs a number and a name. A new match asks what to track: {name} only, or a whole team. In a team match you tap the stat, then the number of the player.':
     'Μπορείς να κρατάς δύο ομάδες. Κάθε μέλος θέλει αριθμό και όνομα. Ο νέος αγώνας ρωτά τι θα καταγράψεις: «Όλη η ομάδα» ή «Ατομικά». Σε αγώνα ομάδας πατάς τη φάση και μετά τον αριθμό.',
   // player card and account
@@ -1123,8 +1124,8 @@ function setWho(n){
     save(m);
   }
   S.whoOther = false;
-  // a spike or plasé: who set it, asked every time (once; Skip keeps it unknown)
-  if (e && n && TAG_KEYS.includes(e.k) && e.s === undefined){ S.who = {mid:m.id, i:S.who.i, setby:1, chain, fix:S.who.fix}; S.barAt = Date.now(); return render(); }
+  // a spike or plasé: who set it, when the team asks it (Team page switch; once, "Don't know" keeps it unknown)
+  if (e && n && TAG_KEYS.includes(e.k) && e.s === undefined && teamOf(slotOf(m)).setBy){ S.who = {mid:m.id, i:S.who.i, setby:1, chain, fix:S.who.fix}; S.barAt = Date.now(); return render(); }
   nextWho(m, chain && n);
 }
 // After a number: with the Who? button the next stat without a number comes up at once (until none is left or Cancel)
@@ -1808,20 +1809,22 @@ function teamView(){
         <button type="button" class="rm" data-rm="${i}" aria-label="${L('Remove this player')}">✕</button></div>`).join('')}</div>
       <p id="t-err" class="note" style="color:var(--neg);font-weight:600" role="alert" hidden></p>
       <button type="button" class="btn btn-dk" id="b-addrow">+ ${L('Add player')}</button>
+      <label class="check"><input id="t-setby" type="checkbox" ${t.setBy ? 'checked' : ''}> ${L('Ask who set each spike')}</label>
+      <p class="note" style="margin:-6px 0 0">${L('After the number of a spike or plasé, the app asks who passed the ball (for "Sets that became points").')}</p>
       <button class="btn btn-or" type="submit">${L('Save team')}</button>
       ${S.team.name || S.team.players.length ? `<button type="button" class="btn btn-del ${S.armed === 'delteam' ? 'armed' : ''}" id="b-delteam">${S.armed === 'delteam' ? L('Tap again to delete {team}', {team:teamLabel(S.slot)}) : L('Delete this team')}</button>` : ''}
     </form>
     <p class="note">${L('You can keep two teams. Every player needs a number and a name. A new match asks what to track: {name} only, or a whole team. In a team match you tap the stat, then the number of the player.', {name:esc(pName())})}</p>
   </section>`;
 }
-// as typed (nothing cleaned), for the draft kept while typing
 // a new empty row on the team page, the cursor in its number box
 function addRow(){ const d = readTeamRaw(); d.players.push({num:'', name:'', pos:''}); keepDraft(d); render(); const r = document.querySelectorAll('.t-num'); if (r.length) r[r.length-1].focus(); }
+// as typed (nothing cleaned), for the draft kept while typing
 function readTeamRaw(){
-  return {name:$('#t-name').value, players:[...document.querySelectorAll('.rrow')].map(r => ({num:r.querySelector('.t-num').value, name:r.querySelector('.t-pn').value, pos:r.querySelector('.t-pos').value}))};
+  return {name:$('#t-name').value, players:[...document.querySelectorAll('.rrow')].map(r => ({num:r.querySelector('.t-num').value, name:r.querySelector('.t-pn').value, pos:r.querySelector('.t-pos').value})), setBy:!!$('#t-setby')?.checked};
 }
 function readTeam(){
-  return {name:$('#t-name').value.trim(), players:[...document.querySelectorAll('.rrow')].map(r => ({num:jnum(r.querySelector('.t-num').value), name:r.querySelector('.t-pn').value.trim(), pos:r.querySelector('.t-pos').value}))};
+  return {name:$('#t-name').value.trim(), players:[...document.querySelectorAll('.rrow')].map(r => ({num:jnum(r.querySelector('.t-num').value), name:r.querySelector('.t-pn').value.trim(), pos:r.querySelector('.t-pos').value})), setBy:!!$('#t-setby')?.checked};
 }
 // The team on screen is deleted. Its matches stay in Season under its name, in a season of their own,
 // so a new team in this slot starts afresh. Not while that team plays a live match.
@@ -1860,7 +1863,7 @@ function saveTeamForm(){
   return true;
 }
 // typed on the team page and not saved yet
-const teamDirty = () => { if (!$('#teamform')) return false; const d = readTeam(); d.players = d.players.filter(p => p.num || p.name); return JSON.stringify(d) !== JSON.stringify({name:S.team.name||'', players:(S.team.players||[]).map(p => ({num:p.num, name:p.name||'', pos:p.pos||''}))}); };
+const teamDirty = () => { if (!$('#teamform')) return false; const d = readTeam(); d.players = d.players.filter(p => p.num || p.name); return JSON.stringify(d) !== JSON.stringify({name:S.team.name||'', players:(S.team.players||[]).map(p => ({num:p.num, name:p.name||'', pos:p.pos||''})), setBy:!!S.team.setBy}); };
 function liveView(m){
   if (isTeam(m)) return teamLive(m);
   const a = analyze(m), all = counts(m);
@@ -2440,12 +2443,13 @@ function drawReport(m){
 }
 // A team match: the same top, then the team's numbers, every player with a stat, and set by set.
 function drawTeamReport(m){
-  const c = counts(m), a = analyze(m), sets = picSets(m, a), rows = playerRows([m]);
+  // each child's points only: errors and minus ratings stay off a picture shared with the team (Ian 2026-10-07)
+  const c = counts(m), a = analyze(m), sets = picSets(m, a), rows = playerRows([m]), scorers = rows.filter(r => pts(r.c) > 0);
   // the flow line (side-out, where the points came from) under the bars
   const sv = serveStats(m).tot, ps = pointSources(m);
   const flow = [sv.soOf ? L('Side-out') + ' ' + pct100(sv.so, sv.soOf) + '%' : '', sv.bpOf ? L('Break points') + ' ' + pct100(sv.bp, sv.bpOf) + '%' : '', L('Earned') + ' ' + ps.earned, L('Their errors') + ' ' + ps.theirErr, L('Our errors') + ' ' + ps.given].filter(Boolean).join('  ·  ');
   // players start at 1360 (after the bars from 990 and a heading), 58 each; sets 64 each; footer 90; flow line 56
-  const W = 1080, P = 72, H = 1360 + 56 + rows.length * 58 + 40 + sets.length * 64 + 90;
+  const W = 1080, P = 72, H = 1360 + 56 + scorers.length * 58 + 40 + sets.length * 64 + 90;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
   picHead(ctx, m, a, sets, W, H, P);
@@ -2460,21 +2464,18 @@ function drawTeamReport(m){
   let y = picBars(ctx, c, W, P, 990, rallyServes([m]));
   picText(ctx, flow, P, y + 6, {size:28, color:PIC.muted, fit:W-2*P, w:500});
   y += 56;
-  // players, best scorer first: points, errors, rating
-  // (taps left without a number are a row too, so the column adds up to the tile above)
+  // the players who scored, best first (points tapped without a number are a row too, so the column adds up)
   y += 30;
-  if (rows.length){
+  if (scorers.length){
     picText(ctx, capsName(L('Players')), P, y, {w:800, size:34, head:true});
-    [[L('PTS'), W-P-300], [L('ERR'), W-P-150], [L('RTG'), W-P]].forEach(([t, x]) => picText(ctx, t, x, y, {w:600, size:24, color:PIC.muted, align:'right'}));
+    picText(ctx, L('PTS'), W-P, y, {w:600, size:24, color:PIC.muted, align:'right'});
   }
   y += 58;
-  rows.forEach((r, i) => {
+  scorers.forEach((r, i) => {
     if (i % 2 === 0){ ctx.fillStyle = PIC.soft; picRound(ctx, P-12, y-40, W-2*P+24, 54, 12); ctx.fill(); }
     if (r.num) picText(ctx, '#' + r.num, P+8, y-4, {w:800, size:34, head:true, color:PIC.volt});
-    picText(ctx, r.num ? r.name || '' : L('No player'), P+100, y-4, {w:600, size:30, fit:W-P-300-60-(P+100), color:r.num ? PIC.ink : PIC.muted});
-    picText(ctx, String(pts(r.c)), W-P-300, y-4, {w:700, size:32, align:'right'});
-    picText(ctx, String(errs(r.c)), W-P-150, y-4, {w:700, size:32, align:'right', color:PIC.muted});
-    picText(ctx, fmtVir(vir(r.c)), W-P, y-4, {w:700, size:32, align:'right'});
+    picText(ctx, r.num ? r.name || '' : L('No player'), P+100, y-4, {w:600, size:30, fit:W-P-120-(P+100), color:r.num ? PIC.ink : PIC.muted});
+    picText(ctx, String(pts(r.c)), W-P, y-4, {w:700, size:32, align:'right'});
     y += 58;
   });
   // set by set: the team's points and errors
