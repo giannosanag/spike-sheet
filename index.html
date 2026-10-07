@@ -182,7 +182,9 @@ td.k{font-weight:700}
 details.more summary{cursor:pointer;font-weight:600;padding:6px 0;list-style:none}
 details.more summary::-webkit-details-marker{display:none}
 details.more summary::after{content:' ›'}details.more[open] summary::after{content:' ⌄'}
-.seg{display:inline-flex;background:var(--soft);border-radius:999px;padding:3px}
+/* long team names on a small phone: the switch wraps onto two lines instead of pushing the page sideways
+   (22px corners: round on one line, still neat on two) */
+.seg{display:inline-flex;background:var(--soft);border-radius:22px;padding:3px;max-width:100%;flex-wrap:wrap}
 .seg button{font-size:13px;font-weight:600;padding:10px 16px;border-radius:999px;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--bg);color:var(--ink)}
 .tagbar .more input.sm{flex:0 1 80px;text-align:center}
@@ -210,6 +212,57 @@ label.qh{margin-bottom:0;gap:8px}
 .lead .lt{font-size:13px;color:var(--muted)}
 .lead .lp{display:flex;flex-wrap:wrap;gap:4px 14px}
 .lead button{font-size:14px;text-align:left;padding:2px 0}.lead b{font-variant-numeric:tabular-nums;margin-left:3px}
+/* court mode (a live team match): score, +1, every stat and Undo / Time-out / End set on one phone
+   screen with no scrolling during a rally */
+body.playing>.wrap{gap:10px}
+body.playing header{padding-block:10px 0;gap:8px}
+body.playing .brand{font-size:20px}
+body.playing .tabs{gap:12px}body.playing .tabs button{font-size:14px;padding:4px 0}
+/* the date line goes: the set number is on the End set button, the sets played on the pips */
+body.playing .bug-top{display:none}
+body.playing .score{padding-top:10px}
+body.playing .serveq{flex-wrap:nowrap}
+body.playing .serveq .seg{flex-wrap:nowrap;min-width:0}
+body.playing .serveq .seg button{max-width:9.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.playing #syncnote:not(.warn){display:none}
+body.playing #app{gap:10px}
+body.playing .bug-top{padding-top:10px}
+body.playing .score{padding:4px 18px 6px}
+body.playing .big{font-size:56px}body.playing .big i{font-size:34px}
+body.playing .pips{padding-bottom:8px}
+body.playing .plus{padding-bottom:10px}
+body.playing .plus button{padding:13px 10px}
+body.playing .sec{gap:5px}
+body.playing .sec h3{font-size:12px;font-weight:600;color:var(--muted)}
+body.playing .stat{min-height:60px;padding:7px 2px 6px;border-radius:14px}
+body.playing .stat .n{font-size:24px}
+.padzone{display:flex;flex-direction:column;gap:10px}
+.acts{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:6px}
+.act.who{display:flex;flex-direction:column;justify-content:center;align-items:center}
+.act.who small{font-size:11px;font-weight:500;opacity:.75}
+.act.who.on{background:var(--volt);color:var(--volt-ink)}
+.act{min-height:50px;border-radius:14px;padding:8px;background:var(--soft);font-weight:600;font-size:14px;line-height:1.15}
+.act.undo{display:flex;align-items:center;gap:8px;text-align:left;background:var(--btn);color:var(--btn-ink);min-width:0}
+.act.undo>span:last-child{min-width:0}
+.act.undo small{display:block;font-size:11px;font-weight:500;opacity:.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.act:active{transform:scale(.97)}
+.act:disabled{opacity:.35}
+@media (min-height:800px){body.playing .stat{min-height:72px}body.playing .stat .n{font-size:28px}body.playing .big{font-size:64px}}
+/* very small phones: the second line on each stat button goes, so the rally area still fits */
+@media (max-height:600px){body.playing .stat .s{display:none}body.playing .stat{min-height:48px}body.playing .sec{gap:3px}body.playing .padzone{gap:8px}}
+/* a phone on its side: score on the left, every stat on the right, for two thumbs */
+@media (orientation:landscape) and (max-height:540px){
+  body.playing>.wrap{max-width:none}
+  body.playing #app{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);column-gap:14px;row-gap:10px;align-items:start}
+  body.playing #app>*{grid-column:1/-1}
+  body.playing #app>.bug:first-of-type{grid-column:1;grid-row:1}
+  body.playing #app>.serveq{grid-column:1;grid-row:2}
+  body.playing #app>.padzone{grid-column:2;grid-row:1/span 3}
+  /* the number bar opens over the score column, so the stats on the right stay free */
+  body.playing .tagbar{right:auto;width:calc(42% - 8px);max-width:none;margin:0;border-radius:0 20px 0 0}
+  body.playing .tagbar .nums{max-height:56vh}
+  body.playing .tagbar.who .nums button{height:44px}
+}
 /* a phone on its side: the time-out screen scrolls and shrinks instead of cutting off its buttons */
 .freeze{overflow-y:auto;justify-content:safe center}
 @media (max-height:480px){.freeze{gap:8px}.freeze h2,.freeze .fz-clock{font-size:40px}.freeze .btn{padding:14px}}
@@ -567,6 +620,8 @@ function syncNote(){
       + (/iPhone|iPad/.test(navigator.userAgent) && !navigator.standalone ? ' On iPhone, also add it to the Home Screen: Safari deletes it after a week unused.' : '');
   // the phone is full: said all the time, not once
   if (S.lsFail) n.innerHTML = `<b style="color:var(--neg)">This phone is full: new taps are not saved. Free some space.</b> ` + n.innerHTML;
+  // a warning stays on screen in court mode too
+  n.classList.toggle('warn', !!(S.lsFail || (S.user && S.saveFailed)));
 }
 const isTyping = () => ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName);
 
@@ -749,23 +804,28 @@ function setPasser(n){
   S.tag = null; S.barAt = S.barClosedAt = Date.now(); clearTimeout(S.tagT); render();
 }
 // The who bar is closing by another tap (next stat, a point, End set, time-out) or by itself:
-// say that the stat has no player yet. Skip and Undo are choices and say nothing.
+// say that the stat has no player yet. Later and Undo are choices and say nothing.
 function whoLeft(){
   const m = S.who && !S.who.fix && S.matches[S.who.mid], e = m && m.log[S.who.i];
   // after the tap's own message ("Set 1: 25-20"), so this one is the one left on screen
-  if (e && BYK[e.k] && !e.p){ const t = `${evLabel(e, m).t}: no player. Tap it in Play by play to add one`; setTimeout(() => toast(t), 0); }
+  if (e && BYK[e.k] && !e.p){ const t = `${evLabel(e, m).t}: no player yet. Tap Who? between rallies`; setTimeout(() => toast(t), 0); }
 }
 // n: a jersey number, or '' for "Skip". A number that is not on the roster joins it for this match.
 function setWho(n){
-  const m = S.who && S.matches[S.who.mid], e = m && m.log[S.who.i];
+  const m = S.who && S.matches[S.who.mid], e = m && m.log[S.who.i], chain = S.who && S.who.chain;
   n = jnum(n);
   if (e && n){
     e.p = n;
     if (!(m.roster||[]).some(p => p.num === n)) m.roster = [...(m.roster||[]), {num:n, name:''}];
     save(m);
   }
+  S.whoOther = false;
+  // naming from the Who? button: the next stat without a number comes up at once, until none is left or Cancel
+  if (chain && n){ const nx = firstUnnamed(m); if (nx >= 0){ S.who = {mid:m.id, i:nx, fix:1, chain:1}; S.barAt = Date.now(); return render(); } }
   S.who = null; S.barAt = S.barClosedAt = Date.now(); clearTimeout(S.tagT); render();
 }
+// A team match: the first stat still without a player (-1 when every stat has one)
+const firstUnnamed = m => (m.log||[]).findIndex(e => BYK[e.k] && !e.p);
 function teamPoint(side){
   const m = S.matches[S.activeId]; if (!m) return;
   // a double tap is one point: no rally is over in 0.4 s
@@ -997,6 +1057,8 @@ function render(){
   else if (S.view === 'match' && S.matches[S.openId]){ app.innerHTML = matchView(S.matches[S.openId]); prepPicture(S.matches[S.openId]); }
   else { S.view = 'history'; app.innerHTML = historyView(); }
   capsFix(app);
+  // court mode: a live team match (a compact header, no sync note unless it warns)
+  document.body.classList.toggle('playing', S.view === 'live' && !S.choose && isTeam(S.activeId && S.matches[S.activeId]));
   clearInterval(S.timer);
   const m = S.activeId && S.matches[S.activeId];
   if (S.view === 'live' && m && (m.onCourt || m.toOn)) S.timer = setInterval(()=>{ const c = $('#clock'); if (c) c.textContent = fmtTime(playMs(m));
@@ -1058,7 +1120,7 @@ function newView(){
       <button class="btn btn-or" type="submit" id="b-start" ${trackMode()==='team' && !S.team.players.length ? 'hidden' : ''}>Start match</button>
     </form>
     <p class="note" id="h-player" ${trackMode()==='team'?'hidden':''}>Count the score with the two big buttons. Tap ${pWhose()} stats as they happen: a point adds one to your team, an error adds one to the other team. Tap the court button each time ${pWho()} goes on or off.</p>
-    <p class="note" id="h-team" ${trackMode()==='team'?'':'hidden'}>Count the score with the two big buttons. Tap a stat as it happens, then the player's number: a point adds one to your team, an error adds one to the other team. Forgot a number? Tap that line in Play by play.</p>
+    <p class="note" id="h-team" ${trackMode()==='team'?'':'hidden'}>Count the score with the two big buttons. Tap a stat as it happens, then the player's number: a point adds one to your team, an error adds one to the other team. No time for the number? Tap Later, or just the next stat, and name it with Who? between rallies.</p>
   </section>
   ${S.player.name ? '' : `<button class="btn btn-dk" id="b-addp" data-view="player" ${trackMode()==='team'?'hidden':''}>Add the player's name and number</button>`}`;
 }
@@ -1092,16 +1154,18 @@ function scoreBug(m, a, opts){
     <div class="plus">
       ${ord(`<button class="us" id="b-us">+1 ${esc(homeName(m))}</button>`, `<button class="them" id="b-them">+1 ${esc(m.opp)}</button>`)}
     </div>
+    ${opts.court ? '' : `
     <div class="bug-foot">
-      <div class="setsel" role="group" aria-label="Set">${Array.from({length:Math.max(lastSet(m), m.maxSet||1)}, (_,i)=>i+1).map(n=>`<button data-set="${n}" aria-pressed="${S.set===n}">${n}</button>`).join('')}</div>
+      ${setSel(m)}
       <button class="lnk" id="b-endset">End set ${s} ›</button>
     </div>
     <div class="bug-foot" style="padding-top:0">
       <button class="lnk" id="b-timeout">Time-out</button>
       <button class="lnk" id="b-fix">Fix score</button>
-    </div>` : ''}
+    </div>`}` : ''}
   </section>`;
 }
+const setSel = m => `<div class="setsel" role="group" aria-label="Set">${Array.from({length:Math.max(lastSet(m), m.maxSet||1)}, (_,i)=>i+1).map(n=>`<button data-set="${n}" aria-pressed="${S.set===n}">${n}</button>`).join('')}</div>`;
 
 function pads(all){
   return GROUPS.map(G=>`
@@ -1161,23 +1225,41 @@ function teamPlayerView(num){
 function whoBar(m){
   if (!S.who || S.who.mid !== m.id) return '';
   const e = m.log[S.who.i]; if (!e) return '';
+  // naming later: which rally it was, and how many are still to name
+  const f = S.who.fix && analyze(m).feed.find(x => x.e === e), left = S.who.chain ? (m.log||[]).filter(x => BYK[x.k] && !x.p).length : 0;
+  // short: "Other #" and "Later" are in the grid, so the bar leaves the stat buttons free on most phones
   return `<div class="tagbar who" role="group" aria-label="Which player">
-    <div class="q" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>${esc(evLabel(e,m).t)}: who?</span>${S.who.fix ? '' : `<button class="skip" id="b-whoundo" style="height:40px;padding:0 14px;font-size:13px">Wrong tap, undo</button>`}</div>
-    <div class="nums">${(m.roster||[]).map(p=>`<button data-who="${esc(p.num)}">${esc(p.num)}<small>${esc((p.name||'').split(/\s+/)[0])}</small></button>`).join('')}</div>
-    <form class="more" id="whoform">
+    <div class="q" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>${esc(evLabel(e,m).t)}${f ? ` · set ${e.set}, ${f.us}–${f.them}` : ''}: who?${left > 1 ? ` <small style="font-weight:400;opacity:.7">(${left} to name)</small>` : ''}</span>${S.who.fix ? '' : `<button class="skip" id="b-whoundo" style="height:40px;padding:0 14px;font-size:13px">Wrong tap, undo</button>`}</div>
+    <div class="nums">${(m.roster||[]).map(p=>`<button data-who="${esc(p.num)}">${esc(p.num)}<small>${esc((p.name||'').split(/\s+/)[0])}</small></button>`).join('')}<button type="button" class="skip" data-whoother="1">Other<small>number</small></button><button type="button" class="skip" data-who="">${S.who.fix ? 'Cancel' : 'Later'}</button></div>
+    ${S.whoOther ? `<form class="more" id="whoform">
       <input id="who-other" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="Other number" aria-label="Other number">
       <button type="submit">Add</button>
-      <button type="button" class="skip" data-who="">${S.who.fix ? 'Cancel' : 'Skip'}</button>
-    </form>
+    </form>` : ''}
   </div>`;
 }
 // Live screen of a team match: the same score and pad; every stat then asks for the number.
 function teamLive(m){
   const a = analyze(m), all = counts(m), rows = playerRows([m]), cur = a.score[S.set] || {us:0, them:0};
+  // nobody serves in a set that is over, and there is no next set to ask about once the match is won
+  const over = (m.ended||[]).includes(S.set), {w, l} = setsWon(m), won = w >= winSets(m) || l >= winSets(m);
+  // stats left without a number: named between rallies with the Who? button
+  const unnamed = (m.log||[]).filter(e => BYK[e.k] && !e.p).length;
+  // court mode: what a rally needs (score, +1, every stat, Undo / Time-out / End set) fits one phone screen
+  // with no scrolling; the rest is below it
   return `
-  ${scoreBug(m, a, {live:true, serving:servingNow(m, S.set)})}
-  ${cur.us || cur.them ? '' : `<div class="serveq"><span>Who serves first in set ${S.set}?</span><div class="seg" role="group" aria-label="First server">${(m.away ? ['them','us'] : ['us','them']).map(k =>
+  ${scoreBug(m, a, {live:true, court:true, serving:over ? null : servingNow(m, S.set)})}
+  ${cur.us || cur.them || won ? '' : `<div class="serveq"><span>Serves first?</span><div class="seg" role="group" aria-label="First server in set ${S.set}">${(m.away ? ['them','us'] : ['us','them']).map(k =>
     `<button type="button" data-serve="${k}" aria-pressed="${firstServer(m, S.set) === k}">${esc(k === 'us' ? homeName(m) : m.opp)}</button>`).join('')}</div></div>`}
+  <div class="padzone">
+  ${pads(all)}
+  <div class="acts">
+    ${undoFab(m, true)}
+    <button class="act who${unnamed ? ' on' : ''}" id="b-name" ${unnamed ? '' : 'disabled'}>Who?<small>${unnamed ? unnamed + ' to name' : 'all named'}</small></button>
+    <button class="act" id="b-timeout">Time-out</button>
+    <button class="act" id="b-endset">End set ${S.set} ›</button>
+  </div>
+  </div>
+  <section class="bug"><div class="bug-foot">${setSel(m)}<button class="lnk" id="b-fix">Fix score</button></div></section>
   <section class="player">
     <div class="jersey">${esc((homeName(m)[0]||'T').toUpperCase())}</div>
     <div class="pinfo">
@@ -1190,7 +1272,6 @@ function teamLive(m){
       </div>
     </div>
   </section>
-  ${pads(all)}
   ${rows.length ? `<section class="sec"><div class="sec-h"><h3>Players</h3></div>${playerList(rows)}</section>` : ''}
   ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>Play by play</h3><span class="note">tap a line to change the player</span></div>${feedHTML(m, a.feed.slice(-8).reverse())}</section>` : ''}
   <section class="panel">
@@ -1199,13 +1280,12 @@ function teamLive(m){
   </section>
   <button class="btn btn-dk" id="b-toplayer">Switch to ${esc(pName())} only</button>
   <button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?'Tap again to delete this match':'Delete this match'}</button>
-  ${undoFab(m)}
   ${m.toOn && freezeView(m) || whoBar(m) || timeoutBar(m) || setBar(m, a)}`;
 }
 function teamMatchView(m){
   const a = analyze(m), c = counts(m), rows = playerRows([m]), armed = S.armed === 'del-'+m.id;
   const sets = scoredSets(a.score).sort((x,y)=>x-y), teamPts = sets.reduce((t,s)=>t+a.score[s].us, 0);
-  const srv = c.ace + c.serve + c.serr;
+  const srv = c.ace + c.serve + c.serr, svSets = serveStats(m).sets;
   return `
   <div class="row" style="align-items:center"><div><div class="kicker">${m.result==='W'?'Final · Win':m.result==='L'?'Final · Loss':'Final'}${m.score?' '+esc(m.score):''} · whole team</div><h2>${esc(homeName(m))} vs ${esc(m.opp)}</h2></div></div>
   ${scoreBug(m, a, {live:false})}
@@ -1224,7 +1304,7 @@ function teamMatchView(m){
   ${attackServeHTML(rows, c)}
   ${sets.length ? `<section class="sec"><div class="sec-h"><h3>Set by set</h3></div>${sets.map(s => {
     const cs = counts(m, s), x = a.score[s], p = pts(cs), e = errs(cs), good = listOf(cs, ['dig','pass','assist','serve','att']);
-    const sv = serveStats(m).sets[s], rn = runs(m, s);
+    const sv = svSets[s], rn = runs(m, s);
     return `<div class="setc">
       <div class="setc-h"><b>Set ${s}</b><span>${x.us}–${x.them} ${(m.ended||[]).includes(s) ? (x.us > x.them ? 'won' : x.them > x.us ? 'lost' : 'tied') : 'not finished'}</span></div>
       ${typedOnly(m, s) ? TYPED : `<p>${p ? `<b>${p} point${p>1?'s':''}</b>: ${listOf(cs, PT_KEYS)}` : 'No points'}</p>
@@ -1375,12 +1455,12 @@ function liveView(m){
   ${undoFab(m)}
   ${m.toOn && freezeView(m) || tagBar(m) || timeoutBar(m) || setBar(m, a)}`;
 }
-// Always-visible undo, naming the tap it will take back.
-function undoFab(m){
+// Always-visible undo, naming the tap it will take back. inline: a button in the court-mode row, not floating.
+function undoFab(m, inline){
   const log = m.log||[]; let e = log[log.length-1];
   if (e && e.auto && log.length > 1) e = log[log.length-2];
   const back = undoBack(m), what = back != null ? 'back to set ' + back : e ? evLabel(e,m).t : '';
-  return `<button class="fab" id="b-undo" ${what?'':'disabled'} aria-label="Undo ${esc(what)}">
+  return `<button class="${inline ? 'act undo' : 'fab'}" id="b-undo" ${what?'':'disabled'} aria-label="Undo ${esc(what)}">
     <span class="fab-i" aria-hidden="true">↶</span><span>Undo<small>${what?esc(what):'nothing yet'}</small></span></button>`;
 }
 function tagBar(m){
@@ -1583,14 +1663,17 @@ function servingNow(m, s){
   return p[p.length-1].late ? null : p[p.length-1].k;
 }
 // Side-out: rallies won when the other team served. Break points: rallies won on our own serve.
-// The server of each rally is the winner of the one before; typed-in points break the chain until the next rally.
+// The server of each rally is the winner of the one before, so only a set's first rally needs the first
+// server (not known: that one rally is left out). Typed-in points break the chain until the next rally.
+// serr: our serve errors in the rallies counted as ours (so "serves in" never mixes counted and uncounted rallies)
 function serveStats(m){
-  const sets = {}, tot = {so:0, soOf:0, bp:0, bpOf:0};
+  const sets = {}, tot = {so:0, soOf:0, bp:0, bpOf:0, serr:0};
   scoredSets(analyze(m).score).forEach(s => {
-    const first = firstServer(m, s); if (!first) return;
-    const r = sets[s] = {so:0, soOf:0, bp:0, bpOf:0}; let cur = first;
+    const r = sets[s] = {so:0, soOf:0, bp:0, bpOf:0, serr:0}; let cur = firstServer(m, s);
     (m.log||[]).forEach(e => {
-      if (e.set !== s || (e.k !== 'us' && e.k !== 'them')) return;
+      if (e.set !== s) return;
+      if (e.k === 'serr' && cur === 'us') r.serr++;
+      if (e.k !== 'us' && e.k !== 'them') return;
       if (e.late){ cur = null; return; }
       if (cur === 'us'){ r.bpOf++; if (e.k === 'us') r.bp++; }
       else if (cur === 'them'){ r.soOf++; if (e.k === 'us') r.so++; }
@@ -1625,11 +1708,11 @@ function runs(m, s){
 const sumKeys = (list, keys) => list.reduce((t, x) => { keys.forEach(k => t[k] = (t[k]||0) + (x[k]||0)); return t; }, {});
 // Side-out / break points / serves in, and where the points came from: one block for a match or a season
 function flowHTML(ms){
-  const sv = sumKeys(ms.map(m => serveStats(m).tot), ['so','soOf','bp','bpOf']);
+  const sv = sumKeys(ms.map(m => serveStats(m).tot), ['so','soOf','bp','bpOf','serr']);
   const ps = sumKeys(ms.map(pointSources), ['earned','theirErr','given','theyEarned']);
-  const serr = ms.reduce((t, m) => t + counts(m).serr, 0);
+  const serr = Math.min(sv.serr, sv.bpOf);
   const row = (l, a, b, n) => `<div class="pr"><span class="pl">${l}<small>${b ? `${a} of ${b} · ${n}` : 'not known yet'}</small></span><b>${b ? pct100(a, b) + '%' : '–'}</b><span class="pbar" aria-hidden="true"><i style="width:${b ? pct100(a, b) : 0}%"></i></span></div>`;
-  const ratio = ps.given ? (ps.earned / ps.given).toFixed(1) : '–';
+  const ratio = ps.given ? (ps.earned / ps.given).toFixed(1) : ps.earned + ' : 0';
   return `<section class="sec"><div class="sec-h"><h3>Team flow</h3><span class="note">from the rally score</span></div>
   <div class="pct">
     ${row('Side-out', sv.so, sv.soOf, 'points won when they served')}
@@ -1649,7 +1732,7 @@ function attackServeHTML(rows, total){
   const hit = rows.filter(r => r.num && attempts(r.c)).sort((a,b) => attempts(b.c) - attempts(a.c));
   const srv = rows.filter(r => r.num && (r.c.ace + r.c.serve + r.c.serr)).sort((a,b) => (b.c.ace + b.c.serve + b.c.serr) - (a.c.ace + a.c.serve + a.c.serr));
   const inPct = c => c.serve ? pct100(c.ace + c.serve, c.ace + c.serve + c.serr) + '%' : '–';
-  const ae = c => c.serr ? (c.ace / c.serr).toFixed(1) : c.ace ? c.ace + ' : 0' : '–';
+  const ae = c => c.ace + ' : ' + c.serr;
   return (hit.length ? `<section class="sec"><div class="sec-h"><h3>Hitting</h3><span class="note">efficiency = (kills − errors) / attempts</span></div>
     <div class="tbl"><table><thead><tr><th>Player</th><th>K</th><th>E</th><th>TA</th><th>Eff</th></tr></thead>
     <tbody>${hit.map(r => `<tr><td>${esc(pLabel(r))}</td><td>${r.c.kill + r.c.plase}</td><td>${r.c.aerr}</td><td>${attempts(r.c)}</td><td class="k">${fmtEff(r.c)}</td></tr>`).join('')}
@@ -2031,7 +2114,9 @@ document.addEventListener('click', async e => {
   const wasArmed = S.armed;
   if (t.id !== 'b-del') S.armed = null;
   // any other button closes the "who passed" picker
-  if (t.dataset.pass == null && t.dataset.who == null && !t.dataset.stat){ if (!['b-undo','b-whoundo'].includes(t.id)) whoLeft(); S.tag = null; S.who = null; clearTimeout(S.tagT); }
+  // ("Other #" opens the number box inside the bar; Who? names the stats left without one, so it says nothing)
+  if (t.dataset.whoother){ S.whoOther = true; render(); $('#who-other')?.focus(); return; }
+  if (t.dataset.pass == null && t.dataset.who == null && !t.dataset.stat){ if (!['b-undo','b-whoundo','b-name'].includes(t.id)) whoLeft(); S.tag = null; S.who = null; S.whoOther = false; clearTimeout(S.tagT); }
   if (t.dataset.to == null && t.form?.id !== 'fixform'){ S.toAsk = false; S.fixAsk = false; }
   if (t.dataset.to != null){ if (t.dataset.to) return timeOut(t.dataset.to); S.barClosedAt = Date.now(); return render(); }
   // new-match form: these switch in place, so what is typed stays
@@ -2115,6 +2200,8 @@ document.addEventListener('click', async e => {
     case 'b-fix': S.fixAsk = true; S.barAt = Date.now(); render(); $('#fix-us')?.select(); return;
     case 'b-fixno': S.fixAsk = false; S.barClosedAt = Date.now(); return render();
     case 'b-undo': case 'b-whoundo': return undo();
+    // between rallies: name the stats left without a number, one after another
+    case 'b-name': { const m = S.matches[S.activeId], i = m ? firstUnnamed(m) : -1; if (i >= 0){ S.who = {mid:m.id, i, fix:1, chain:1}; S.barAt = Date.now(); } return render(); }
     // the freeze closes under the finger; a tap synced in from another phone since is not taken back
     case 'b-toundo': { const m = S.matches[S.activeId], l = m?.log?.[m.log.length-1]; S.barClosedAt = Date.now(); return l?.k === 'to' ? undo() : resumePlay(); }
     case 'b-resumeplay': return resumePlay();
@@ -2177,7 +2264,7 @@ window.addEventListener('pageshow', e => { if (e.persisted){ restore(); if (!isT
 function goBack(){
   const m = S.activeId && S.matches[S.activeId];
   if (S.view === 'live' && m && m.toOn) return true;
-  if (S.who || S.tag || S.toAsk || S.fixAsk){ whoLeft(); S.who = null; S.tag = null; S.toAsk = false; S.fixAsk = false; clearTimeout(S.tagT); S.barClosedAt = Date.now(); render(); return true; }
+  if (S.who || S.tag || S.toAsk || S.fixAsk){ whoLeft(); S.who = null; S.whoOther = false; S.tag = null; S.toAsk = false; S.fixAsk = false; clearTimeout(S.tagT); S.barClosedAt = Date.now(); render(); return true; }
   if (S.view !== 'live'){
     // the team page: saved like leaving it by a tab; refused, the typing waits there
     if (S.view === 'team'){ if (teamDirty() && !saveTeamForm()) toast('Team not saved yet: finish it on the Team page'); else dropDraft(); }
