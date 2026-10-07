@@ -202,6 +202,14 @@ label.qh{margin-bottom:0;gap:8px}
 .freeze .fz-clock{font-family:var(--head);font-stretch:62%;font-weight:800;font-size:56px;line-height:1;font-variant-numeric:tabular-nums}
 .freeze .btn{font-size:18px;font-weight:700;padding:20px}
 .freeze .btn-or{background:var(--volt);color:var(--volt-ink);border-color:var(--volt)}
+/* team flow: who serves, season leaders */
+.srv{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--volt);box-shadow:0 0 0 1.5px var(--ink);margin-right:6px;vertical-align:2px}
+.serveq{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;font-weight:600}
+.leads{display:flex;flex-direction:column}
+.lead{display:grid;grid-template-columns:96px 1fr;gap:8px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line)}
+.lead .lt{font-size:13px;color:var(--muted)}
+.lead .lp{display:flex;flex-wrap:wrap;gap:4px 14px}
+.lead button{font-size:14px;text-align:left;padding:2px 0}.lead b{font-variant-numeric:tabular-nums;margin-left:3px}
 /* a phone on its side: the time-out screen scrolls and shrinks instead of cutting off its buttons */
 .freeze{overflow-y:auto;justify-content:safe center}
 @media (max-height:480px){.freeze{gap:8px}.freeze h2,.freeze .fz-clock{font-size:40px}.freeze .btn{padding:14px}}
@@ -1057,7 +1065,8 @@ function newView(){
 
 // a long word (PANATHINAIKOS) would split mid-word on a phone: shrink it instead
 const nmLong = n => { const w = Math.max(...String(n).split(/\s+/).map(x => x.length)); return w > 11 ? ' long xl' : w > 9 ? ' long' : ''; };
-const teamCell = (name, sets, side) => `<div class="team${side}"><span class="nm${nmLong(name)}">${esc(name)}</span><span class="sw">Sets ${sets}</span></div>`;
+// srv: this team serves now (a volt dot before the name)
+const teamCell = (name, sets, side, srv) => `<div class="team${side}"><span class="nm${nmLong(name)}">${srv ? '<i class="srv" aria-label="serving"></i>' : ''}${esc(name)}</span><span class="sw">Sets ${sets}</span></div>`;
 // sets won: the "3-1" typed at the final whistle wins over the sets tracked (tracking may have stopped early)
 function finalSets(m){ const x = /^(\d+)-(\d+)$/.exec(m.score||''); return x ? {w:+x[1], l:+x[2]} : setsWon(m); }
 function scoreBug(m, a, opts){
@@ -1066,7 +1075,7 @@ function scoreBug(m, a, opts){
   const s = S.set, sc = opts.live ? (a.score[s] || {us:0,them:0}) : {us:w, them:l};
   // away: the home team (the opponent) is on the left, like the hall's scoreboard. Taps still count for your team.
   const ord = (a2, b2) => m.away ? b2 + a2 : a2 + b2;
-  const us = {name:homeName(m), sets:w, pts:sc.us}, them = {name:m.opp, sets:l, pts:sc.them};
+  const us = {name:homeName(m), sets:w, pts:sc.us, srv:opts.serving === 'us'}, them = {name:m.opp, sets:l, pts:sc.them, srv:opts.serving === 'them'};
   const L = m.away ? them : us, R = m.away ? us : them;
   const pips = Object.keys(a.score).map(Number).sort((x,y)=>x-y).filter(n => (m.ended||[]).includes(n))
     .map(n => { const x = a.score[n]; return `<span class="pip ${x.us>x.them?'w':x.them>x.us?'l':''}">S${n} ${m.away ? x.them+'–'+x.us : x.us+'–'+x.them}</span>`; }).join('');
@@ -1074,9 +1083,9 @@ function scoreBug(m, a, opts){
   <section class="bug">
     <div class="bug-top"><span class="comp">${esc(fmtDate(m.date))}${m.team?' · '+esc(m.team):''}</span><span class="setflag">${opts.live ? 'Set '+s : 'Sets'}</span></div>
     <div class="score">
-      ${teamCell(L.name, L.sets, '')}
+      ${teamCell(L.name, L.sets, '', L.srv)}
       <div class="big"><span class="${L.pts>=R.pts?'hi':''}">${L.pts}</span><i>:</i><span class="${R.pts>L.pts?'hi':''}">${R.pts}</span></div>
-      ${teamCell(R.name, R.sets, ' away')}
+      ${teamCell(R.name, R.sets, ' away', R.srv)}
     </div>
     ${pips ? `<div class="pips">${pips}</div>` : ''}
     ${opts.live ? `
@@ -1164,9 +1173,11 @@ function whoBar(m){
 }
 // Live screen of a team match: the same score and pad; every stat then asks for the number.
 function teamLive(m){
-  const a = analyze(m), all = counts(m), rows = playerRows([m]);
+  const a = analyze(m), all = counts(m), rows = playerRows([m]), cur = a.score[S.set] || {us:0, them:0};
   return `
-  ${scoreBug(m, a, {live:true})}
+  ${scoreBug(m, a, {live:true, serving:servingNow(m, S.set)})}
+  ${cur.us || cur.them ? '' : `<div class="serveq"><span>Who serves first in set ${S.set}?</span><div class="seg" role="group" aria-label="First server">${(m.away ? ['them','us'] : ['us','them']).map(k =>
+    `<button type="button" data-serve="${k}" aria-pressed="${firstServer(m, S.set) === k}">${esc(k === 'us' ? homeName(m) : m.opp)}</button>`).join('')}</div></div>`}
   <section class="player">
     <div class="jersey">${esc((homeName(m)[0]||'T').toUpperCase())}</div>
     <div class="pinfo">
@@ -1208,14 +1219,19 @@ function teamMatchView(m){
     <div class="tile"><b>${c.block}</b><span>Blocks</span><em>${c.dig} defences</em></div>
   </div>
   ${pctRows(c)}
+  ${flowHTML([m])}
   ${rows.length ? `<section class="sec"><div class="sec-h"><h3>Players</h3><span class="note">tap a player</span></div>${playerList(rows, true)}</section>` : ''}
+  ${attackServeHTML(rows, c)}
   ${sets.length ? `<section class="sec"><div class="sec-h"><h3>Set by set</h3></div>${sets.map(s => {
     const cs = counts(m, s), x = a.score[s], p = pts(cs), e = errs(cs), good = listOf(cs, ['dig','pass','assist','serve','att']);
+    const sv = serveStats(m).sets[s], rn = runs(m, s);
     return `<div class="setc">
       <div class="setc-h"><b>Set ${s}</b><span>${x.us}–${x.them} ${(m.ended||[]).includes(s) ? (x.us > x.them ? 'won' : x.them > x.us ? 'lost' : 'tied') : 'not finished'}</span></div>
       ${typedOnly(m, s) ? TYPED : `<p>${p ? `<b>${p} point${p>1?'s':''}</b>: ${listOf(cs, PT_KEYS)}` : 'No points'}</p>
       ${good ? `<p class="m">Good plays: ${good}</p>` : ''}
-      <p class="m">${e ? `${e} error${e>1?'s':''}: ${listOf(cs, ERR_KEYS)}` : 'No errors'}</p>`}
+      <p class="m">${e ? `${e} error${e>1?'s':''}: ${listOf(cs, ERR_KEYS)}` : 'No errors'}</p>
+      ${sv && sv.soOf + sv.bpOf ? `<p class="m">Side-out ${sv.soOf ? pct100(sv.so, sv.soOf) + '%' : '–'} (${sv.so} of ${sv.soOf}) · break points ${sv.bpOf ? pct100(sv.bp, sv.bpOf) + '%' : '–'} (${sv.bp} of ${sv.bpOf})</p>` : ''}
+      ${rn.us || rn.them ? `<p class="m">Longest run: ${esc(homeName(m))} ${rn.us} · ${esc(m.opp)} ${rn.them}</p>` : ''}`}
       ${toLine(m, a, s)}
     </div>`; }).join('')}</section>` : ''}
   <details class="more sec"><summary>Full table</summary>${boxTable(rows.map(r=>({label:pLabel(r), c:r.c})).concat({label:'Team', c, sum:true}), 'Player')}${LEGEND}</details>
@@ -1246,7 +1262,10 @@ function teamSeason(list, seg, slot){
   </section>
   ${pctRows(total)}
   ${newMatchBtn()}
+  ${leadersHTML(rows)}
+  ${flowHTML(list)}
   <section class="sec"><div class="sec-h"><h3>Players</h3><span class="note">whole season · tap a player</span></div>${playerList(rows, true)}</section>
+  ${attackServeHTML(rows, total)}
   <section class="sec"><div class="sec-h"><h3>Game log</h3><button class="lnk" id="b-editlist">${S.editList?'Done':'Remove matches'}</button></div>
   <div class="mlist">${per.map(({m,c})=>{ const live = m.id===S.activeId, armed = S.armed==='x-'+m.id;
     const info = `<span class="res ${live?'live':(m.result||'')}">${live?'LIVE':(m.result||'–')}</span>
@@ -1487,7 +1506,7 @@ const listOf = (c, keys) => keys.filter(k => c[k]).map(k => nWord(c[k], k)).join
 const pct100 = (a, b) => { const p = Math.round(100*a/b); return p === 100 && a < b ? 99 : p === 0 && a > 0 ? 1 : p; };
 function pctParts(c){
   return [
-    {l:'Attack', a:c.kill + c.plase, b:c.kill + c.plase + c.aerr + c.att, n:'points from attacks'},
+    {l:'Attack', a:c.kill + c.plase, b:c.kill + c.plase + c.aerr + c.att, n:'efficiency ' + fmtEff(c)},
     {l:'Serve', a:c.ace + c.serve, b:c.ace + c.serve + c.serr, n:c.ace ? nWord(c.ace,'ace') : 'serves in'},
     {l:'Reception', a:c.pass, b:c.pass + c.rerr, n:'good receptions'},
   ].map(r => Object.assign(r, {p: r.b ? pct100(r.a, r.b) : null}));
@@ -1533,12 +1552,123 @@ function setCards(m, a){
 const typedOnly = (m, s) => { const es = (m.log||[]).filter(e => e.set === s && (e.k === 'us' || e.k === 'them' || BYK[e.k])); return es.length > 0 && es.every(e => e.late); };
 const TYPED = '<p class="m">Score typed in (missed). No stats for this set.</p>';
 // "Time-outs: Us at 12–15, Them at 20–18" for one set (the score when it was called), '' when none
+// and what the next five rallies gave after it ("then 3–2")
 function toLine(m, a, s){
-  const t = a.feed.filter(f => f.e.k === 'to' && f.e.set === s).map(f => `${f.e.side === 'us' ? homeName(m) : m.opp} at ${f.us}–${f.them}`);
+  const log = m.log||[];
+  const after = e => { const nx = log.slice(log.indexOf(e) + 1).filter(x => x.set === s && !x.late && (x.k === 'us' || x.k === 'them')).slice(0, 5);
+    return nx.length ? ` (then ${nx.filter(x => x.k === 'us').length}–${nx.filter(x => x.k === 'them').length})` : ''; };
+  const t = a.feed.filter(f => f.e.k === 'to' && f.e.set === s).map(f => `${f.e.side === 'us' ? homeName(m) : m.opp} at ${f.us}–${f.them}${after(f.e)}`);
   return t.length ? `<p class="m">Time-out${t.length > 1 ? 's' : ''}: ${esc(t.join(', '))}</p>` : '';
 }
 // sets that were watched: a set only typed in (arrived late) does not lower the per-set average
 function setsPlayed(m){ const a = analyze(m); return scoredSets(a.score).filter(s => !typedOnly(m, s)).length || 1; }
+
+/* ---------- team flow: who served, side-out, where the points came from, runs ---------- */
+// The first server of a set: chosen on the live screen (m.serve[set]), or read from the first rally
+// (our ace / serve in / serve error = we served; our reception = they served). null = not known.
+function firstServer(m, s){
+  if (m.serve && m.serve[s]) return m.serve[s];
+  for (const e of (m.log||[])){
+    if (e.set !== s || e.late) continue;
+    if (e.k === 'us' || e.k === 'them') return null;
+    if (['ace','serve','serr'].includes(e.k)) return 'us';
+    if (['pass','rerr'].includes(e.k)) return 'them';
+  }
+  return null;
+}
+// The team serving now: the winner of the last rally (the first server before any). null after typed-in points.
+function servingNow(m, s){
+  const p = (m.log||[]).filter(e => e.set === s && (e.k === 'us' || e.k === 'them'));
+  if (!p.length) return firstServer(m, s);
+  return p[p.length-1].late ? null : p[p.length-1].k;
+}
+// Side-out: rallies won when the other team served. Break points: rallies won on our own serve.
+// The server of each rally is the winner of the one before; typed-in points break the chain until the next rally.
+function serveStats(m){
+  const sets = {}, tot = {so:0, soOf:0, bp:0, bpOf:0};
+  scoredSets(analyze(m).score).forEach(s => {
+    const first = firstServer(m, s); if (!first) return;
+    const r = sets[s] = {so:0, soOf:0, bp:0, bpOf:0}; let cur = first;
+    (m.log||[]).forEach(e => {
+      if (e.set !== s || (e.k !== 'us' && e.k !== 'them')) return;
+      if (e.late){ cur = null; return; }
+      if (cur === 'us'){ r.bpOf++; if (e.k === 'us') r.bp++; }
+      else if (cur === 'them'){ r.soOf++; if (e.k === 'us') r.so++; }
+      cur = e.k;
+    });
+    Object.keys(tot).forEach(k => tot[k] += r[k]);
+  });
+  return {sets, tot};
+}
+// Where the points came from: earned = our point stats; the rest of our points were their errors.
+// Given = our errors; the rest of their points they earned. Typed-in points are left out.
+function pointSources(m){
+  const c = counts(m); let us = 0, them = 0;
+  (m.log||[]).forEach(e => { if (e.late) return; if (e.k === 'us') us++; else if (e.k === 'them') them++; });
+  return {earned:pts(c), theirErr:Math.max(0, us - pts(c)), given:errs(c), theyEarned:Math.max(0, them - errs(c))};
+}
+// Hitting efficiency (kills - errors) / attempts, as volleyball writes it: .364, -.111
+const attempts = c => c.kill + c.plase + c.aerr + c.att;
+const effNum = c => attempts(c) ? (c.kill + c.plase - c.aerr) / attempts(c) : null;
+const fmtEff = c => { const v = effNum(c); return v == null ? '–' : v.toFixed(3).replace(/^(-?)0\./, '$1.'); };
+// The longest run of points in a row for each team in one set
+function runs(m, s){
+  const best = {us:0, them:0}; let cur = null, n = 0;
+  (m.log||[]).forEach(e => {
+    if (e.set !== s || (e.k !== 'us' && e.k !== 'them')) return;
+    if (e.late){ cur = null; n = 0; return; }
+    if (e.k === cur) n++; else { cur = e.k; n = 1; }
+    best[cur] = Math.max(best[cur], n);
+  });
+  return best;
+}
+const sumKeys = (list, keys) => list.reduce((t, x) => { keys.forEach(k => t[k] = (t[k]||0) + (x[k]||0)); return t; }, {});
+// Side-out / break points / serves in, and where the points came from: one block for a match or a season
+function flowHTML(ms){
+  const sv = sumKeys(ms.map(m => serveStats(m).tot), ['so','soOf','bp','bpOf']);
+  const ps = sumKeys(ms.map(pointSources), ['earned','theirErr','given','theyEarned']);
+  const serr = ms.reduce((t, m) => t + counts(m).serr, 0);
+  const row = (l, a, b, n) => `<div class="pr"><span class="pl">${l}<small>${b ? `${a} of ${b} · ${n}` : 'not known yet'}</small></span><b>${b ? pct100(a, b) + '%' : '–'}</b><span class="pbar" aria-hidden="true"><i style="width:${b ? pct100(a, b) : 0}%"></i></span></div>`;
+  const ratio = ps.given ? (ps.earned / ps.given).toFixed(1) : '–';
+  return `<section class="sec"><div class="sec-h"><h3>Team flow</h3><span class="note">from the rally score</span></div>
+  <div class="pct">
+    ${row('Side-out', sv.so, sv.soOf, 'points won when they served')}
+    ${row('Break points', sv.bp, sv.bpOf, 'points won on our serve')}
+    ${row('Serves in', sv.bpOf - serr, sv.bpOf, 'every rally we served')}
+  </div>
+  ${sv.soOf + sv.bpOf ? '' : `<p class="note">Tap who serves first at the start of each set to see these.</p>`}
+  <div class="tiles">
+    <div class="tile hero"><b>${ps.earned}</b><span>Earned</span><em>our spikes, aces, blocks</em></div>
+    <div class="tile"><b>${ps.theirErr}</b><span>Their errors</span><em>points given to us</em></div>
+    <div class="tile"><b>${ps.given}</b><span>Our errors</span><em>points given away</em></div>
+    <div class="tile"><b>${ps.theyEarned}</b><span>They earned</span><em>earned : given ${ratio}</em></div>
+  </div></section>`;
+}
+// Per player: hitting (kills, errors, attempts, efficiency) and serving (aces, errors, in %, ace:error)
+function attackServeHTML(rows, total){
+  const hit = rows.filter(r => r.num && attempts(r.c)).sort((a,b) => attempts(b.c) - attempts(a.c));
+  const srv = rows.filter(r => r.num && (r.c.ace + r.c.serve + r.c.serr)).sort((a,b) => (b.c.ace + b.c.serve + b.c.serr) - (a.c.ace + a.c.serve + a.c.serr));
+  const inPct = c => c.serve ? pct100(c.ace + c.serve, c.ace + c.serve + c.serr) + '%' : '–';
+  const ae = c => c.serr ? (c.ace / c.serr).toFixed(1) : c.ace ? c.ace + ' : 0' : '–';
+  return (hit.length ? `<section class="sec"><div class="sec-h"><h3>Hitting</h3><span class="note">efficiency = (kills − errors) / attempts</span></div>
+    <div class="tbl"><table><thead><tr><th>Player</th><th>K</th><th>E</th><th>TA</th><th>Eff</th></tr></thead>
+    <tbody>${hit.map(r => `<tr><td>${esc(pLabel(r))}</td><td>${r.c.kill + r.c.plase}</td><td>${r.c.aerr}</td><td>${attempts(r.c)}</td><td class="k">${fmtEff(r.c)}</td></tr>`).join('')}
+    <tr class="sum"><td>Team</td><td>${total.kill + total.plase}</td><td>${total.aerr}</td><td>${attempts(total)}</td><td>${fmtEff(total)}</td></tr></tbody></table></div></section>` : '')
+  + (srv.length ? `<section class="sec"><div class="sec-h"><h3>Serving</h3><span class="note">in % only when "serve in" is tapped</span></div>
+    <div class="tbl"><table><thead><tr><th>Player</th><th>Aces</th><th>Err</th><th>In %</th><th>A:E</th></tr></thead>
+    <tbody>${srv.map(r => `<tr><td>${esc(pLabel(r))}</td><td>${r.c.ace}</td><td>${r.c.serr}</td><td>${inPct(r.c)}</td><td class="k">${ae(r.c)}</td></tr>`).join('')}</tbody></table></div></section>` : '');
+}
+// Season leaders: the top three in each count; hitting needs 10 attempts
+function leadersHTML(rows){
+  const named = rows.filter(r => r.num);
+  const cats = [['Points', r => pts(r.c), v => v], ['Spikes', r => r.c.kill + r.c.plase, v => v], ['Aces', r => r.c.ace, v => v], ['Blocks', r => r.c.block, v => v],
+    ['Defences', r => r.c.dig, v => v], ['Receptions', r => r.c.pass, v => v], ['Hitting', r => attempts(r.c) >= 10 ? effNum(r.c) : null, (v, r) => fmtEff(r.c)]];
+  const lines = cats.map(([l, f, show]) => {
+    const top = named.map(r => ({r, v:f(r)})).filter(x => x.v != null && x.v > 0).sort((a,b) => b.v - a.v).slice(0, 3);
+    return top.length ? `<div class="lead"><span class="lt">${l}</span><span class="lp">${top.map(x => `<button data-tp="${esc(x.r.num)}">#${esc(x.r.num)} ${esc((x.r.name||'').split(/\s+/)[0])} <b>${show(x.v, x.r)}</b></button>`).join('')}</span></div>` : '';
+  }).join('');
+  return lines ? `<section class="sec"><div class="sec-h"><h3>Leaders</h3><span class="note">tap a player</span></div><div class="leads">${lines}</div></section>` : '';
+}
 
 // Season: one bar per match (oldest left), points or rating. Tap a bar to read it.
 function seasonChart(list){
@@ -1649,8 +1779,11 @@ function drawReport(m){
 // A team match: the same top, then the team's numbers, every player with a stat, and set by set.
 function drawTeamReport(m){
   const c = counts(m), a = analyze(m), sets = picSets(m, a), rows = playerRows([m]);
-  // players start at 1360 (after the bars from 990 and a heading), 58 each; sets 64 each; footer 90
-  const W = 1080, P = 72, H = 1360 + rows.length * 58 + 40 + sets.length * 64 + 90;
+  // the flow line (side-out, where the points came from) under the bars
+  const sv = serveStats(m).tot, ps = pointSources(m);
+  const flow = [sv.soOf ? `Side-out ${pct100(sv.so, sv.soOf)}%` : '', sv.bpOf ? `Break points ${pct100(sv.bp, sv.bpOf)}%` : '', `Earned ${ps.earned}`, `Their errors ${ps.theirErr}`, `Our errors ${ps.given}`].filter(Boolean).join('  ·  ');
+  // players start at 1360 (after the bars from 990 and a heading), 58 each; sets 64 each; footer 90; flow line 56
+  const W = 1080, P = 72, H = 1360 + 56 + rows.length * 58 + 40 + sets.length * 64 + 90;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
   picHead(ctx, m, a, sets, W, H, P);
@@ -1663,6 +1796,8 @@ function drawTeamReport(m){
   picText(ctx, `Whole team · ${np} player${np === 1 ? '' : 's'} with stats`, P+160, py+58, {size:30, color:PIC.muted, fit:W-P-P-160, w:500});
   picTiles(ctx, [[String(pts(c)), 'POINTS', PIC.ink], [String(errs(c)), 'ERRORS', PIC.ink], [String(c.ace), 'ACES', PIC.ink], [String(c.block), 'BLOCKS', PIC.ink]], W, P);
   let y = picBars(ctx, c, W, P, 990);
+  picText(ctx, flow, P, y + 6, {size:28, color:PIC.muted, fit:W-2*P, w:500});
+  y += 56;
   // players, best scorer first: points, errors, rating
   // (taps left without a number are a row too, so the column adds up to the tile above)
   y += 30;
@@ -1958,6 +2093,8 @@ document.addEventListener('click', async e => {
   if (t.id === 'b-addrow'){ const d = readTeamRaw(); d.players.push({num:'', name:''}); keepDraft(d); render(); const r = document.querySelectorAll('.t-num'); if (r.length) r[r.length-1].focus(); return; }
   if (t.dataset.stat) return tap(t.dataset.stat);
   if (t.dataset.set) return pickSet(+t.dataset.set);
+  // the first server of the set on screen (side-out % in the report)
+  if (t.dataset.serve){ const m = S.matches[S.activeId]; if (m){ m.serve = Object.assign({}, m.serve, {[S.set]: t.dataset.serve}); save(m); } return render(); }
   if (t.dataset.metric){ S.chartMetric = t.dataset.metric; return render(); }
   if (t.dataset.open){
     if (t.dataset.open === S.activeId){ S.view = 'live'; } else { S.view = 'match'; S.openId = t.dataset.open; }
