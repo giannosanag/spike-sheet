@@ -92,7 +92,7 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 .score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:10px 18px 14px}
 .team{display:flex;flex-direction:column;gap:4px;min-width:0}
 .team.away{text-align:right;align-items:flex-end}
-.team .nm{font-size:22px;line-height:1;overflow-wrap:anywhere}.team .nm.long{font-size:16px}@media (max-width:360px){.team .nm.long{font-size:13px}.team .nm.xl{font-size:11px}}
+.team .nm{font-size:22px;line-height:1;overflow-wrap:anywhere}.team .nm.long{font-size:16px}.team .nm.xl{font-size:14px}@media (max-width:360px){.team .nm.long{font-size:13px}.team .nm.xl{font-size:11px}}
 .team .sw{font-size:12px;color:var(--muted)}
 .big{display:flex;align-items:center;gap:8px;font-size:84px;line-height:.85}
 .big i{font-style:normal;color:var(--faint);font-size:50px}
@@ -202,6 +202,26 @@ label.qh{margin-bottom:0;gap:8px}
 .freeze .fz-clock{font-family:var(--head);font-stretch:62%;font-weight:800;font-size:56px;line-height:1;font-variant-numeric:tabular-nums}
 .freeze .btn{font-size:18px;font-weight:700;padding:20px}
 .freeze .btn-or{background:var(--volt);color:var(--volt-ink);border-color:var(--volt)}
+/* a phone on its side: the time-out screen scrolls and shrinks instead of cutting off its buttons */
+.freeze{overflow-y:auto;justify-content:safe center}
+@media (max-height:480px){.freeze{gap:8px}.freeze h2,.freeze .fz-clock{font-size:40px}.freeze .btn{padding:14px}}
+/* a pull-down at the top must not reload the page in the middle of a match */
+html,body{overscroll-behavior-y:contain}
+/* no sideways jump of the column on a computer when a page starts to scroll */
+html{scrollbar-gutter:stable}
+/* landscape iPhone: buttons clear of the notch and the rounded corners */
+.tagbar{padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+/* keyboard focus shows on the dark bars too */
+.tagbar :focus-visible{outline-color:var(--volt)}
+/* a mouse gets a hover, not only the press */
+@media (hover:hover){.btn:hover,.stat:hover,.mitem:hover,.tagbar button:hover,.court button:hover,.plus button:hover,.pick button:hover{filter:brightness(.92)}}
+/* tablet / computer: bars, Undo and the time-out screen stay with the 560 px column, not the window edges */
+.freeze>*{width:100%;max-width:560px;margin-inline:auto}
+@media (min-width:600px){
+  .tagbar{max-width:592px;margin-inline:auto;border-radius:20px 20px 0 0}
+  .fab{right:max(16px, calc(50% - 280px))}
+}
+@media (max-width:599px){.fab{right:max(16px, env(safe-area-inset-right, 0px))}}
 .chart svg{display:block;width:100%;height:auto;overflow:visible}
 .chart .bar{fill:var(--muted)}.chart .bar.sel{fill:var(--hi)}
 .chart .base{stroke:var(--line);stroke-width:1}
@@ -328,29 +348,39 @@ const teamLabel = slot => teamOf(slot).name || (slot === 'team2' ? 'Team 2' : 'T
 /* ---------- storage ---------- */
 const LS = {
   get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } },
-  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); if (S.lsFail && k.startsWith('ss.m.')){ S.lsFail = false; syncNote(); } }catch(e){ if (!S.lsFail){ S.lsFail = true; setTimeout(()=>{ toast('This phone cannot save. Free some space.'); syncNote(); }, 0); } } },
+  // true when it was written
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); if (S.lsFail && k.startsWith('ss.m.')){ S.lsFail = false; syncNote(); } return true; }catch(e){ if (!S.lsFail){ S.lsFail = true; setTimeout(()=>{ toast('This phone cannot save. Free some space.'); syncNote(); }, 0); } return false; } },
 };
 // Each match has its own key (ss.m.<id>): a tap writes only the match that changed, not the whole
 // season (a season is over 1 MB, too slow to write on every tap on a cheap phone).
-// written: id -> the updatedAt last written. all: write every match (when the page closes).
+// written: id -> the updatedAt that is on the phone (only set when the write worked, so a write
+// refused for space is tried again on the next save).
 let written = {};
-function backup(all){
-  Object.values(S.matches).forEach(m => { if (all || written[m.id] !== (m.updatedAt||0)){ LS.set('ss.m.' + m.id, m); written[m.id] = m.updatedAt||0; } });
+function backup(){
+  Object.values(S.matches).forEach(m => { if (written[m.id] !== (m.updatedAt||0) && LS.set('ss.m.' + m.id, m)) written[m.id] = m.updatedAt||0; });
   Object.keys(written).forEach(id => { if (!S.matches[id]){ try{ localStorage.removeItem('ss.m.' + id); }catch(e){} delete written[id]; } });
+  // the old one-key copy still holds matches that did not fit before: drop each one once it has its own
+  // key or was deleted, so it can never bring a deleted match back
+  if (S.oldLeft){ const old = LS.get('ss.matches') || {}; let ch = false;
+    Object.keys(old).forEach(id => { if (!S.matches[id] || written[id] != null){ delete old[id]; ch = true; } });
+    if (!Object.keys(old).length){ try{ localStorage.removeItem('ss.matches'); }catch(e){} S.oldLeft = false; } else if (ch) LS.set('ss.matches', old); }
   LS.set('ss.active', S.activeId); LS.set('ss.player', S.player); LS.set('ss.team', S.teams.team); LS.set('ss.team2', S.teams.team2);
 }
 function restore(){
   const ms = {};
   try{ for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k && k.startsWith('ss.m.')){ const x = LS.get(k); if (x && x.id) ms[x.id] = x; } } }catch(e){}
   written = {}; Object.values(ms).forEach(x => written[x.id] = x.updatedAt||0);
-  // before 2026-10-07 every match sat in one key: move them (the newer copy wins), and drop that key
-  // only when every match is in its own key
+  // before 2026-10-07 every match sat in one key: each one moves to its own key (the newer copy wins)
+  // and leaves the old key at once; the key goes when it is empty
   const old = LS.get('ss.matches');
+  S.oldLeft = false;
   if (old && typeof old === 'object'){
-    Object.values(old).forEach(x => { if (x && x.id && (!ms[x.id] || (x.updatedAt||0) > (ms[x.id].updatedAt||0))) ms[x.id] = x; });
-    let ok = true;
-    Object.values(ms).forEach(x => { if (written[x.id] === (x.updatedAt||0) && localStorage.getItem('ss.m.' + x.id)) return; try{ localStorage.setItem('ss.m.' + x.id, JSON.stringify(x)); written[x.id] = x.updatedAt||0; }catch(e){ ok = false; } });
-    if (ok) try{ localStorage.removeItem('ss.matches'); }catch(e){}
+    Object.keys(old).forEach(id => { const x = old[id];
+      if (!x || !x.id || (ms[x.id] && (ms[x.id].updatedAt||0) >= (x.updatedAt||0))){ delete old[id]; return; }
+      ms[x.id] = x;
+      try{ localStorage.setItem('ss.m.' + x.id, JSON.stringify(x)); written[x.id] = x.updatedAt||0; delete old[id]; }catch(e){} });
+    if (!Object.keys(old).length) try{ localStorage.removeItem('ss.matches'); }catch(e){}
+    else { S.oldLeft = true; LS.set('ss.matches', old); }
   }
   S.matches = ms;
   const p = LS.get('ss.player'); if (p && typeof p === 'object') S.player = Object.assign(S.player, p);
@@ -483,6 +513,7 @@ function clearLocal(keepUnsaved, keepCards){
   const had = keepUnsaved && LS.get('ss.cloud'), keep = {};
   if (Array.isArray(had)) Object.values(S.matches).forEach(m => { if (!had.includes(m.id)) keep[m.id] = m; });
   S.matches = keep; S.activeId = null; dropDraft();
+  try{ localStorage.removeItem('ss.matches'); }catch(e){} S.oldLeft = false;
   // keepCards: a save was being refused, so the player card and roster may exist only here
   if (!keepCards){ S.player = {name:'', num:'', pos:''}; S.teams = {team:{name:'', players:[]}, team2:{name:'', players:[]}}; }
   try{ localStorage.removeItem('ss.synced'); localStorage.removeItem('ss.deleted'); localStorage.removeItem('ss.cloud'); }catch(e){}
@@ -946,7 +977,7 @@ function arm(key){ S.armed = key; S.armAt = Date.now(); clearTimeout(S.armT); S.
 const greekPlain = s => s.normalize('NFD').replace(/([Ͱ-Ͽ]̈?)́/g, '$1').normalize('NFC');
 function capsFix(root){
   const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
-  while ((n = w.nextNode())) if (/[Ά-Ώά-ΰό-ώ]/.test(n.data) && getComputedStyle(n.parentElement).textTransform === 'uppercase') n.data = greekPlain(n.data);
+  while ((n = w.nextNode())) if (/[Ά-ΐά-ΰό-ώ]/.test(n.data) && getComputedStyle(n.parentElement).textTransform === 'uppercase') n.data = greekPlain(n.data);
 }
 function render(){
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history'))));
@@ -955,7 +986,7 @@ function render(){
   else if (S.view === 'player') app.innerHTML = playerView();
   else if (S.view === 'team') app.innerHTML = teamView();
   else if (S.view === 'tplayer' && S.tpNum) app.innerHTML = teamPlayerView(S.tpNum);
-  else if (S.view === 'match' && S.matches[S.openId]){ app.innerHTML = matchView(S.matches[S.openId]); if (!isTeam(S.matches[S.openId])) prepPicture(S.matches[S.openId]); }
+  else if (S.view === 'match' && S.matches[S.openId]){ app.innerHTML = matchView(S.matches[S.openId]); prepPicture(S.matches[S.openId]); }
   else { S.view = 'history'; app.innerHTML = historyView(); }
   capsFix(app);
   clearInterval(S.timer);
@@ -1167,6 +1198,9 @@ function teamMatchView(m){
   return `
   <div class="row" style="align-items:center"><div><div class="kicker">${m.result==='W'?'Final · Win':m.result==='L'?'Final · Loss':'Final'}${m.score?' '+esc(m.score):''} · whole team</div><h2>${esc(homeName(m))} vs ${esc(m.opp)}</h2></div></div>
   ${scoreBug(m, a, {live:false})}
+  <div class="row">
+    <button class="btn btn-or" id="b-share" data-id="${m.id}" style="flex:1">Share picture</button>
+  </div>
   <div class="tiles">
     <div class="tile hero"><b>${pts(c)}</b><span>Points by players</span><em>of ${teamPts} team points</em></div>
     <div class="tile"><b>${errs(c)}</b><span>Errors</span><em>points given away</em></div>
@@ -1575,14 +1609,115 @@ function picTeam(ctx, text, x, y, maxW, align){
   picText(ctx, best.b, x, y + zz*0.5, {w:800, size:zz, head:true, align, fit:maxW});
 }
 function picRound(ctx, x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+// the sets shown: every set with a score or a stat
+const picSets = (m, a) => Object.keys(a.score).map(Number).sort((x,y)=>x-y).filter(n => { const x = a.score[n], cs = counts(m, n); return x.us || x.them || pts(cs) || errs(cs); });
 function drawReport(m){
-  const c = counts(m), a = analyze(m), {w, l} = finalSets(m), court = setCourt(m);
-  const sets = Object.keys(a.score).map(Number).sort((x,y)=>x-y).filter(n => { const x = a.score[n], cs = counts(m, n); return x.us || x.them || pts(cs) || errs(cs); });
+  if (isTeam(m)) return drawTeamReport(m);
+  const c = counts(m), a = analyze(m), court = setCourt(m), sets = picSets(m, a);
   // sets start at y 1290 (after three 96-high bars from 990); the footer needs 90 below the last line
   const W = 1080, P = 72, H = 1290 + sets.length * 64 + (passLine(m) ? 60 : 0) + 90;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
+  picHead(ctx, m, a, sets, W, H, P);
+  // player
+  const py = 640;
+  ctx.fillStyle = PIC.volt; ctx.beginPath(); ctx.arc(P+64, py, 64, 0, 7); ctx.fill();
+  picText(ctx, S.player.num || '?', P+64, py+2, {w:800, size:70, head:true, color:PIC.voltInk, align:'center', base:'middle'});
+  picText(ctx, capsName(pName()), P+160, py+10, {w:800, size:76, head:true, fit:W-P-P-160});
+  picText(ctx, [S.player.pos, `${fmtVir(pts(c)/setsPlayed(m))} points per set`].filter(Boolean).join(' · '), P+160, py+58, {size:30, color:PIC.muted, fit:W-P-P-160, w:500});
+  // hero numbers
+  picTiles(ctx, [[String(pts(c)), 'POINTS', PIC.ink], [fmtVir(vir(c)), 'RATING', PIC.ink], [fmtPM(a.pm), '+/-', a.pm > 0 ? PIC.pos : a.pm < 0 ? PIC.neg : PIC.ink], [String(mins(playMs(m))), 'MINUTES', PIC.ink]], W, P);
+  // attack / serve / reception
+  let y = picBars(ctx, c, W, P, 990);
+  // set by set
+  y += 12;
+  sets.forEach(n => {
+    const x = a.score[n], cs = counts(m, n), cr = court[n] || {onR:0, pm:0}, p = pts(cs), e = errs(cs);
+    ctx.fillStyle = PIC.soft; picRound(ctx, P, y-40, W-2*P, 54, 14); ctx.fill();
+    picText(ctx, `SET ${n}`, P+22, y-4, {w:800, size:34, head:true});
+    picText(ctx, `${x.us}–${x.them}`, P+170, y-4, {w:700, size:30});
+    if (typedOnly(m, n)){ picText(ctx, 'score typed in, no stats', P+330, y-4, {size:30, color:PIC.muted}); y += 64; return; }
+    picText(ctx, `${p} pt${p === 1 ? '' : 's'} · ${e} error${e === 1 ? '' : 's'}`, P+330, y-4, {size:30, color:PIC.muted});
+    if (cr.onR) picText(ctx, fmtPM(cr.pm), W-P-22, y-4, {w:700, size:30, align:'right', color:cr.pm > 0 ? PIC.pos : cr.pm < 0 ? PIC.neg : PIC.ink});
+    else picText(ctx, 'bench', W-P-22, y-4, {size:28, align:'right', color:PIC.muted});
+    y += 64;
+  });
+  const pl = passLine(m);
+  if (pl) { picText(ctx, pl, P, y+14, {size:28, color:PIC.muted, fit:W-2*P, w:500}); y += 60; }
+  return cv;
+}
+// A team match: the same top, then the team's numbers, every player with a stat, and set by set.
+function drawTeamReport(m){
+  const c = counts(m), a = analyze(m), sets = picSets(m, a), rows = playerRows([m]);
+  // players start at 1360 (after the bars from 990 and a heading), 58 each; sets 64 each; footer 90
+  const W = 1080, P = 72, H = 1360 + rows.length * 58 + 40 + sets.length * 64 + 90;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  picHead(ctx, m, a, sets, W, H, P);
+  // the team
+  const py = 640, name = homeName(m);
+  ctx.fillStyle = PIC.volt; ctx.beginPath(); ctx.arc(P+64, py, 64, 0, 7); ctx.fill();
+  picText(ctx, capsName(name[0] || 'T'), P+64, py+2, {w:800, size:70, head:true, color:PIC.voltInk, align:'center', base:'middle'});
+  picText(ctx, capsName(name), P+160, py+10, {w:800, size:76, head:true, fit:W-P-P-160});
+  const np = rows.filter(r => r.num).length;
+  picText(ctx, `Whole team · ${np} player${np === 1 ? '' : 's'} with stats`, P+160, py+58, {size:30, color:PIC.muted, fit:W-P-P-160, w:500});
+  picTiles(ctx, [[String(pts(c)), 'POINTS', PIC.ink], [String(errs(c)), 'ERRORS', PIC.ink], [String(c.ace), 'ACES', PIC.ink], [String(c.block), 'BLOCKS', PIC.ink]], W, P);
+  let y = picBars(ctx, c, W, P, 990);
+  // players, best scorer first: points, errors, rating
+  // (taps left without a number are a row too, so the column adds up to the tile above)
+  y += 30;
+  if (rows.length){
+    picText(ctx, 'PLAYERS', P, y, {w:800, size:34, head:true});
+    [['PTS', W-P-300], ['ERR', W-P-150], ['RTG', W-P]].forEach(([t, x]) => picText(ctx, t, x, y, {w:600, size:24, color:PIC.muted, align:'right'}));
+  }
+  y += 58;
+  rows.forEach((r, i) => {
+    if (i % 2 === 0){ ctx.fillStyle = PIC.soft; picRound(ctx, P-12, y-40, W-2*P+24, 54, 12); ctx.fill(); }
+    if (r.num) picText(ctx, '#' + r.num, P+8, y-4, {w:800, size:34, head:true, color:PIC.volt});
+    picText(ctx, r.num ? r.name || '' : 'No player', P+100, y-4, {w:600, size:30, fit:W-P-300-60-(P+100), color:r.num ? PIC.ink : PIC.muted});
+    picText(ctx, String(pts(r.c)), W-P-300, y-4, {w:700, size:32, align:'right'});
+    picText(ctx, String(errs(r.c)), W-P-150, y-4, {w:700, size:32, align:'right', color:PIC.muted});
+    picText(ctx, fmtVir(vir(r.c)), W-P, y-4, {w:700, size:32, align:'right'});
+    y += 58;
+  });
+  // set by set: the team's points and errors
+  y += 40;
+  sets.forEach(n => {
+    const x = a.score[n], cs = counts(m, n), p = pts(cs), e = errs(cs);
+    ctx.fillStyle = PIC.soft; picRound(ctx, P, y-40, W-2*P, 54, 14); ctx.fill();
+    picText(ctx, `SET ${n}`, P+22, y-4, {w:800, size:34, head:true});
+    picText(ctx, `${x.us}–${x.them}`, P+170, y-4, {w:700, size:30});
+    picText(ctx, typedOnly(m, n) ? 'score typed in, no stats' : `${p} pt${p === 1 ? '' : 's'} · ${e} error${e === 1 ? '' : 's'}`, P+330, y-4, {size:30, color:PIC.muted});
+    y += 64;
+  });
+  return cv;
+}
+// Four number tiles under the name (the first in volt).
+function picTiles(ctx, hero, W, P){
+  const hw = (W - 2*P - 3*16) / 4;
+  hero.forEach(([v, lab, col], i) => { const x = P + i*(hw+16);
+    ctx.fillStyle = i === 0 ? PIC.volt : PIC.soft; picRound(ctx, x, 750, hw, 170, 24); ctx.fill();
+    picText(ctx, v, x+24, 850, {w:800, size:88, head:true, color:i === 0 ? PIC.voltInk : col, fit:hw-40});
+    picText(ctx, lab, x+24, 892, {w:600, size:24, color:i === 0 ? PIC.voltInk : PIC.muted}); });
+}
+// Attack / serve / reception bars from y; returns the y after them.
+function picBars(ctx, c, W, P, y){
+  pctParts(c).forEach(r => {
+    picText(ctx, r.l, P, y, {w:700, size:36});
+    picFont(ctx, 700, 36); const lw = ctx.measureText(r.l).width;
+    picText(ctx, r.b ? `${r.a} of ${r.b}` : 'none tapped', P + lw + 18, y, {size:28, color:PIC.muted});
+    picText(ctx, r.p == null ? '–' : r.p + '%', W-P, y+4, {w:800, size:56, head:true, align:'right'});
+    ctx.fillStyle = PIC.soft2; picRound(ctx, P, y+20, W-2*P, 14, 7); ctx.fill();
+    if (r.p){ ctx.fillStyle = PIC.volt; picRound(ctx, P, y+20, Math.max(14, (W-2*P)*r.p/100), 14, 7); ctx.fill(); }
+    y += 96;
+  });
+  return y;
+}
+// Brand, date, result, both teams, sets won and the set scores; the footer address.
+function picHead(ctx, m, a, sets, W, H, P){
+  const {w, l} = finalSets(m);
   ctx.fillStyle = PIC.bg; ctx.fillRect(0, 0, W, H);
+  picText(ctx, 'giannosanag.github.io/spike-sheet', W/2, H-40, {size:24, color:PIC.muted, align:'center'});
   // brand + date
   ctx.fillStyle = PIC.volt; ctx.beginPath(); ctx.arc(P+12, 92, 12, 0, 7); ctx.fill();
   picText(ctx, 'SPIKE SHEET', P+36, 108, {w:800, size:46, head:true});
@@ -1604,47 +1739,6 @@ function drawReport(m){
       ctx.strokeStyle = won ? PIC.ink : PIC.soft2; ctx.lineWidth = 3; picRound(ctx, x, 480, cw[i], 54, 27); ctx.stroke();
       picText(ctx, t, x + cw[i]/2, 518, {w:600, size:30, color:won ? PIC.ink : PIC.muted, align:'center'}); x += cw[i] + 14; });
   }
-  // player
-  const py = 640;
-  ctx.fillStyle = PIC.volt; ctx.beginPath(); ctx.arc(P+64, py, 64, 0, 7); ctx.fill();
-  picText(ctx, S.player.num || '?', P+64, py+2, {w:800, size:70, head:true, color:PIC.voltInk, align:'center', base:'middle'});
-  picText(ctx, capsName(pName()), P+160, py+10, {w:800, size:76, head:true, fit:W-P-P-160});
-  picText(ctx, [S.player.pos, `${fmtVir(pts(c)/setsPlayed(m))} points per set`].filter(Boolean).join(' · '), P+160, py+58, {size:30, color:PIC.muted, fit:W-P-P-160, w:500});
-  // hero numbers
-  const hero = [[String(pts(c)), 'POINTS', PIC.ink], [fmtVir(vir(c)), 'RATING', PIC.ink], [fmtPM(a.pm), '+/-', a.pm > 0 ? PIC.pos : a.pm < 0 ? PIC.neg : PIC.ink], [String(mins(playMs(m))), 'MINUTES', PIC.ink]];
-  const hw = (W - 2*P - 3*16) / 4;
-  hero.forEach(([v, lab, col], i) => { const x = P + i*(hw+16);
-    ctx.fillStyle = i === 0 ? PIC.volt : PIC.soft; picRound(ctx, x, 750, hw, 170, 24); ctx.fill();
-    picText(ctx, v, x+24, 850, {w:800, size:88, head:true, color:i === 0 ? PIC.voltInk : col, fit:hw-40});
-    picText(ctx, lab, x+24, 892, {w:600, size:24, color:i === 0 ? PIC.voltInk : PIC.muted}); });
-  // attack / serve / reception
-  let y = 990;
-  pctParts(c).forEach(r => {
-    picText(ctx, r.l, P, y, {w:700, size:36});
-    picFont(ctx, 700, 36); const lw = ctx.measureText(r.l).width;
-    picText(ctx, r.b ? `${r.a} of ${r.b}` : 'none tapped', P + lw + 18, y, {size:28, color:PIC.muted});
-    picText(ctx, r.p == null ? '–' : r.p + '%', W-P, y+4, {w:800, size:56, head:true, align:'right'});
-    ctx.fillStyle = PIC.soft2; picRound(ctx, P, y+20, W-2*P, 14, 7); ctx.fill();
-    if (r.p){ ctx.fillStyle = PIC.volt; picRound(ctx, P, y+20, Math.max(14, (W-2*P)*r.p/100), 14, 7); ctx.fill(); }
-    y += 96;
-  });
-  // set by set
-  y += 12;
-  sets.forEach(n => {
-    const x = a.score[n], cs = counts(m, n), cr = court[n] || {onR:0, pm:0}, p = pts(cs), e = errs(cs);
-    ctx.fillStyle = PIC.soft; picRound(ctx, P, y-40, W-2*P, 54, 14); ctx.fill();
-    picText(ctx, `SET ${n}`, P+22, y-4, {w:800, size:34, head:true});
-    picText(ctx, `${x.us}–${x.them}`, P+170, y-4, {w:700, size:30});
-    if (typedOnly(m, n)){ picText(ctx, 'score typed in, no stats', P+330, y-4, {size:30, color:PIC.muted}); y += 64; return; }
-    picText(ctx, `${p} pt${p === 1 ? '' : 's'} · ${e} error${e === 1 ? '' : 's'}`, P+330, y-4, {size:30, color:PIC.muted});
-    if (cr.onR) picText(ctx, fmtPM(cr.pm), W-P-22, y-4, {w:700, size:30, align:'right', color:cr.pm > 0 ? PIC.pos : cr.pm < 0 ? PIC.neg : PIC.ink});
-    else picText(ctx, 'bench', W-P-22, y-4, {size:28, align:'right', color:PIC.muted});
-    y += 64;
-  });
-  const pl = passLine(m);
-  if (pl) { picText(ctx, pl, P, y+14, {size:28, color:PIC.muted, fit:W-2*P, w:500}); y += 60; }
-  picText(ctx, 'giannosanag.github.io/spike-sheet', W/2, H-40, {size:24, color:PIC.muted, align:'center'});
-  return cv;
 }
 function picName(m){ return ('spike-sheet-' + (m.opp||'match') + '-' + (m.date||'')).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-+/g, '-') + '.jpg'; }
 // Made ahead, when the match page opens: iOS only allows the share sheet straight from a tap,
@@ -1892,7 +1986,8 @@ document.addEventListener('click', async e => {
       // signing out takes the matches off this phone: the account must have them all first
       if (navigator.onLine === false) return toast('No internet. Sign out when it is back, so nothing is lost.');
       clearTimeout(S.flushT); await flush();
-      if (S.saveFailed || Object.keys(S.pending).length) return toast('Still saving to your account. Try again in a moment.');
+      // waiting saves: wait. A save the account refused will not go through by waiting: signing out is the cure.
+      if (Object.keys(S.pending).length && !S.saveFailed) return toast('Still saving to your account. Try again in a moment.');
       toast('Signing out…');
       return window.SS_auth.signOut();
     case 'b-finish': {
@@ -1936,12 +2031,35 @@ document.addEventListener('submit', e => {
   }
 });
 document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#teamform')) keepDraft(readTeamRaw()); });
-window.addEventListener('pagehide', () => { backup(true); flush(); });
+window.addEventListener('pagehide', () => { backup(); flush(); });
+// back from the browser's page cache: another copy of the app may have changed things meanwhile
+window.addEventListener('pageshow', e => { if (e.persisted){ restore(); if (!isTyping()) render(); } });
+// Android Back (and Escape on a computer): first close the open bar, then go back to Live; only Back on
+// Live with nothing open leaves the app. The time-out screen stays until Resume play.
+function goBack(){
+  const m = S.activeId && S.matches[S.activeId];
+  if (S.view === 'live' && m && m.toOn) return true;
+  if (S.who || S.tag || S.toAsk || S.fixAsk){ whoLeft(); S.who = null; S.tag = null; S.toAsk = false; S.fixAsk = false; clearTimeout(S.tagT); S.barClosedAt = Date.now(); render(); return true; }
+  if (S.view !== 'live'){
+    // the team page: saved like leaving it by a tab; refused, the typing waits there
+    if (S.view === 'team'){ if (teamDirty() && !saveTeamForm()) toast('Team not saved yet: finish it on the Team page'); else dropDraft(); }
+    S.view = 'live'; S.openId = null; S.editList = false; render(); window.scrollTo(0,0); return true; }
+  return false;
+}
+history.pushState({ss:1}, '');
+window.addEventListener('popstate', () => {
+  if (goBack()) return history.pushState({ss:1}, '');
+  // nothing to close: a second Back within 2 s leaves the app, a stray one does not
+  toast('Press Back again to leave');
+  setTimeout(() => history.pushState({ss:1}, ''), 2000);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !isTyping()) goBack(); });
 // the same phone has the app open twice (home-screen app and a browser tab): take the other one's
 // changes at once, so an old screen can never save over newer taps
 window.addEventListener('storage', e => {
   if (!e.key || !(e.key.startsWith('ss.m.') || ['ss.active','ss.player','ss.team','ss.team2'].includes(e.key))) return;
-  restore(); if (!isTyping()) render();
+  // several keys change together (one per match): one reload for the lot
+  clearTimeout(S.stT); S.stT = setTimeout(() => { restore(); if (!isTyping()) render(); }, 30);
 });
 
 restore();
