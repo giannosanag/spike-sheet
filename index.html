@@ -1740,7 +1740,8 @@ function picHead(ctx, m, a, sets, W, H, P){
       picText(ctx, t, x + cw[i]/2, 518, {w:600, size:30, color:won ? PIC.ink : PIC.muted, align:'center'}); x += cw[i] + 14; });
   }
 }
-function picName(m){ return ('spike-sheet-' + (m.opp||'match') + '-' + (m.date||'')).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-+/g, '-') + '.jpg'; }
+// any alphabet stays (spike-sheet-ολυμπιακός-2026-10-07.jpg); only spaces and signs become dashes
+function picName(m){ return ('spike-sheet-' + (m.opp||'match') + '-' + (m.date||'')).toLowerCase().replace(/[^\p{L}\p{N}-]+/gu, '-').replace(/-+/g, '-').replace(/-$/, '') + '.jpg'; }
 // Made ahead, when the match page opens: iOS only allows the share sheet straight from a tap,
 // so the picture must already exist when the button is pressed.
 async function prepPicture(m){
