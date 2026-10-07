@@ -5,5 +5,7 @@ per set and per season. Works on any phone browser; add it to the home screen to
 
 - App: a single `index.html` (no build step), hosted on GitHub Pages.
 - Data: Firebase Firestore under `users/<uid>/`, behind Google sign-in. Rules in `firestore.rules`
-  allow each account to read and write only its own data. Nothing personal is stored in this repo.
+  allow each account to read and write only its own data; the app's owner may read every account
+  (the admin page, Player tab). The rules are published by hand in the Firebase console.
+  Nothing personal is stored in this repo.
 - Offline: taps are kept on the phone and upload when there is signal (`sw.js` caches the app).

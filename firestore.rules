@@ -1,9 +1,17 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Each Google account can read and write only its own folder.
+    // The app's owner (this Google account only) may read every account, for the admin page.
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email == 'giannosanag@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    // Each Google account reads and writes only its own folder: its profile (users/<uid>),
+    // its matches and its settings. The owner may read them, never write them.
     match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if request.auth != null && (request.auth.uid == uid || isOwner());
+      allow write: if request.auth != null && request.auth.uid == uid;
     }
   }
 }

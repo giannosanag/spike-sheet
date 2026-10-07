@@ -157,6 +157,13 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 
 /* tables */
 .tbl{overflow-x:auto}
+.pbpbox{max-height:320px;overflow-y:auto}
+.moretop{gap:2px}
+details.kpi{border-top:1px solid var(--line);padding:6px 0}details.kpi summary{font-size:15px}
+.kpis{display:flex;flex-direction:column}
+.kr{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.kr:last-child{border-bottom:0}.kr small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.kr b{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 table{border-collapse:collapse;width:100%}
 th,td{padding:10px 8px;text-align:right;white-space:nowrap;font-size:14px}
 th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--bg);padding-left:0}
@@ -388,6 +395,17 @@ input::-webkit-date-and-time-value{text-align:left}
 @media (max-width:380px){:root[lang="el"] body.playing .tabs{gap:8px}:root[lang="el"] .act.undo .fab-i{display:none}}
 /* the team page: "Πασαδόρος" fits the position box */
 :root[lang="el"] .rrow .t-pos{font-size:13px;padding-inline:2px}
+@media print{
+  :root,:root:not([data-theme="light"]),:root[data-theme="dark"]{--bg:#FFFFFF;--soft:#F2F2F2;--soft2:#E6E6E6;--ink:#000000;--muted:#555555;--faint:#888888;--line:#DDDDDD;--hi:#000000;--pos:#0A6B30;--neg:#B00004}
+  @page{margin:12mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{background:#fff;color:#000}
+  header,#syncnote,.toast,.fab,.tagbar,.freeze,.btn,.lnk,.setsel,.plus{display:none!important}
+  .wrap{max-width:none}
+  .tbl{overflow:visible}.pbpbox{max-height:none;overflow:visible}
+  .setc,.tile,.pr,.kr,tr{break-inside:avoid}
+  details>summary{list-style:none}details>summary::after{content:''!important}
+}
 @media (prefers-reduced-motion:reduce){.stat,.live-dot{animation:none;transition:none}}
 </style>
 
@@ -570,7 +588,8 @@ const EL = {
   '{p} clean receptions': '{p} καλές υποδοχές', 'Game log': 'Αγώνες', 'tap for the team report': 'πάτα για την αναφορά της ομάδας', '{n} error': '{n} λάθος', '{n} errors': '{n} λάθη',
   'Box score': 'Πίνακας', 'Match': 'Αγώνας',
   'Only what was tapped with number {n} in team matches. No minutes or +/- here: a team match does not track who is on court.': 'Μόνο ό,τι πατήθηκε με τον αριθμό {n} σε αγώνες ομάδας. Χωρίς λεπτά και +/- εδώ: ο αγώνας ομάδας δεν καταγράφει ποιος είναι στο γήπεδο.',
-  'Final': 'Τελικό', 'Final · Win': 'Τελικό · Νίκη', 'Final · Loss': 'Τελικό · Ήττα', 'whole team': 'όλη η ομάδα', 'Share picture': 'Κοινοποίηση εικόνας',
+  'Final': 'Τελικό', 'Final · Win': 'Τελικό · Νίκη', 'Final · Loss': 'Τελικό · Ήττα', 'whole team': 'όλη η ομάδα', 'Share picture': 'Κοινοποίηση εικόνας', 'Saved: {name}': 'Αποθηκεύτηκε: {name}', 'This browser cannot print. Open the app in Safari or Chrome.': 'Αυτός ο browser δεν μπορεί να εκτυπώσει. Άνοιξε την εφαρμογή στο Safari ή στο Chrome.',
+  'Score': 'Σκορ', 'Set by': 'Πάσα από', 'Pass from': 'Πάσα από', 'Longest run': 'Μεγαλύτερο σερί', 'Rallies on court': 'Φάσεις στο γήπεδο',
   'Points by players': 'Κερδισμένοι πόντοι', 'of {n} team points': 'από {n} πόντους της ομάδας', 'points given away': 'χαρισμένοι πόντοι', 'tap a player': 'πάτα ένα όνομα',
   'Set by set': 'Σετ προς σετ', 'won': 'νίκη', 'lost': 'ήττα', 'tied': 'ισοπαλία', 'not finished': 'δεν τελείωσε', '{n} point': '{n} πόντος', '{n} points': '{n} πόντοι', 'No points': 'Κανένας πόντος',
   'No errors': 'Κανένα λάθος', 'Side-out {a} ({b} of {c}) · break points {d} ({e} of {f})': 'Σάιντ άουτ {a} ({b} από {c}) · μπρέικ πόιντ {d} ({e} από {f})',
@@ -602,6 +621,37 @@ const EL = {
     'Υ3 / Υ2 / Υ1 υποδοχή με βαθμό 3 (τέλεια), 2 (καλή), 1 (κακή), το ΛΥ είναι το 0 · ΚΔ κράτημα ή διπλή · ΛΘ λάθος θέσης (της ομάδας, χωρίς αριθμό).',
   "SPK spike · PLA plasé · BLK block · DEF defence · REC good reception · SRV serve in · SET good set · ATT attack kept in play, no point · SE / AE / RE serve, attack, reception error · BO block out (the ball goes out off the player's block, their point) · NF net or fault. Rating: +1 for every point, block or defence, +0.5 for a good reception or set, −1 for every error, −0.5 for a block out.":
     'ΑΣ άσος · ΚΡ καρφί · ΠΛ πλασέ · ΜΠ μπλοκ · ΑΜ άμυνα · ΥΠ καλή υποδοχή · ΣΡ σερβίς μέσα · ΠΣ καλή πάσα · ΕΠ επίθεση που συνεχίστηκε, χωρίς πόντο · ΛΣ / ΛΕ / ΛΥ λάθος σερβίς, επίθεσης, υποδοχής · ΜΑ μπλοκ άουτ (η μπάλα φεύγει άουτ από το μπλοκ μας, πόντος τους) · ΔΦ δίχτυ ή φάουλ. Αξιολόγηση: +1 για κάθε πόντο, μπλοκ ή άμυνα, +0.5 για καλή υποδοχή ή πάσα, −1 για κάθε λάθος, −0.5 για μπλοκ άουτ.',
+  // more stats
+  'More stats': 'Περισσότερα στατιστικά', 'tap a title to open it': 'πάτα έναν τίτλο για να ανοίξει',
+  'Points': 'Πόντοι', 'Rally points': 'Σύνολο πόντων', '{a} : {b} per set': '{a} : {b} ανά σετ', 'Point difference': 'Διαφορά πόντων',
+  'From spikes and plasé': 'Από καρφιά και πλασέ', 'From aces': 'Από άσους', 'From blocks': 'Από μπλοκ', 'From their errors': 'Από λάθη τους',
+  'Their points from our errors': 'Πόντοι τους από δικά μας λάθη', 'Their points they earned': 'Πόντοι που κέρδισαν μόνοι τους',
+  '{p} of our points': '{p} των πόντων μας', '{p} of their points': '{p} των πόντων τους',
+  'Pressure': 'Πίεση', 'Biggest lead': 'Μεγαλύτερο προβάδισμα', 'ours : theirs': 'εμείς : αυτοί', 'points in a row': 'πόντοι στη σειρά',
+  'Times tied': 'Ισοπαλίες', 'Lead changes': 'Αλλαγές προβαδίσματος', 'From 20-all': 'Από το 20–20',
+  'points won from 20–20 (10–10 in the deciding set)': 'πόντοι από το 20–20 (10–10 στο τάι μπρέικ)',
+  'Sets won from behind': 'Σετ με ανατροπή', 'after trailing by 3 or more': 'αφού βρεθήκαμε πίσω με 3 ή περισσότερους πόντους',
+  'Sets decided by 2': 'Σετ με διαφορά 2', 'won – lost': 'νίκες – ήττες', 'Won – lost': 'Νίκες – ήττες',
+  'After our time-outs': 'Μετά τα δικά μας τάιμ άουτ', 'After their time-outs': 'Μετά τα τάιμ άουτ τους', 'the next 5 rallies, won : lost': 'οι 5 επόμενες φάσεις, κερδισμένες : χαμένες',
+  'Serves': 'Σερβίς', 'rallies we served': 'φάσεις με δικό μας σερβίς', '{p} of serves': '{p} των σερβίς', 'Serve errors': 'Λάθη σερβίς', 'Aces : errors': 'Άσοι : λάθη',
+  '{a} of {b} · points won on our serve': '{a} από {b} · πόντοι με δικό μας σερβίς', 'Points per serving turn': 'Πόντοι ανά σειρά στο σερβίς', '{n} turn': '{n} φορά στο σερβίς', '{n} turns': '{n} φορές στο σερβίς',
+  'Longest serving run': 'Μεγαλύτερο σερί στο σερβίς', 'points in a row on our serve': 'πόντοι στη σειρά με δικό μας σερβίς',
+  'Receptions graded': 'Υποδοχές με βαθμό', '3 / 2 / 1 / 0: {a} / {b} / {c} / {d}': '3 / 2 / 1 / 0: {a} / {b} / {c} / {d}',
+  'Perfect (3)': 'Τέλειες (3)', 'Good or perfect (3 + 2)': 'Θετικές (3 + 2)', 'Errors (0)': 'Λάθη (0)', 'Pass rating': 'Βαθμός υποδοχής', '0 to 3': 'από 0 έως 3',
+  'Side-out after a {g}': 'Σάιντ άουτ μετά από υποδοχή {g}', 'Good receptions': 'Καλές υποδοχές', 'Reception errors': 'Λάθη υποδοχής', 'Clean': 'Ποσοστό καλών',
+  'Spikes + plasé': 'Καρφιά + πλασέ', '{p} of the spikes + plasé': '{p} των καρφιών + πλασέ', 'Attack errors': 'Λάθη επίθεσης', 'Spikes : errors': 'Καρφιά : λάθη',
+  'Attempts': 'Προσπάθειες', '{p} spikes': '{p} καρφιά', 'Efficiency': 'Απόδοση', '(spikes − errors) / attempts': '(καρφιά − λάθη) / προσπάθειες', 'Good sets': 'Καλές πάσες',
+  'Block and defence': 'Μπλοκ και άμυνα', 'Block outs': 'Μπλοκ άουτ', '{p} of the errors': '{p} των λαθών',
+  'Per set': 'Ανά σετ', 'By set': 'Ανά σετ', 'Their err.': 'Λάθ. τους', 'Run': 'Σερί', 'Lead': 'Προβ.', 'Average score': 'Μέσο σκορ',
+  'Pts = our spikes, aces and blocks · Run and Lead = ours : theirs': 'Πόν. = καρφιά, άσοι και μπλοκ μας · Σερί και Προβ. = εμείς : αυτοί',
+  'Players per set': 'Ανά αριθμό, ανά σετ', 'Share': 'Μερίδιο', 'per set the player had a stat in · Share = of our rally points': 'ανά σετ με έστω ένα στατιστικό · Μερίδιο = % των πόντων μας',
+  'Record': 'Απολογισμός', 'Matches': 'Αγώνες', '{p} won': '{p} νίκες', 'Deciding sets': 'Τάι μπρέικ', 'Last 5': 'Τελευταίοι 5', 'oldest first': 'πρώτα ο παλαιότερος',
+  'Most wins in a row': 'Περισσότερες συνεχόμενες νίκες', 'Biggest win': 'Μεγαλύτερη νίκη', '{sets} vs {opp}': '{sets} vs {opp}',
+  'Opponents': 'Αντίπαλοι', 'Played': 'Αγώνες',
+  'Per set and per minute': 'Ανά σετ και ανά λεπτό', 'Points per 10 minutes on court': 'Πόντοι ανά 10 λεπτά στο γήπεδο',
+  "Share of the team's points": 'Μερίδιο στους πόντους της ομάδας', 'of the points the team won while {who} was on court': 'μόνο όσο ήταν στο γήπεδο ({who})',
+  '{v} per match': '{v} ανά αγώνα', 'Season': 'Σεζόν', 'Team results': 'Αποτελέσματα ομάδας', 'Best match': 'Καλύτερος αγώνας', 'points, oldest first': 'πόντοι, πρώτα ο παλαιότερος',
+  'Points per match home : away': 'Πόντοι ανά αγώνα εντός : εκτός', 'of our rally points in these matches': 'σε αυτούς τους αγώνες',
   // team page
   'Roster': 'Ρόστερ', 'Team name': 'Όνομα ομάδας', 'e.g. Panathinaikos U16': 'π.χ. Παναθηναϊκός Κ16', 'Remove this player': 'Αφαίρεση', 'Add player': 'Προσθήκη μέλους',
   'Save team': 'Αποθήκευση ομάδας', 'Tap again to delete {team}': 'Πάτα ξανά για διαγραφή: {team}', 'Delete this team': 'Διαγραφή ομάδας',
@@ -611,6 +661,15 @@ const EL = {
   'Player card': 'Προφίλ', 'For one-player matches. A whole team is on the Team page.': 'Για αγώνες ενός ατόμου. Μια ολόκληρη ομάδα μπαίνει στη σελίδα Ομάδα.', 'Choose': 'Διάλεξε', 'Save player': 'Αποθήκευση', 'Account': 'Λογαριασμός', 'Sign out': 'Αποσύνδεση',
   'Signed in as {email}. Your matches are saved in your account and sync to every phone you sign in on.': 'Σύνδεση: {email}. Οι αγώνες σου αποθηκεύονται στον λογαριασμό σου και συγχρονίζονται σε κάθε κινητό όπου συνδέεσαι.',
   'Not signed in. Matches are saved on this phone only.': 'Δεν έχεις συνδεθεί. Οι αγώνες αποθηκεύονται μόνο σε αυτό το κινητό.',
+  "The app's owner can see your matches, teams and player card, and when you use the app, to help you and fix problems.": 'Ο διαχειριστής της εφαρμογής μπορεί να δει τους αγώνες, τις ομάδες και το προφίλ σου και πότε τη χρησιμοποιείς, για να σε βοηθά και να διορθώνει προβλήματα.',
+  // the admin page
+  'Admin': 'Διαχείριση', "Only the app's owner can open this page.": 'Μόνο ο διαχειριστής της εφαρμογής μπορεί να ανοίξει αυτή τη σελίδα.', 'Reading every account…': 'Διαβάζονται όλοι οι λογαριασμοί…',
+  'The accounts could not be read ({code}). Are the new Firestore rules published?': 'Οι λογαριασμοί δεν διαβάστηκαν ({code}). Έχουν δημοσιευτεί οι νέοι κανόνες του Firestore;',
+  'Try again': 'Δοκίμασε ξανά', 'Read again': 'Ανανέωση', 'just now': 'μόλις τώρα', '{n} min ago': 'πριν {n} λεπ.', '{n} h ago': 'πριν {n} ώρ.',
+  'Last seen': 'Τελευταία φορά', 'First seen': 'Πρώτη φορά', 'Opens': 'Επισκέψεις', 'Days used, last 30': 'Μέρες χρήσης, τελευταίες 30', 'Devices': 'Συσκευές', 'Language': 'Γλώσσα', 'Last days': 'Τελευταίες μέρες',
+  '{n} person': '{n} άτομο', '{n} people': '{n} άτομα', '{d} used the app today, {w} this week': 'σήμερα {d}, αυτή την εβδομάδα {w}',
+  'Someone shows here after opening this version of the app once while signed in.': 'Ένα άτομο εμφανίζεται εδώ αφού ανοίξει μία φορά αυτή την έκδοση ενώ είναι συνδεδεμένο.',
+  '{n} open': '{n} επίσκεψη', '{n} opens': '{n} επισκέψεις', '{n} day in 30': '{n} μέρα στις 30', '{n} days in 30': '{n} μέρες στις 30', '{t} team, {p} one player': 'ομάδα {t}, ατομικά {p}',
 };
 function L(s, v){ const w = s.split('|')[0]; let t = (S.lang === 'el' && (EL[s] || EL[w])) || w; if (v) t = t.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? ''); return t; }
 // Two saved teams per account (settings/team and settings/team2). S.team is the one chosen now.
@@ -948,10 +1007,12 @@ const pWhose = () => S.player.name ? L("{name}'s", {name:esc(S.player.name)}) : 
 const homeName = m => m.home || L('Us');
 // a score or the teams in the hall's order: away, the home team (the opponent) first, as on the scoreboard
 const ordS = (m, us, them) => m.away ? them + '–' + us : us + '–' + them;
-const vsLine = m => m.away ? esc(m.opp) + ' ' + L('vs') + ' ' + esc(homeName(m)) : esc(homeName(m)) + ' ' + L('vs') + ' ' + esc(m.opp);
+const vsText = m => m.away ? m.opp + ' ' + L('vs') + ' ' + homeName(m) : homeName(m) + ' ' + L('vs') + ' ' + m.opp, vsLine = m => esc(vsText(m));
 // A stat's name in a sentence ("Serve error", "Spike")
 const statName = k => { const s = BYK[k]; return L(s.full || (s.g === 'err' ? s.l + ' error' : s.l)); };
 // W / L as a letter on a result badge
+// a playing position (S, OH, ...) in words
+const posName = k => { const p = POS.find(x => x.k === k); return p ? L(p.l) : ''; };
 const resLetter = r => r === 'W' ? L('W') : r === 'L' ? L('L') : '–';
 // "1 match" / "3 matches" in the chosen language
 const nL = (n, one, many) => L(n === 1 ? one : many, {n});
@@ -1346,11 +1407,12 @@ function applyLang(){
 }
 function render(){
   applyLang();
-  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history'))));
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history') || (S.view==='admin' && b.dataset.view==='player'))));
   const app = $('#app');
   if (S.view === 'live') app.innerHTML = S.activeId && S.matches[S.activeId] ? (S.choose ? chooseView(S.matches[S.activeId]) : liveView(S.matches[S.activeId])) : newView();
   else if (S.view === 'player') app.innerHTML = playerView();
   else if (S.view === 'team') app.innerHTML = teamView();
+  else if (S.view === 'admin') app.innerHTML = adminView();
   else if (S.view === 'tplayer' && S.tpNum) app.innerHTML = teamPlayerView(S.tpNum);
   else if (S.view === 'match' && S.matches[S.openId]){ app.innerHTML = matchView(S.matches[S.openId]); prepPicture(S.matches[S.openId]); }
   else { S.view = 'history'; app.innerHTML = historyView(); }
@@ -1558,6 +1620,7 @@ function teamPlayerView(num){
       <span class="p vir">${fmtVir(vir(c))}<small>${L('RTG')}</small></span>
       <span class="p">${pts(c)}<small>${L('PTS')}</small></span>
     </button>`; }).join('')}</div></section>
+  ${rosterMore(per, num)}
   <section class="sec"><div class="sec-h"><h3>${L('Box score')}</h3></div>${boxTable(per.map(({m,c})=>({label:fmtDate(m.date)+' '+m.opp, c})).concat({label:L('Season'), c:total, sum:true}), L('Match'), true)}${legend()}${legendTeam()}</section>
   <p class="note">${L('Only what was tapped with number {n} in team matches. No minutes or +/- here: a team match does not track who is on court.', {n:esc(num)})}</p>
   ${back}`;
@@ -1647,6 +1710,7 @@ function teamMatchView(m){
   <div class="row">
     <button class="btn btn-or" id="b-share" data-id="${m.id}" style="flex:1">${L('Share picture')}</button>
   </div>
+  <div class="row"><button class="btn btn-dk" id="b-xlsx" data-id="${m.id}">Excel</button><button class="btn btn-dk" id="b-pdf">PDF</button></div>
   <div class="tiles">
     <div class="tile hero"><b>${pts(c)}</b><span>${L('Points by players')}</span><em>${L('of {n} team points', {n:teamPts})}</em></div>
     <div class="tile"><b>${errs(c)}</b><span>${L('Errors')}</span><em>${L('points given away')}</em></div>
@@ -1672,8 +1736,9 @@ function teamMatchView(m){
       ${rn.us || rn.them ? `<p class="m">${L('Longest run: {a} {x} · {b} {y}', {a:esc(homeName(m)), x:rn.us, b:esc(m.opp), y:rn.them})}</p>` : ''}`}
       ${toLine(m, a, s)}
     </div>`; }).join('')}</section>` : ''}
+  ${teamMore([m])}
   <details class="more sec"><summary>${L('Full table')}</summary>${boxTable(rows.map(r=>({label:pLabel(r), c:r.c})).concat({label:L('Team'), c, sum:true}), L('Player'), true)}${legend()}${legendTeam()}</details>
-  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>${L('Play by play')}</h3><span class="note">${L('tap a line to change the player')}</span></div><div style="max-height:320px;overflow-y:auto">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
+  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>${L('Play by play')}</h3><span class="note">${L('tap a line to change the player')}</span></div><div class="pbpbox">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
   <div class="row">
     <button class="btn btn-dk" id="b-resume" data-id="${m.id}">${L('Keep tracking')}</button>
     <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${m.id}">${armed?L('Tap again to delete'):L('Delete')}</button>
@@ -1699,6 +1764,7 @@ function teamSeason(list, seg, slot){
     </div>
   </section>
   ${pctRows(total, rallyServes(list))}
+  <div class="row"><button class="btn btn-dk" id="b-pdf">PDF</button></div>
   ${newMatchBtn()}
   ${leadersHTML(rows)}
   ${flowHTML(list)}
@@ -1707,6 +1773,7 @@ function teamSeason(list, seg, slot){
   ${attackServeHTML(rows, total)}
   ${receptionHTML(rows, total)}
   ${setByHTML(list)}
+  ${teamMore(list, true)}
   <section class="sec"><div class="sec-h"><h3>${L('Game log')}</h3><button class="lnk" id="b-editlist">${S.editList?L('Done'):L('Remove matches')}</button></div>
   <div class="mlist">${per.map(({m,c})=>{ const live = m.id===S.activeId, armed = S.armed==='x-'+m.id;
     const info = `<span class="res ${live?'live':(m.result||'')}">${live?L('LIVE'):resLetter(m.result)}</span>
@@ -2492,7 +2559,7 @@ function sharePicture(m){
   openShare(m, pic, false);
 }
 function openShare(m, pic, late){
-  const data = {files:[pic.file], title:m.away ? `${m.opp} ${L('vs')} ${homeName(m)}` : `${homeName(m)} ${L('vs')} ${m.opp}`};
+  const data = {files:[pic.file], title:vsText(m)};
   if (navigator.canShare && navigator.canShare(data)){
     navigator.share(data).catch(err => {
       if (err && err.name === 'AbortError') return;
@@ -2509,6 +2576,303 @@ function savePicture(file){
   toast(L('Picture saved'));
 }
 
+/* ---------- more stats: folded sections under every report and season ---------- */
+// One pass over a match's rallies, per set: the biggest lead each way, ties, lead changes, points from 20-all
+// (10-all in the deciding set), the side-out after each pass grade, and our serving turns (a turn starts with
+// our first serve of the set or when we win the serve back). Typed-in points count for the score only.
+function rallyWalk(m){
+  const out = {};
+  (m.log||[]).forEach(e => {
+    const x = out[e.set] || (out[e.set] = {us:0, them:0, lead:{us:0, them:0}, ties:0, changes:0, leader:null, clutch:{us:0, them:0},
+      pass:{3:[0, 0], 2:[0, 0], 1:[0, 0]}, pg:null, srv:firstServer(m, e.set), turnOf:null, turns:0, run:0, best:0});
+    if (e.k === 'p3' || e.k === 'p2' || e.k === 'p1') x.pg = e.k[1];
+    if (e.k !== 'us' && e.k !== 'them') return;
+    const w = e.k, cl = e.set >= lastSet(m) ? 10 : 20;
+    if (e.late){ x[w]++; x.srv = null; x.turnOf = null; x.pg = null; return; }
+    if (x.us >= cl && x.them >= cl) x.clutch[w]++;
+    if (x.srv === 'them' && x.pg){ x.pass[x.pg][1]++; if (w === 'us') x.pass[x.pg][0]++; }
+    x.pg = null;
+    if (x.srv === 'us'){ if (x.turnOf !== 'us'){ x.turns++; x.run = 0; } if (w === 'us') x.best = Math.max(x.best, ++x.run); }
+    x.turnOf = x.srv;
+    x[w]++; x.srv = w;
+    const d = x.us - x.them, ld = d > 0 ? 'us' : d < 0 ? 'them' : x.leader;
+    if (d > 0) x.lead.us = Math.max(x.lead.us, d); else if (d < 0) x.lead.them = Math.max(x.lead.them, -d); else x.ties++;
+    if (x.leader && ld !== x.leader) x.changes++;
+    x.leader = ld;
+  });
+  return out;
+}
+// the next five rallies after each side's time-outs: [won, lost] for us
+function afterTimeouts(m){
+  const r = {us:[0, 0], them:[0, 0]}, log = m.log||[];
+  log.forEach((e, i) => { if (e.k === 'to') log.slice(i + 1).filter(x => x.set === e.set && !x.late && (x.k === 'us' || x.k === 'them')).slice(0, 5).forEach(x => r[e.side][x.k === 'us' ? 0 : 1]++); });
+  return r;
+}
+const per = (v, n) => n ? fmtVir(v / n) : '–';
+const pctOf = (a, b) => b ? pct100(a, b) + '%' : '–';
+const sumCounts = ms => ms.reduce((t, m) => { const c = counts(m); STATS.forEach(x => t[x.k] += c[x.k]); return t; }, zeroCounts());
+// a folded section: rows [label, value, note]; empty rows are left out
+const kpiSec = (title, rows) => { rows = rows.filter(Boolean); return rows.length ? `<details class="more kpi"><summary>${title}</summary><div class="kpis">${rows.map(([l, v, n]) =>
+  `<div class="kr"><span>${l}${n ? `<small>${n}</small>` : ''}</span><b>${v}</b></div>`).join('')}</div></details>` : ''; };
+const kpiTbl = (title, head, rows, note) => rows.length ? `<details class="more kpi"><summary>${title}</summary>${note ? `<p class="note" style="margin:4px 0 6px">${note}</p>` : ''}<div class="tbl"><table><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r =>
+  `<tr>${r.map((v, i) => `<td${i ? '' : ' style="text-align:left;white-space:nowrap"'}>${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>` : '';
+const moreWrap = secs => secs.join('') ? `<section class="sec moretop"><div class="sec-h"><h3>${L('More stats')}</h3><span class="note">${L('tap a title to open it')}</span></div>${secs.join('')}</section>` : '';
+
+// The skills of a player (or the team) from counts: shared by the team report, the player pages and one-player matches
+function skillSecs(c, sets, opts){
+  // graded passes give the %s; reception errors alone give a count (not "100% errors")
+  const kills = c.kill + c.plase, graded = c.p3 + c.p2 + c.p1, g = graded + c.rerr;
+  return [
+    kpiSec(L('Serve'), [
+      opts.serves ? [L('Serves'), opts.serves.of, L('rallies we served')] : null,
+      opts.serves ? [L('Serves in'), pctOf(opts.serves.of - opts.serves.err, opts.serves.of)] : c.serve ? [L('Serves in'), pctOf(c.ace + c.serve, c.ace + c.serve + c.serr)] : null,
+      [L('Aces'), c.ace, L('{v} per set', {v:per(c.ace, sets)}) + (opts.serves ? ' · ' + L('{p} of serves', {p:pctOf(c.ace, opts.serves.of)}) : '')],
+      [L('Serve errors'), c.serr, L('{v} per set', {v:per(c.serr, sets)}) + (opts.serves ? ' · ' + L('{p} of serves', {p:pctOf(c.serr, opts.serves.of)}) : '')],
+      [L('Aces : errors'), `${c.ace} : ${c.serr}`],
+      ...(opts.serveRows || [])]),
+    kpiSec(L('Reception'), graded ? [
+      [L('Receptions graded'), g, L('3 / 2 / 1 / 0: {a} / {b} / {c} / {d}', {a:c.p3, b:c.p2, c:c.p1, d:c.rerr})],
+      [L('Perfect (3)'), pctOf(c.p3, g)], [L('Good or perfect (3 + 2)'), pctOf(c.p3 + c.p2, g)], [L('Errors (0)'), pctOf(c.rerr, g)],
+      [L('Pass rating'), passRating(c) || '–', L('0 to 3')], ...(opts.passRows || [])]
+      : [c.pass ? [L('Good receptions'), c.pass] : null, c.rerr ? [L('Reception errors'), c.rerr] : null, c.pass ? [L('Clean'), pctOf(c.pass, c.pass + c.rerr)] : null, ...(opts.passRows || [])]),
+    kpiSec(L('Attack'), [
+      [L('Spikes + plasé'), kills, L('{v} per set', {v:per(kills, sets)})],
+      c.plase ? [L('Plasé'), c.plase, L('{p} of the spikes + plasé', {p:pctOf(c.plase, kills)})] : null,
+      [L('Attack errors'), c.aerr, L('{v} per set', {v:per(c.aerr, sets)})],
+      [L('Spikes : errors'), `${kills} : ${c.aerr}`],
+      c.att ? [L('Attempts'), attempts(c), L('{p} spikes', {p:pctOf(kills, attempts(c))})] : null,
+      c.att ? [L('Efficiency'), fmtEff(c), L('(spikes − errors) / attempts')] : null,
+      c.assist ? [L('Good sets'), c.assist, L('{v} per set', {v:per(c.assist, sets)})] : null]),
+    kpiSec(L('Block and defence'), [
+      [L('Blocks'), c.block, L('{v} per set', {v:per(c.block, sets)})],
+      c.berr ? [L('Block outs'), c.berr, L('{v} per set', {v:per(c.berr, sets)})] : null,
+      c.dig ? [L('Defences'), c.dig, L('{v} per set', {v:per(c.dig, sets)})] : null]),
+    errs(c) ? kpiSec(L('Errors'), [
+      [L('Errors'), errs(c), L('{v} per set', {v:per(errs(c), sets)})],
+      ...ERR_KEYS.filter(k => c[k] && (opts.team || !BYK[k].team)).map(k => [statName(k), c[k], L('{p} of the errors', {p:pctOf(c[k], errs(c))})])]) : '',
+  ];
+}
+
+// A team: one match or a season
+function teamMore(ms, season){
+  const c = sumCounts(ms), rs = rallyServes(ms), ps = sumKeys(ms.map(pointSources), ['earned', 'theirErr', 'given', 'theyEarned']);
+  const sv = sumKeys(ms.map(m => serveStats(m).tot), ['so', 'soOf', 'bp', 'bpOf']), us = ps.earned + ps.theirErr, them = ps.given + ps.theyEarned;
+  const t = {lead:{us:0, them:0}, ties:0, changes:0, clutch:{us:0, them:0}, pass:{3:[0, 0], 2:[0, 0], 1:[0, 0]}, turns:0, best:0, back:0, run:{us:0, them:0}, close:[0, 0], to:{us:[0, 0], them:[0, 0]}};
+  let sets = 0;
+  ms.forEach(m => {
+    const wk = rallyWalk(m), tos = afterTimeouts(m), a = analyze(m);
+    ['us', 'them'].forEach(k => { t.to[k][0] += tos[k][0]; t.to[k][1] += tos[k][1]; });
+    Object.keys(wk).map(Number).forEach(n => { const x = wk[n], sc = a.score[n]; if (!sc || !(sc.us || sc.them) || typedOnly(m, n)) return;
+      sets++; ['us', 'them'].forEach(k => { t.lead[k] = Math.max(t.lead[k], x.lead[k]); t.clutch[k] += x.clutch[k]; });
+      t.ties += x.ties; t.changes += x.changes; t.turns += x.turns; t.best = Math.max(t.best, x.best);
+      [3, 2, 1].forEach(g => { t.pass[g][0] += x.pass[g][0]; t.pass[g][1] += x.pass[g][1]; });
+      const rn = runs(m, n); t.run.us = Math.max(t.run.us, rn.us); t.run.them = Math.max(t.run.them, rn.them);
+      if ((m.ended||[]).includes(n) && sc.us !== sc.them){ const won = sc.us > sc.them; if (won && x.lead.them >= 3) t.back++; if (Math.abs(sc.us - sc.them) === 2) t.close[won ? 0 : 1]++; }
+    });
+  });
+  if (!sets) return '';
+  const kills = c.kill + c.plase, ofUs = n => L('{p} of our points', {p:pctOf(n, us)}), ofThem = n => L('{p} of their points', {p:pctOf(n, them)});
+  const secs = [
+    kpiSec(L('Points'), [
+      [L('Rally points'), `${us} : ${them}`, L('{a} : {b} per set', {a:per(us, sets), b:per(them, sets)})],
+      [L('Point difference'), fmtPM(us - them), L('{v} per set', {v:fmtPM(+per(us - them, sets) || 0)})],
+      [L('From spikes and plasé'), kills, ofUs(kills)], [L('From aces'), c.ace, ofUs(c.ace)], [L('From blocks'), c.block, ofUs(c.block)],
+      [L('From their errors'), ps.theirErr, ofUs(ps.theirErr)],
+      [L('Their points from our errors'), ps.given, ofThem(ps.given)], [L('Their points they earned'), ps.theyEarned, ofThem(ps.theyEarned)]]),
+    kpiSec(L('Pressure'), [
+      [L('Biggest lead'), `${t.lead.us} : ${t.lead.them}`, L('ours : theirs')],
+      [L('Longest run'), `${t.run.us} : ${t.run.them}`, L('points in a row')],
+      [L('Times tied'), t.ties, season ? L('{v} per set', {v:per(t.ties, sets)}) : ''],
+      [L('Lead changes'), t.changes, season ? L('{v} per set', {v:per(t.changes, sets)}) : ''],
+      [L('From 20-all'), `${t.clutch.us} : ${t.clutch.them}`, L('points won from 20–20 (10–10 in the deciding set)')],
+      [L('Sets won from behind'), t.back, L('after trailing by 3 or more')],
+      t.close[0] + t.close[1] ? [L('Sets decided by 2'), `${t.close[0]} – ${t.close[1]}`, L('won – lost')] : null,
+      t.to.us[0] + t.to.us[1] ? [L('After our time-outs'), `${t.to.us[0]} : ${t.to.us[1]}`, L('the next 5 rallies, won : lost')] : null,
+      t.to.them[0] + t.to.them[1] ? [L('After their time-outs'), `${t.to.them[0]} : ${t.to.them[1]}`, L('the next 5 rallies, won : lost')] : null]),
+    ...skillSecs(c, sets, {team:true, serves:rs.of ? rs : null,
+      serveRows:[sv.bpOf ? [L('Break points'), pctOf(sv.bp, sv.bpOf), L('{a} of {b} · points won on our serve', {a:sv.bp, b:sv.bpOf})] : null,
+        t.turns ? [L('Points per serving turn'), per(sv.bp, t.turns), nL(t.turns, '{n} turn', '{n} turns')] : null,
+        t.turns ? [L('Longest serving run'), t.best, L('points in a row on our serve')] : null],
+      passRows:[sv.soOf ? [L('Side-out'), pctOf(sv.so, sv.soOf), L('{a} of {b}', {a:sv.so, b:sv.soOf})] : null,
+        ...[3, 2, 1].map(g => t.pass[g][1] ? [L('Side-out after a {g}', {g}), pctOf(t.pass[g][0], t.pass[g][1]), L('{a} of {b}', {a:t.pass[g][0], b:t.pass[g][1]})] : null)]}),
+  ];
+  // per set (one match) or by set number (a season)
+  if (!season){ const m = ms[0], a = analyze(m), svs = serveStats(m).sets, wk = rallyWalk(m);
+    secs.push(kpiTbl(L('Per set'), [L('Sets'), L('Score'), L('Pts'), L('Their err.'), L('Err'), L('Side-out'), L('Break pts'), L('Run'), L('Lead')],
+      scoredSets(a.score).sort((p, q) => p - q).filter(n => !typedOnly(m, n)).map(n => { const x = a.score[n], cs = counts(m, n), v = svs[n] || {}, rn = runs(m, n), k = wk[n] || {lead:{us:0, them:0}};
+        return [n, ordS(m, x.us, x.them), pts(cs), Math.max(0, x.us - pts(cs)), errs(cs), pctOf(v.so, v.soOf), pctOf(v.bp, v.bpOf), `${rn.us} : ${rn.them}`, `${k.lead.us} : ${k.lead.them}`]; }),
+      L('Pts = our spikes, aces and blocks · Run and Lead = ours : theirs'))); }
+  else { const by = {};
+    ms.forEach(m => { const a = analyze(m); scoredSets(a.score).forEach(n => { if (typedOnly(m, n) || !(m.ended||[]).includes(n)) return; const b = by[n] || (by[n] = {w:0, l:0, us:0, them:0}), x = a.score[n];
+      if (x.us > x.them) b.w++; else if (x.them > x.us) b.l++; b.us += x.us; b.them += x.them; }); });
+    secs.push(kpiTbl(L('By set'), [L('Sets'), L('Won – lost'), L('Average score')], Object.keys(by).map(Number).sort((p, q) => p - q).map(n => { const b = by[n], k = b.w + b.l;
+      return [L('Set {n}', {n}), `${b.w} – ${b.l}`, `${per(b.us, k)} : ${per(b.them, k)}`]; }))); }
+  // every player, per set
+  const rows = playerRows(ms).filter(r => r.num);
+  secs.push(kpiTbl(L('Players per set'), [L('Player'), L('Sets'), L('Pts'), abbr(BYK.kill), abbr(BYK.ace), abbr(BYK.block), L('Err'), L('Rtg'), L('Share')],
+    rows.map(r => { const n = ms.filter(m => (m.log||[]).some(e => e.p === r.num)).reduce((t, m) => t + setsPlayed(m), 0);
+      return [esc(pLabel(r)), n, per(pts(r.c), n), per(r.c.kill + r.c.plase, n), per(r.c.ace, n), per(r.c.block, n), per(errs(r.c), n), per(vir(r.c), n), pctOf(pts(r.c), us)]; }),
+    L('per set the player had a stat in · Share = of our rally points')));
+  if (season) secs.push(recordSec(ms), opponentsSec(ms));
+  return moreWrap(secs);
+}
+// A season's results: matches, sets, deciding sets, home and away, the last five, the best run, by competition
+function recordSec(ms){
+  const done = ms.filter(m => m.result === 'W' || m.result === 'L').sort((a, b) => (a.date||'').localeCompare(b.date||'') || (a.createdAt||0) - (b.createdAt||0));
+  if (!done.length) return '';
+  const wl = list => `${list.filter(m => m.result === 'W').length} – ${list.filter(m => m.result === 'L').length}`;
+  let sw = 0, sl = 0, dw = 0, dl = 0, run = 0, best = 0;
+  done.forEach(m => { const f = finalSets(m); sw += f.w; sl += f.l; run = m.result === 'W' ? run + 1 : 0; best = Math.max(best, run);
+    const a = analyze(m), last = Math.max(0, ...scoredSets(a.score)); if (last >= lastSet(m)){ const x = a.score[last]; if (x.us > x.them) dw++; else if (x.them > x.us) dl++; } });
+  const big = done.filter(m => m.result === 'W').map(m => { const f = finalSets(m), a = analyze(m); return {m, d:f.w - f.l, p:scoredSets(a.score).reduce((t, n) => t + a.score[n].us - a.score[n].them, 0)}; }).sort((a, b) => b.d - a.d || b.p - a.p)[0];
+  const comps = [...new Set(done.map(m => m.team).filter(Boolean))];
+  return kpiSec(L('Record'), [
+    [L('Matches'), wl(done), L('{p} won', {p:pctOf(done.filter(m => m.result === 'W').length, done.length)})],
+    [L('Sets'), `${sw} – ${sl}`, L('{p} won', {p:pctOf(sw, sw + sl)})],
+    dw + dl ? [L('Deciding sets'), `${dw} – ${dl}`] : null,
+    done.some(m => !m.away) ? [L('Home'), wl(done.filter(m => !m.away))] : null,
+    done.some(m => m.away) ? [L('Away'), wl(done.filter(m => m.away))] : null,
+    [L('Last 5'), done.slice(-5).map(m => resLetter(m.result)).join(' '), L('oldest first')],
+    [L('Most wins in a row'), best],
+    big ? [L('Biggest win'), L('{sets} vs {opp}', {sets:ordS(big.m, finalSets(big.m).w, finalSets(big.m).l), opp:esc(big.m.opp)}), fmtDate(big.m.date)] : null,
+    ...(comps.length > 1 ? comps.map(k => [esc(k), wl(done.filter(m => m.team === k))]) : [])]);
+}
+function opponentsSec(ms){
+  const by = {};
+  ms.filter(m => m.result === 'W' || m.result === 'L').forEach(m => { const o = by[m.opp] || (by[m.opp] = {n:0, w:0, sw:0, sl:0}), f = finalSets(m); o.n++; if (m.result === 'W') o.w++; o.sw += f.w; o.sl += f.l; });
+  const rows = Object.entries(by).sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0]));
+  return kpiTbl(L('Opponents'), [L('Opponent'), L('Played'), L('Won – lost'), L('Sets')], rows.map(([o, x]) => [esc(o), x.n, `${x.w} – ${x.n - x.w}`, `${x.sw} – ${x.sl}`]));
+}
+// One player: a match or a season of one-player matches (court time, +/-, share of the team's points on court)
+function playerMore(ms, season){
+  const c = sumCounts(ms); let sets = 0, min = 0, pm = 0, plus = 0;
+  ms.forEach(m => { const a = analyze(m); sets += setsPlayed(m); min += mins(playMs(m)); pm += a.pm; plus += a.plus; });
+  const secs = [kpiSec(L('Per set and per minute'), [
+    [L('Points'), pts(c), L('{v} per set', {v:per(pts(c), sets)})], [L('Errors'), errs(c), L('{v} per set', {v:per(errs(c), sets)})],
+    [L('Rating'), fmtVir(vir(c)), L('{v} per set', {v:per(vir(c), sets)})],
+    min ? [L('Minutes'), min, L('{v} per set', {v:per(min, sets)})] : null,
+    min ? [L('Points per 10 minutes on court'), fmtVir(pts(c) / min * 10)] : null,
+    plus ? [L("Share of the team's points"), pctOf(pts(c), plus), L('of the points the team won while {who} was on court', {who:pWho()})] : null,
+    [L('+/- on court'), fmtPM(pm), season ? L('{v} per match', {v:fmtPM(+per(pm, ms.length) || 0)}) : '']]),
+    ...skillSecs(c, sets, {})];
+  if (season){ const done = ms.filter(m => m.result === 'W' || m.result === 'L'), byDate = ms.slice().sort((a, b) => (a.date||'').localeCompare(b.date||'') || (a.createdAt||0) - (b.createdAt||0));
+    const best = ms.map(m => ({m, p:pts(counts(m))})).sort((a, b) => b.p - a.p)[0], home = ms.filter(m => !m.away), away = ms.filter(m => m.away);
+    const avgP = list => list.length ? per(list.reduce((t, m) => t + pts(counts(m)), 0), list.length) : '–';
+    secs.push(kpiSec(L('Season'), [
+      done.length ? [L('Team results'), `${done.filter(m => m.result === 'W').length} – ${done.filter(m => m.result === 'L').length}`, L('won – lost')] : null,
+      best ? [L('Best match'), L('{n} points', {n:best.p}), L('vs {opp}', {opp:esc(best.m.opp)}) + ' · ' + esc(fmtDate(best.m.date))] : null,
+      [L('Last 5'), byDate.slice(-5).map(m => pts(counts(m))).join(' · '), L('points, oldest first')],
+      home.length && away.length ? [L('Points per match home : away'), `${avgP(home)} : ${avgP(away)}`] : null]));
+  }
+  return moreWrap(secs);
+}
+// One roster player over team matches: the same skills, per set and as a share of the team's points
+function rosterMore(per1, num){
+  const c = sumCounts(per1.map(x => x.m)), mine = zeroCounts();
+  per1.forEach(({c:x}) => STATS.forEach(k => mine[k.k] += x[k.k]));
+  const sets = per1.reduce((t, x) => t + setsPlayed(x.m), 0), team = sumKeys(per1.map(x => pointSources(x.m)), ['earned', 'theirErr']);
+  const sb = per1.reduce((t, x) => t + (x.m.log||[]).filter(e => TAG_KEYS.includes(e.k) && e.s === num).length, 0);
+  return moreWrap([kpiSec(L('Per set'), [
+    [L('Points'), pts(mine), L('{v} per set', {v:per(pts(mine), sets)})], [L('Errors'), errs(mine), L('{v} per set', {v:per(errs(mine), sets)})],
+    [L('Rating'), fmtVir(vir(mine)), L('{v} per set', {v:per(vir(mine), sets)})],
+    [L("Share of the team's points"), pctOf(pts(mine), team.earned + team.theirErr), L('of our rally points in these matches')],
+    sb ? [L('Sets that became points'), sb, L('{v} per set', {v:per(sb, sets)})] : null]),
+    ...skillSecs(mine, sets, {team:true})]);
+}
+
+/* ---------- exports: Excel and PDF ---------- */
+// A real .xlsx, not a CSV: Excel splits a CSV at "," or ";" depending on the computer's language, so Greek
+// and English Excel would read the same file differently. A stored (not compressed) zip with inline strings.
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zipStore(files, type){
+  const enc = new TextEncoder(), parts = [], dir = []; let off = 0;
+  files.forEach(([name, text]) => {
+    const n = enc.encode(name), d = enc.encode(text), c = crc32(d), h = new DataView(new ArrayBuffer(30)), e = new DataView(new ArrayBuffer(46));
+    // local header: version 2.0, UTF-8 names, stored, dated 1 Jan 1980
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(12, 0x21, true);
+    h.setUint32(14, c, true); h.setUint32(18, d.length, true); h.setUint32(22, d.length, true); h.setUint16(26, n.length, true);
+    e.setUint32(0, 0x02014b50, true); e.setUint16(4, 20, true); e.setUint16(6, 20, true); e.setUint16(8, 0x0800, true); e.setUint16(14, 0x21, true);
+    e.setUint32(16, c, true); e.setUint32(20, d.length, true); e.setUint32(24, d.length, true); e.setUint16(28, n.length, true); e.setUint32(42, off, true);
+    parts.push(new Uint8Array(h.buffer), n, d); dir.push(new Uint8Array(e.buffer), n);
+    off += 30 + n.length + d.length;
+  });
+  const size = dir.reduce((t, x) => t + x.length, 0), end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, size, true); end.setUint32(16, off, true);
+  return new Blob([...parts, ...dir, new Uint8Array(end.buffer)], {type});
+}
+// sheets: [{name, rows:[[text or number, ...]], widths:[...]}]; the first row of each sheet is bold
+function xlsx(sheets){
+  const x = v => String(v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+  const col = i => { let t = ''; for (i++; i; i = Math.floor((i - 1) / 26)) t = String.fromCharCode(65 + (i - 1) % 26) + t; return t; };
+  const NS = 'http://schemas.openxmlformats.org', XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const cell = (v, r, c) => v == null || v === '' ? '' : typeof v === 'number' && isFinite(v)
+    ? `<c r="${col(c)}${r+1}"${r ? '' : ' s="1"'}><v>${v}</v></c>` : `<c r="${col(c)}${r+1}" t="inlineStr"${r ? '' : ' s="1"'}><is><t xml:space="preserve">${x(v)}</t></is></c>`;
+  const sheet = sh => `${XML}<worksheet xmlns="${NS}/spreadsheetml/2006/main">${sh.widths ? `<cols>${sh.widths.map((w, i) => `<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols>` : ''}<sheetData>${sh.rows.map((row, r) => `<row r="${r+1}">${row.map((v, c) => cell(v, r, c)).join('')}</row>`).join('')}</sheetData></worksheet>`;
+  const names = sheets.map((sh, i) => (String(sh.name).replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 31).trim() || 'Sheet' + (i + 1)));
+  return zipStore([
+    ['[Content_Types].xml', `${XML}<Types xmlns="${NS}/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`],
+    ['_rels/.rels', `${XML}<Relationships xmlns="${NS}/package/2006/relationships"><Relationship Id="rId1" Type="${NS}/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ['xl/workbook.xml', `${XML}<workbook xmlns="${NS}/spreadsheetml/2006/main" xmlns:r="${NS}/officeDocument/2006/relationships"><sheets>${names.map((n, i) => `<sheet name="${x(n)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`],
+    ['xl/_rels/workbook.xml.rels', `${XML}<Relationships xmlns="${NS}/package/2006/relationships">${sheets.map((_, i) => `<Relationship Id="rId${i+1}" Type="${NS}/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="${NS}/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ['xl/styles.xml', `${XML}<styleSheet xmlns="${NS}/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`],
+    ...sheets.map((sh, i) => [`xl/worksheets/sheet${i+1}.xml`, sheet(sh)])
+  ], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+}
+// The match as an Excel file: the match, the box score (every player, or every set for one player),
+// the sets and the play by play. Scores in the hall's order, like the scoreboard.
+function matchSheets(m){
+  const a = analyze(m), team = isTeam(m), cols = STATS.filter(s => team || !s.team), sets = scoredSets(a.score).sort((p, q) => p - q);
+  const {w, l} = finalSets(m), r1 = v => Math.round(v * 10) / 10, sv = serveStats(m).sets;
+  const info = [[L('Match'), vsText(m)],
+    [L('Date'), m.date || ''], [L('Competition'), m.team || ''], [L('Home or away'), L(m.away ? 'Away' : 'Home')],
+    [L('Result'), m.result === 'W' ? L('Won') : m.result === 'L' ? L('Lost') : ''], [L('Sets'), ordS(m, w, l)],
+    ...sets.map(n => [L('Set {n}', {n}), ordS(m, a.score[n].us, a.score[n].them)])];
+  const line = (lead, c) => [...lead, pts(c), r1(vir(c)), errs(c), ...cols.map(t => c[t.k] || 0)];
+  const tail = [L('Points'), L('Rating'), L('Errors'), ...cols.map(t => statName(t.k))];
+  const box = team
+    ? [[L('Number'), L('Name'), L('Position'), ...tail], ...playerRows([m]).map(r => { const p = (m.roster||[]).find(x => x.num === r.num) || {};
+        return line([r.num ? +r.num : '', r.num ? r.name || '' : L('No player'), posName(p.pos)], r.c); }), line([L('Team'), '', ''], counts(m))]
+    : [[L('Sets'), ...tail], ...sets.map(n => line([L('Set {n}', {n})], counts(m, n))), line([L('Match')], counts(m))];
+  const court = team ? null : setCourt(m);
+  const setRows = [[L('Sets'), homeName(m), m.opp, L('Result'), L('Points'), L('Errors'), ...(team ? [L('Side-out') + ' %', L('Break points') + ' %', L('Longest run') + ': ' + homeName(m), L('Longest run') + ': ' + m.opp]
+      : [L('Rallies on court'), '+/-'])],
+    ...sets.map(n => { const x = a.score[n], cs = counts(m, n), res = (m.ended||[]).includes(n) ? L(x.us > x.them ? 'won' : x.them > x.us ? 'lost' : 'tied') : L('not finished');
+      if (!team){ const cr = court[n] || {onR:0, pm:0}; return [n, x.us, x.them, res, pts(cs), errs(cs), cr.onR, cr.pm]; }
+      const t = sv[n] || {}, rn = runs(m, n);
+      return [n, x.us, x.them, res, pts(cs), errs(cs), t.soOf ? pct100(t.so, t.soOf) : '', t.bpOf ? pct100(t.bp, t.bpOf) : '', rn.us, rn.them]; })];
+  const name = n => ((m.roster||[]).find(p => p.num === n) || {}).name || '';
+  const pbp = [['#', L('Sets'), L('Score'), L('Play by play'), L('Number'), L('Name'), team ? L('Set by') : L('Pass from')],
+    ...a.feed.map((f, i) => [i + 1, f.e.set, ordS(m, f.us, f.them), evLabel(f.e, m).t, f.e.p ? +f.e.p : '', f.e.p ? name(f.e.p) : '', team ? (f.e.s ? +f.e.s : '') : (f.e.from || '')])];
+  return [{name:L('Match'), rows:info, widths:[18, 36]}, {name:L('Box score'), rows:box, widths:team ? [10, 18, 14] : [12]},
+    {name:L('Sets'), rows:setRows}, {name:L('Play by play'), rows:pbp, widths:[6, 6, 9, 44, 10, 18, 10]}];
+}
+function exportMatch(m){
+  if (!m) return;
+  shareFile(new File([xlsx(matchSheets(m))], picName(m).replace(/\.jpg$/, '.xlsx'), {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), vsText(m));
+}
+// a file to the phone: the share sheet where it takes the file (iPhone), else a download (Android, computers)
+function shareFile(file, title){
+  const data = {files:[file], title};
+  if (navigator.canShare && navigator.canShare(data)) navigator.share(data).catch(err => { if (err && err.name !== 'AbortError') saveFile(file); });
+  else saveFile(file);
+}
+function saveFile(file){
+  const url = URL.createObjectURL(file), a = document.createElement('a');
+  a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast(L('Saved: {name}', {name:file.name}));
+}
+// PDF: the page through the phone's Print (Save as PDF), every folded section open, on white paper
+function printPage(){
+  if (typeof window.print !== 'function') return toast(L('This browser cannot print. Open the app in Safari or Chrome.'));
+  const shut = [...document.querySelectorAll('#app details:not([open])')];
+  shut.forEach(d => d.open = true);
+  const back = () => { shut.forEach(d => d.open = false); window.removeEventListener('afterprint', back); };
+  window.addEventListener('afterprint', back);
+  window.print();
+}
+
 function matchView(m){
   if (isTeam(m)) return teamMatchView(m);
   const a = analyze(m), c = counts(m);
@@ -2522,13 +2886,15 @@ function matchView(m){
   <div class="row">
     <button class="btn btn-or" id="b-share" data-id="${m.id}" style="flex:1">${L('Share picture')}</button>
   </div>
+  <div class="row"><button class="btn btn-dk" id="b-xlsx" data-id="${m.id}">Excel</button><button class="btn btn-dk" id="b-pdf">PDF</button></div>
   ${pctRows(c)}
   ${setCards(m, a)}
   ${a.stints.length ? `<section class="sec"><div class="sec-h"><h3>${L('Time on court')}</h3><span class="note">${nL(a.stints.length, '{n} spell', '{n} spells')}</span></div><div class="stints">${a.stints.map(st=>`
     <div class="stint"><span>${L('On at {score} (set {n})', {score:`<b>${st.inUs}–${st.inThem}</b>`, n:st.inSet})} · ${st.outSet!=null?L('off at {score} (set {n})', {score:`<b>${st.outUs}–${st.outThem}</b>`, n:st.outSet}):L('to the end')}${st.dur?' · '+L('{n} min', {n:mins(st.dur)}):''}</span><b class="${pmClass(st.plus-st.minus)}">${fmtPM(st.plus-st.minus)}</b></div>`).join('')}</div></section>` : ''}
   ${passTable([m])}
+  ${playerMore([m])}
   <details class="more sec"><summary>${L('Full table')}</summary><span class="note">${esc(pName())}${S.player.num?' #'+esc(S.player.num):''}</span>${boxTable(rows,L('Sets'))}${legend()}</details>
-  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>${L('Play by play')}</h3><span class="note">${L('{n} events', {n:a.feed.length})}</span></div><div style="max-height:320px;overflow-y:auto">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
+  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>${L('Play by play')}</h3><span class="note">${L('{n} events', {n:a.feed.length})}</span></div><div class="pbpbox">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
   <div class="row">
     <button class="btn btn-dk" id="b-resume" data-id="${m.id}">${L('Keep tracking')}</button>
     <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${m.id}">${armed?L('Tap again to delete'):L('Delete')}</button>
@@ -2572,6 +2938,7 @@ function historyView(){
   ${tiles(total, {pm, min:mins(time), ptsNote:`<em>${L('best {v} vs {opp}', {v:bestPts.v, opp:esc(bestPts.m.opp)})}</em>`, virNote:`<em>${L('best {v}', {v:fmtVir(bestVir.v)})}</em>`, minNote:`<em>${L('{v} a match', {v:Math.round(mins(time)/n)})}</em>`})}
   ${pctRows(total)}
   ${seasonChart(list)}
+  <div class="row"><button class="btn btn-dk" id="b-pdf">PDF</button></div>
   ${newMatchBtn()}
   <section class="sec"><div class="sec-h"><h3>${L('Game log')}</h3><button class="lnk" id="b-editlist">${S.editList?L('Done'):L('Remove matches')}</button></div>
   <div class="mlist">${per.map(({m,c,a})=>{ const live = m.id===S.activeId, armed = S.armed==='x-'+m.id;
@@ -2588,6 +2955,7 @@ function historyView(){
     </button>`; }).join('')}</div>
   ${S.editList ? `<p class="note">${L('Tap Delete, then tap again to remove the match from every phone.')}</p>` : ''}</section>
   ${passTable(list)}
+  ${playerMore(list, true)}
   <section class="sec"><div class="sec-h"><h3>${L('Season box score')}</h3></div>${boxTable(rows,L('Match'))}${legend()}</section>`;
 }
 
@@ -2609,14 +2977,79 @@ function playerView(){
     <div class="kicker">${L('Account')}</div>
     ${S.user
       ? `<p style="margin:0">${L('Signed in as {email}. Your matches are saved in your account and sync to every phone you sign in on.', {email:`<b>${esc(S.user.email||'')}</b>`})}</p>
-         <button class="btn btn-dk" id="b-signout">${L('Sign out')}</button>`
+         <button class="btn btn-dk" id="b-signout">${L('Sign out')}</button>${isAdmin() ? `<button class="btn btn-or" id="b-admin">${L('Admin')}</button>` : ''}`
       : `<p style="margin:0">${L('Not signed in. Matches are saved on this phone only.')}</p>
          <button class="btn btn-or" id="b-signin">${L('Sign in with Google')}</button>`}
+    <p class="note" style="margin:0">${L("The app's owner can see your matches, teams and player card, and when you use the app, to help you and fix problems.")}</p>
   </section>
   <section class="panel">
     <div class="kicker">Language · Γλώσσα</div>
     <div class="seg" role="group" aria-label="Language · Γλώσσα"><button data-lang="en" aria-pressed="${S.lang !== 'el'}" lang="en">English</button><button data-lang="el" aria-pressed="${S.lang === 'el'}" lang="el">Ελληνικά</button></div>
   </section>`;
+}
+
+/* ---------- admin: the app's owner sees every account (the Firestore rules allow it for this account only) ---------- */
+const ADMIN = 'giannosanag@gmail.com';
+const isAdmin = () => !!(S.user && S.user.email === ADMIN);
+function adminLoad(){
+  if (!window.SS_admin) return toast(L("Can't reach Google. Check the internet."));
+  S.adm = {loading:true}; render();
+  window.SS_admin.all().then(users => { S.adm = {users}; if (S.view === 'admin') render(); }, e => { S.adm = {err:(e && e.code) || String(e)}; if (S.view === 'admin') render(); });
+}
+// "3 min ago", "5 h ago", else the date and time
+function ago(t){
+  if (!t) return '–';
+  const d = Date.now() - t;
+  if (d < 60e3) return L('just now');
+  if (d < 3600e3) return L('{n} min ago', {n:Math.round(d / 60e3)});
+  if (d < 24 * 3600e3) return L('{n} h ago', {n:Math.round(d / 3600e3)});
+  const x = new Date(t), two = v => String(v).padStart(2, '0');
+  return fmtDate(x.getFullYear() + '-' + two(x.getMonth() + 1) + '-' + two(x.getDate())) + ' ' + two(x.getHours()) + ':' + two(x.getMinutes());
+}
+// days used in the last 30, from the profile's day counts
+const activeDays = p => { const from = Date.now() - 30 * 864e5; return Object.keys((p && p.days) || {}).filter(d => Date.parse(d + 'T12:00') >= from).length; };
+function adminView(){
+  const A = S.adm || {}, head = t => `<section class="panel"><div class="kicker">${L('Admin')}</div><h2>${t}</h2>`;
+  if (!isAdmin()) return `${head(L('Admin'))}<p class="empty">${L("Only the app's owner can open this page.")}</p></section>`;
+  if (A.loading) return `${head(L('Admin'))}<p class="note">${L('Reading every account…')}</p></section>`;
+  if (A.err) return `${head(L('Admin'))}<p class="note">${L('The accounts could not be read ({code}). Are the new Firestore rules published?', {code:esc(A.err)})}</p><button class="btn btn-or" id="b-adload">${L('Try again')}</button></section>`;
+  const users = (A.users || []).slice().sort((a, b) => ((b.profile||{}).last||0) - ((a.profile||{}).last||0));
+  const u = A.user && users.find(x => x.uid === A.user);
+  // one match of one account: read only
+  if (u && A.match){ const m = u.matches.find(x => x.id === A.match); if (m){ const a = analyze(m), sets = scoredSets(a.score).sort((p, q) => p - q), c = counts(m);
+    const rows = isTeam(m) ? playerRows([m]).map(r => ({label:pLabel(r), c:r.c})).concat({label:L('Team'), c, sum:true}) : sets.map(n => ({label:L('Set {n}', {n}), c:counts(m, n)})).concat({label:L('Match'), c, sum:true});
+    return `${head(vsLine(m))}<p class="note" style="margin:0">${esc(fmtDate(m.date))}${m.team ? ' · ' + esc(m.team) : ''} · ${esc((u.profile||{}).email || u.uid)}</p>
+      <p style="margin:0"><b>${L(m.result === 'W' ? 'Won' : m.result === 'L' ? 'Lost' : 'Not sure')} ${esc(m.score || '')}</b> · ${sets.map(n => ordS(m, a.score[n].us, a.score[n].them)).join(', ')}</p></section>
+      ${pctRows(c, isTeam(m) ? rallyServes([m]) : null)}
+      <section class="sec"><div class="sec-h"><h3>${L('Box score')}</h3></div>${boxTable(rows, isTeam(m) ? L('Player') : L('Sets'), isTeam(m))}</section>
+      ${isTeam(m) ? teamMore([m]) : ''}
+      <div class="row"><button class="btn btn-dk" id="b-adback">‹ ${L('Back')}</button><button class="btn btn-dk" id="b-pdf">PDF</button></div>`; } }
+  // one account
+  if (u){ const p = u.profile || {}, ms = u.matches.slice().sort((a, b) => (b.date||'').localeCompare(a.date||'') || (b.createdAt||0) - (a.createdAt||0));
+    const days = Object.keys(p.days || {}).sort().reverse().slice(0, 14);
+    return `${head(esc(p.email || u.uid))}${p.name ? `<p class="note" style="margin:0">${esc(p.name)}</p>` : ''}
+      <div class="kpis">${[[L('Last seen'), ago(p.last)], [L('First seen'), ago(p.first)], [L('Opens'), p.opens || 0], [L('Days used, last 30'), activeDays(p)],
+        [L('Devices'), Object.entries(p.devices || {}).sort((a, b) => b[1] - a[1]).map(([k, t]) => esc(k) + ' (' + ago(t) + ')').join('<br>') || '–'],
+        [L('Language'), esc(p.lang || '–')], [L('Last days'), days.map(d => esc(shortDate(d)) + (p.days[d] > 1 ? ' ×' + p.days[d] : '')).join(' · ') || '–']]
+        .map(([l, v]) => `<div class="kr"><span>${l}</span><b style="white-space:normal">${v}</b></div>`).join('')}</div></section>
+      ${u.player && (u.player.name || u.player.num) ? `<section class="sec"><div class="sec-h"><h3>${L('Player card')}</h3></div><p class="note" style="margin:0">#${esc(u.player.num || '?')} ${esc(u.player.name || '')}${u.player.pos ? ' · ' + esc(L(u.player.pos)) : ''}</p></section>` : ''}
+      ${u.teams.filter(t => t && (t.name || (t.players||[]).length)).map(t => `<section class="sec"><div class="sec-h"><h3>${esc(t.name || L('Team'))}</h3><span class="note">${nL((t.players||[]).length, '{n} player', '{n} players')}</span></div>
+        <p class="note" style="margin:0">${(t.players||[]).map(x => '#' + esc(x.num) + ' ' + esc(x.name) + (x.pos ? ' (' + esc(posAb(x.pos)) + ')' : '')).join(' · ')}</p></section>`).join('')}
+      <section class="sec"><div class="sec-h"><h3>${L('Matches')}</h3><span class="note">${ms.length}</span></div>
+      <div class="mlist">${ms.map(m => `<button class="mitem" data-amatch="${esc(m.id)}"><span class="res ${m.done ? (m.result||'') : 'live'}">${m.done ? resLetter(m.result) : L('LIVE')}</span>
+        <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${isTeam(m) ? L('whole team') : L('One player')}</div></span>
+        <span class="p">${pts(counts(m))}<small>${L('PTS')}</small></span></button>`).join('') || `<p class="empty">${L('No matches yet.')}</p>`}</div></section>
+      <button class="btn btn-dk" id="b-adback">‹ ${L('Back')}</button>`; }
+  // everyone
+  const allM = users.reduce((t, x) => t + x.matches.length, 0), dayAgo = Date.now() - 864e5, weekAgo = Date.now() - 7 * 864e5;
+  return `${head(nL(users.length, '{n} person', '{n} people'))}
+    <p class="note" style="margin:0">${nL(allM, '{n} match', '{n} matches')} · ${L('{d} used the app today, {w} this week', {d:users.filter(x => ((x.profile||{}).last||0) > dayAgo).length, w:users.filter(x => ((x.profile||{}).last||0) > weekAgo).length})}</p>
+    <p class="note" style="margin:0">${L('Someone shows here after opening this version of the app once while signed in.')}</p>
+    <button class="btn btn-dk" id="b-adload">${L('Read again')}</button></section>
+    <div class="mlist">${users.map(x => { const p = x.profile || {}, team = x.matches.filter(isTeam).length;
+      return `<button class="mitem adu" data-auid="${esc(x.uid)}"><span><div class="t">${esc(p.email || x.uid)}</div>
+        <div class="d">${L('Last seen')} ${ago(p.last)} · ${nL(p.opens || 0, '{n} open', '{n} opens')} · ${nL(activeDays(p), '{n} day in 30', '{n} days in 30')}</div>
+        <div class="d">${nL(x.matches.length, '{n} match', '{n} matches')} (${L('{t} team, {p} one player', {t:team, p:x.matches.length - team})})${x.teams.filter(t => t && t.name).map(t => ' · ' + esc(t.name)).join('')}</div></span></button>`; }).join('')}</div>`;
 }
 
 /* ---------- events ---------- */
@@ -2719,6 +3152,8 @@ document.addEventListener('click', async e => {
     if (st && t.dataset.subin){ const out = st.pos[S.sub.i]; push(m, {k:'sub', out, in:t.dataset.subin}); save(m); toast(L('Sub: #{a} in for #{b}', {a:t.dataset.subin, b:out})); }
     S.sub = null; S.barClosedAt = Date.now(); return render(); }
   if (t.dataset.metric){ S.chartMetric = t.dataset.metric; return render(); }
+  if (t.dataset.auid){ S.adm.user = t.dataset.auid; S.adm.match = null; window.scrollTo(0,0); return render(); }
+  if (t.dataset.amatch){ S.adm.match = t.dataset.amatch; window.scrollTo(0,0); return render(); }
   // the language, kept on this phone
   if (t.dataset.lang){ S.lang = t.dataset.lang; LS.set('ss.lang', S.lang); syncNote(); return render(); }
   if (t.dataset.open){
@@ -2782,6 +3217,12 @@ document.addEventListener('click', async e => {
       return arm('delteam');
     // the report as a picture, through the phone's share sheet (WhatsApp, Messages...)
     case 'b-share': return sharePicture(S.matches[t.dataset.id]);
+    case 'b-xlsx': return exportMatch(S.matches[t.dataset.id]);
+    // the owner's admin page: every account, one account, one match
+    case 'b-admin': S.view = 'admin'; window.scrollTo(0,0); return adminLoad();
+    case 'b-adload': return adminLoad();
+    case 'b-adback': if (S.adm){ if (S.adm.match) S.adm.match = null; else S.adm.user = null; } window.scrollTo(0,0); return render();
+    case 'b-pdf': return printPage();
   }
 });
 document.addEventListener('submit', e => {
@@ -2930,7 +3371,33 @@ window.SS_auth = {
   },
 };
 A.getRedirectResult(auth).catch(e => window.SS_toast(window.SS_L('Sign-in failed ({code})', {code:e.code})));
-A.onAuthStateChanged(auth, u => window.SS_onUser(u ? {uid: u.uid, email: u.email} : null, u ? database(u.uid) : null));
+// Who uses the app and when, for the owner's admin page: the account's profile (users/<uid>), written at most
+// once every 30 minutes per phone. Best effort: a refused write never shows as "not saved".
+async function ping(u){
+  try{
+    const key = 'ss.ping.' + u.uid;
+    if (Date.now() - (+localStorage.getItem(key) || 0) < 30 * 60e3) return;
+    localStorage.setItem(key, String(Date.now()));
+    const ref = F.doc(fs, 'users', u.uid), had = (await F.getDoc(ref)).data(), now = Date.now(), d = new Date();
+    const day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), ua = navigator.userAgent;
+    const kind = (/iPhone|iPad/.test(ua) ? 'iPhone' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'Mac' : 'Other') + ((matchMedia('(display-mode: standalone)').matches || navigator.standalone) ? ' app' : ' browser');
+    await F.setDoc(ref, Object.assign({email:u.email || '', name:u.displayName || '', last:now, opens:F.increment(1), days:{[day]:F.increment(1)}, devices:{[kind]:now}, lang:document.documentElement.lang || ''},
+      had && had.first ? {} : {first:now}), {merge:true});
+  }catch(e){}
+}
+// The owner's admin page: every account's profile, matches, player card and teams (the rules allow only the owner)
+window.SS_admin = {
+  async all(){
+    const us = await F.getDocs(F.collection(fs, 'users'));
+    return Promise.all(us.docs.map(async d => {
+      const uid = d.id, [ms, p, t1, t2] = await Promise.all([F.getDocs(F.collection(fs, 'users', uid, 'matches')), F.getDoc(F.doc(fs, 'users', uid, 'settings', 'player')),
+        F.getDoc(F.doc(fs, 'users', uid, 'settings', 'team')), F.getDoc(F.doc(fs, 'users', uid, 'settings', 'team2'))]);
+      return {uid, profile:d.data(), matches:ms.docs.map(x => x.data()).filter(m => m && m.id), player:p.exists() ? p.data() : null, teams:[t1, t2].map(t => t.exists() ? t.data() : null)};
+    }));
+  },
+};
+A.onAuthStateChanged(auth, u => { window.SS_onUser(u ? {uid: u.uid, email: u.email} : null, u ? database(u.uid) : null); if (u) ping(u); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && auth.currentUser) ping(auth.currentUser); });
 </script>
 <script>
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
