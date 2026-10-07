@@ -15,14 +15,14 @@
 <style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
 <title>Spike Sheet</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Roboto+Condensed:wght@600..800&display=swap">
 <style>
 /* Sportswear-app look: black on white, heavy condensed caps, pills, one volt highlight. */
 :root{
   --bg:#FFFFFF; --soft:#F5F5F5; --soft2:#EDEDED; --ink:#111111; --muted:#707072; --faint:#9E9EA0; --line:#E5E5E5;
   --btn:#111111; --btn-ink:#FFFFFF; --volt:#D7FF3A; --volt-ink:#111111; --hi:#111111;
   --pos:#128A43; --neg:#D30005;
-  --head:"Archivo","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --head:"Archivo","Roboto Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
   --font:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -67,7 +67,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;pa
 
 .note{font-size:13px;color:var(--muted)}
 .kicker{font-size:13px;font-weight:500;color:var(--muted)}
-h2{font-size:34px;line-height:.95;margin:0;text-wrap:balance}
+h2{font-size:34px;line-height:.95;margin:0;text-wrap:balance;overflow-wrap:break-word}
 h3{font-size:16px;font-weight:600;margin:0}
 .sec{display:flex;flex-direction:column;gap:10px}
 .sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
@@ -92,7 +92,7 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 .score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:10px 18px 14px}
 .team{display:flex;flex-direction:column;gap:4px;min-width:0}
 .team.away{text-align:right;align-items:flex-end}
-.team .nm{font-size:22px;line-height:1;overflow-wrap:anywhere}.team .nm.long{font-size:16px}@media (max-width:360px){.team .nm.long{font-size:13px}}
+.team .nm{font-size:22px;line-height:1;overflow-wrap:anywhere}.team .nm.long{font-size:16px}@media (max-width:360px){.team .nm.long{font-size:13px}.team .nm.xl{font-size:11px}}
 .team .sw{font-size:12px;color:var(--muted)}
 .big{display:flex;align-items:center;gap:8px;font-size:84px;line-height:.85}
 .big i{font-style:normal;color:var(--faint);font-size:50px}
@@ -107,15 +107,15 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 .plus button:active{transform:scale(.97)}
 .bug-foot{display:flex;justify-content:space-between;align-items:center;padding:10px 12px 12px;gap:8px;flex-wrap:wrap}
 .setsel{display:flex;gap:4px;align-items:center}
-.setsel button{font-size:14px;font-weight:600;width:34px;height:34px;border-radius:50%;color:var(--muted)}
+.setsel button{font-size:14px;font-weight:600;width:40px;height:40px;border-radius:50%;color:var(--muted)}
 .setsel button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.lnk{font-size:14px;font-weight:600;padding:8px 6px;text-decoration:underline;text-underline-offset:3px}
+.lnk{font-size:14px;font-weight:600;padding:12px 6px;text-decoration:underline;text-underline-offset:3px}
 
 /* player */
 .player{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:4px 0}
 .jersey{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:28px;background:var(--volt);color:var(--volt-ink)}
 .pinfo{min-width:0}
-.pname{font-size:26px;line-height:1;overflow-wrap:anywhere}
+.pname{font-size:26px;line-height:1;overflow-wrap:anywhere}.pname.long{font-size:22px}.pname.xl{font-size:19px}
 .pline{display:flex;gap:22px;margin-top:8px;flex-wrap:wrap}
 .pline div{display:flex;flex-direction:column}
 .pline b{font-size:30px;line-height:.95}
@@ -129,7 +129,7 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 .court.is-on button{background:var(--volt-ink);color:var(--volt)}
 .choose{gap:12px}.choose p{margin:0}
 .dot-ok{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--pos);margin-right:7px;vertical-align:1px}
-#syncnote .lnk{padding:0 2px;font-size:13px}
+#syncnote .lnk{padding:10px 2px;margin:-10px 0;font-size:13px}
 .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pos);margin-right:6px;vertical-align:1px;animation:pulse 1.6s infinite}
 @keyframes pulse{50%{opacity:.3}}
 
@@ -183,7 +183,7 @@ details.more summary{cursor:pointer;font-weight:600;padding:6px 0;list-style:non
 details.more summary::-webkit-details-marker{display:none}
 details.more summary::after{content:' ›'}details.more[open] summary::after{content:' ⌄'}
 .seg{display:inline-flex;background:var(--soft);border-radius:999px;padding:3px}
-.seg button{font-size:13px;font-weight:600;padding:6px 14px;border-radius:999px;color:var(--muted)}
+.seg button{font-size:13px;font-weight:600;padding:10px 16px;border-radius:999px;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--bg);color:var(--ink)}
 .tagbar .more input.sm{flex:0 1 80px;text-align:center}
 .pick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -231,7 +231,7 @@ label.qh{margin-bottom:0;gap:8px}
 .empty{color:var(--muted);padding:12px 0;text-align:center}
 .check{flex-direction:row!important;align-items:center;gap:10px;color:var(--ink)!important;font-size:15px!important}
 .check input{width:22px;height:22px;accent-color:var(--ink)}
-.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:999px;font-size:14px;font-weight:500;z-index:10;white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:999px;font-size:14px;font-weight:500;z-index:10;max-width:calc(100% - 32px);width:max-content;text-align:center;border-radius:16px}
 /* a message must never sit on, or take the tap of, a number in an open bar */
 .toast{pointer-events:none}
 body:has(.tagbar) .toast{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}
@@ -291,7 +291,7 @@ input::-webkit-date-and-time-value{text-align:left}
   <div id="syncnote" class="note" hidden></div>
   <main id="app" class="wrap" style="max-width:none"></main>
 </div>
-<div id="toast" class="toast" hidden></div>
+<div id="toast" class="toast" role="status" hidden></div>
 
 <script>
 const STATS = [
@@ -328,11 +328,31 @@ const teamLabel = slot => teamOf(slot).name || (slot === 'team2' ? 'Team 2' : 'T
 /* ---------- storage ---------- */
 const LS = {
   get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } },
-  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ if (!S.lsFail){ S.lsFail = true; setTimeout(()=>toast('This phone cannot save. Free some space.'), 0); } } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); if (S.lsFail && k.startsWith('ss.m.')){ S.lsFail = false; syncNote(); } }catch(e){ if (!S.lsFail){ S.lsFail = true; setTimeout(()=>{ toast('This phone cannot save. Free some space.'); syncNote(); }, 0); } } },
 };
-function backup(){ LS.set('ss.matches', S.matches); LS.set('ss.active', S.activeId); LS.set('ss.player', S.player); LS.set('ss.team', S.teams.team); LS.set('ss.team2', S.teams.team2); }
+// Each match has its own key (ss.m.<id>): a tap writes only the match that changed, not the whole
+// season (a season is over 1 MB, too slow to write on every tap on a cheap phone).
+// written: id -> the updatedAt last written. all: write every match (when the page closes).
+let written = {};
+function backup(all){
+  Object.values(S.matches).forEach(m => { if (all || written[m.id] !== (m.updatedAt||0)){ LS.set('ss.m.' + m.id, m); written[m.id] = m.updatedAt||0; } });
+  Object.keys(written).forEach(id => { if (!S.matches[id]){ try{ localStorage.removeItem('ss.m.' + id); }catch(e){} delete written[id]; } });
+  LS.set('ss.active', S.activeId); LS.set('ss.player', S.player); LS.set('ss.team', S.teams.team); LS.set('ss.team2', S.teams.team2);
+}
 function restore(){
-  const m = LS.get('ss.matches'); if (m && typeof m === 'object') S.matches = m;
+  const ms = {};
+  try{ for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k && k.startsWith('ss.m.')){ const x = LS.get(k); if (x && x.id) ms[x.id] = x; } } }catch(e){}
+  written = {}; Object.values(ms).forEach(x => written[x.id] = x.updatedAt||0);
+  // before 2026-10-07 every match sat in one key: move them (the newer copy wins), and drop that key
+  // only when every match is in its own key
+  const old = LS.get('ss.matches');
+  if (old && typeof old === 'object'){
+    Object.values(old).forEach(x => { if (x && x.id && (!ms[x.id] || (x.updatedAt||0) > (ms[x.id].updatedAt||0))) ms[x.id] = x; });
+    let ok = true;
+    Object.values(ms).forEach(x => { if (written[x.id] === (x.updatedAt||0) && localStorage.getItem('ss.m.' + x.id)) return; try{ localStorage.setItem('ss.m.' + x.id, JSON.stringify(x)); written[x.id] = x.updatedAt||0; }catch(e){ ok = false; } });
+    if (ok) try{ localStorage.removeItem('ss.matches'); }catch(e){}
+  }
+  S.matches = ms;
   const p = LS.get('ss.player'); if (p && typeof p === 'object') S.player = Object.assign(S.player, p);
   SLOTS.forEach(k => { const t = LS.get('ss.' + k); if (t && typeof t === 'object') S.teams[k] = Object.assign({name:'', players:[]}, t); });
   S.slot = LS.get('ss.slot') === 'team2' ? 'team2' : 'team';
@@ -503,7 +523,11 @@ function syncNote(){
   n.innerHTML = S.user
     ? (S.saveFailed ? `Saved on this phone. Not in your account yet (${esc(S.user.email || 'your account')}). Trying again.`
       : `<span class="dot-ok"></span>Synced to ${esc(S.user.email || 'your account')}`)
-    : `Saving on this phone only. <button class="lnk" id="b-signin">Sign in with Google</button> to sync and back up.`;
+    : `Saving on this phone only. <button class="lnk" id="b-signin">Sign in with Google</button> to sync and back up.`
+      // iPhone Safari deletes a site's data after 7 days unused; the home-screen app keeps it
+      + (/iPhone|iPad/.test(navigator.userAgent) && !navigator.standalone ? ' On iPhone, also add it to the Home Screen: Safari deletes it after a week unused.' : '');
+  // the phone is full: said all the time, not once
+  if (S.lsFail) n.innerHTML = `<b style="color:var(--neg)">This phone is full: new taps are not saved. Free some space.</b> ` + n.innerHTML;
 }
 const isTyping = () => ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName);
 
@@ -588,7 +612,7 @@ function fmtTime(ms){
 const mins = ms => Math.round(ms/60000);
 function fmtDate(d){ try{ return new Date(d+'T12:00').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'}); }catch(e){ return d; } }
 const today = () => { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
-function toast(t){ const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(S.toastT); S.toastT = setTimeout(()=>el.hidden = true, 2200); }
+function toast(t){ const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(S.toastT); S.toastT = setTimeout(()=>el.hidden = true, 3500); }
 function buzz(){ try{ navigator.vibrate && navigator.vibrate(12); }catch(e){} }
 let wake = null;
 async function keepAwake(){ try{ if (!wake && navigator.wakeLock) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', ()=>wake=null); } }catch(e){} }
@@ -649,6 +673,7 @@ function tap(k){
   // a double tap is one stat: nobody plays two aces in 0.4 s
   if (S.lastStat && S.lastStat.k === k && Date.now() - S.lastStat.at < 400) return;
   S.lastStat = {k, at:Date.now()};
+  whoLeft();
   S.tag = null; S.who = null; clearTimeout(S.tagT);
   const team = isTeam(m);
   // a stat means the player is playing: put them on court if the tap was forgotten
@@ -664,7 +689,7 @@ function tap(k){
   if (team){
     S.who = {mid:m.id, i:idx}; S.barAt = Date.now();
     // closes under a finger reaching for a number: that tap must not hit what is underneath
-    S.tagT = setTimeout(()=>{ if (!isTyping()){ S.who = null; S.barAt = S.barClosedAt = Date.now(); render(); } }, 20000);
+    S.tagT = setTimeout(()=>{ if (!isTyping()){ whoLeft(); S.who = null; S.barAt = S.barClosedAt = Date.now(); render(); } }, 20000);
   } else if (TAG_KEYS.includes(k)){
     S.tag = {mid:m.id, i:idx}; S.barAt = Date.now();
     S.tagT = setTimeout(()=>{ if (!isTyping()){ S.tag = null; S.barAt = S.barClosedAt = Date.now(); render(); } }, 20000);
@@ -683,6 +708,13 @@ function setPasser(n){
     if (!known){ S.player.extraNums = [...(S.player.extraNums||[]), n].sort((a,b)=>a-b); savePlayer(); }
   }
   S.tag = null; S.barAt = S.barClosedAt = Date.now(); clearTimeout(S.tagT); render();
+}
+// The who bar is closing by another tap (next stat, a point, End set, time-out) or by itself:
+// say that the stat has no player yet. Skip and Undo are choices and say nothing.
+function whoLeft(){
+  const m = S.who && !S.who.fix && S.matches[S.who.mid], e = m && m.log[S.who.i];
+  // after the tap's own message ("Set 1: 25-20"), so this one is the one left on screen
+  if (e && BYK[e.k] && !e.p){ const t = `${evLabel(e, m).t}: no player. Tap it in Play by play to add one`; setTimeout(() => toast(t), 0); }
 }
 // n: a jersey number, or '' for "Skip". A number that is not on the roster joins it for this match.
 function setWho(n){
@@ -754,7 +786,7 @@ function timeoutBar(m){
       ${(i => m.away ? i[1] + i[0] : i[0] + i[1])([
         `<input class="sm" id="fix-us" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="${sc.us}" aria-label="${esc(homeName(m))}">`,
         `<input class="sm" id="fix-them" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="${sc.them}" aria-label="${esc(m.opp)}">`])}
-      <button type="submit">Set</button><button type="button" class="skip" id="b-fixno">Cancel</button>
+      <button type="submit">Save</button><button type="button" class="skip" id="b-fixno">Cancel</button>
     </form></div>`; }
   return '';
 }
@@ -839,9 +871,8 @@ function endSet(){
 }
 function finishMatch(result, score, endAt){
   const m = S.matches[S.activeId]; if (!m) return;
-  // the final whistle belongs to the last set that was played, not an empty next set
-  const cur = analyze(m).score[S.set], log = m.log||[];
-  const offSet = (cur && (cur.us || cur.them)) || !log.length ? S.set : log[log.length-1].set;
+  // the final whistle belongs to the last set that was played, not an empty next set or one looked back at
+  const played = scoredSets(analyze(m).score), offSet = played.length ? Math.max(...played) : S.set;
   if (m.onCourt){ const end = Math.max(endAt || Date.now(), m.courtSince||0), seg = m.courtSince ? end-m.courtSince : 0, pre = m.stintMs||0; push(m,{k:'off',dur:pre+seg,onAt:m.courtSince,pre,set:offSet,t:end,fin:1}); m.playMs=(m.playMs||0)+seg; m.onCourt=false; m.courtSince=null; m.stintMs=0; }
   // a set left open whose score finishes it is over now (also one left open by going back with the set buttons);
   // a set stopped half-way (abandoned at 10-12) is not a set won or lost
@@ -910,6 +941,13 @@ function removeMatch(id){
 /* ---------- views ---------- */
 // "Tap again to delete" lets go after 4 s, so a later stray tap cannot delete
 function arm(key){ S.armed = key; S.armAt = Date.now(); clearTimeout(S.armT); S.armT = setTimeout(()=>{ if (S.armed === key){ S.armed = null; if (!isTyping()) render(); } }, 4000); render(); }
+// Greek in capitals has no stress accent (ΟΛΥΜΠΙΑΚΟΣ, not ΟΛΥΜΠΙΑΚΌΣ) but keeps the diaeresis (ΠΑΝΑΘΗΝΑΪΚΟΣ).
+// Done here, not left to the browser: iPhones do not all drop it for text-transform:uppercase.
+const greekPlain = s => s.normalize('NFD').replace(/([Ͱ-Ͽ]̈?)́/g, '$1').normalize('NFC');
+function capsFix(root){
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
+  while ((n = w.nextNode())) if (/[Ά-Ώά-ΰό-ώ]/.test(n.data) && getComputedStyle(n.parentElement).textTransform === 'uppercase') n.data = greekPlain(n.data);
+}
 function render(){
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history'))));
   const app = $('#app');
@@ -919,6 +957,7 @@ function render(){
   else if (S.view === 'tplayer' && S.tpNum) app.innerHTML = teamPlayerView(S.tpNum);
   else if (S.view === 'match' && S.matches[S.openId]){ app.innerHTML = matchView(S.matches[S.openId]); if (!isTeam(S.matches[S.openId])) prepPicture(S.matches[S.openId]); }
   else { S.view = 'history'; app.innerHTML = historyView(); }
+  capsFix(app);
   clearInterval(S.timer);
   const m = S.activeId && S.matches[S.activeId];
   if (S.view === 'live' && m && (m.onCourt || m.toOn)) S.timer = setInterval(()=>{ const c = $('#clock'); if (c) c.textContent = fmtTime(playMs(m));
@@ -948,7 +987,7 @@ function newView(){
   const last = Object.values(S.matches).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0], nd = S.nfDraft || {};
   return `
   <section class="panel">
-    <div class="kicker">Tip-off</div>
+    <div class="kicker">Match day</div>
     <h2>New match</h2>
     <form id="newform" class="wrap" style="max-width:none;gap:12px">
       <div><div style="font-size:17px;font-weight:700;margin-bottom:10px">Team or player?</div><div class="pick" role="group" aria-label="Track">
@@ -979,16 +1018,19 @@ function newView(){
       </details>
       <button class="btn btn-or" type="submit" id="b-start" ${trackMode()==='team' && !S.team.players.length ? 'hidden' : ''}>Start match</button>
     </form>
-    <p class="note">Count the score with the two big buttons. Tap ${pWhose()} stats as they happen: a point adds one to your team, an error adds one to the other team. Tap the court button each time ${pWho()} goes on or off.</p>
+    <p class="note" id="h-player" ${trackMode()==='team'?'hidden':''}>Count the score with the two big buttons. Tap ${pWhose()} stats as they happen: a point adds one to your team, an error adds one to the other team. Tap the court button each time ${pWho()} goes on or off.</p>
+    <p class="note" id="h-team" ${trackMode()==='team'?'':'hidden'}>Count the score with the two big buttons. Tap a stat as it happens, then the player's number: a point adds one to your team, an error adds one to the other team. Forgot a number? Tap that line in Play by play.</p>
   </section>
-  ${S.player.name ? '' : `<button class="btn btn-dk" data-view="player">Add the player's name and number</button>`}`;
+  ${S.player.name ? '' : `<button class="btn btn-dk" id="b-addp" data-view="player" ${trackMode()==='team'?'hidden':''}>Add the player's name and number</button>`}`;
 }
 
 // a long word (PANATHINAIKOS) would split mid-word on a phone: shrink it instead
-const nmLong = n => String(n).split(/\s+/).some(w => w.length > 9) ? ' long' : '';
+const nmLong = n => { const w = Math.max(...String(n).split(/\s+/).map(x => x.length)); return w > 11 ? ' long xl' : w > 9 ? ' long' : ''; };
 const teamCell = (name, sets, side) => `<div class="team${side}"><span class="nm${nmLong(name)}">${esc(name)}</span><span class="sw">Sets ${sets}</span></div>`;
+// sets won: the "3-1" typed at the final whistle wins over the sets tracked (tracking may have stopped early)
+function finalSets(m){ const x = /^(\d+)-(\d+)$/.exec(m.score||''); return x ? {w:+x[1], l:+x[2]} : setsWon(m); }
 function scoreBug(m, a, opts){
-  const {w, l} = setsWon(m);
+  const {w, l} = opts.live ? setsWon(m) : finalSets(m);
   // live: the current set's rally score; finished: sets won
   const s = S.set, sc = opts.live ? (a.score[s] || {us:0,them:0}) : {us:w, them:l};
   // away: the home team (the opponent) is on the left, like the hall's scoreboard. Taps still count for your team.
@@ -1037,18 +1079,18 @@ function playerList(rows, link){
 function teamPlayerView(num){
   const slot = SLOTS.includes(S.seasonMode) ? S.seasonMode : 'team', tm = teamOf(slot);
   const sorted = Object.values(S.matches).filter(m => isTeam(m) && slotOf(m) === slot).sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
-  const per = sorted.filter(m => (m.roster||[]).some(p => p.num === num) || (m.log||[]).some(e => e.p === num)).map(m => ({m, c:counts(m, null, num)}));
+  const per = sorted.filter(m => (m.log||[]).some(e => e.p === num)).map(m => ({m, c:counts(m, null, num)}));
   const back = `<button class="btn btn-dk" data-view="history">‹ Back to team season</button>`;
   const name = (tm.players.find(p => p.num === num) || {}).name || (per.map(x => (x.m.roster||[]).find(p => p.num === num)).find(p => p && p.name) || {}).name || '';
   if (!per.length) return `<section class="panel"><h2>#${esc(num)} ${esc(name)}</h2><p class="empty">No team matches yet.</p></section>${back}`;
   const total = zeroCounts(); let best = null;
   per.forEach(({m, c}) => { STATS.forEach(s => total[s.k] += c[s.k]); if (!best || pts(c) > best.v) best = {v:pts(c), m}; });
-  const n = per.length, avg = v => (v/n).toFixed(1), pc = (a,b) => b ? Math.round(100*a/b)+'%' : '–';
+  const n = per.length, avg = v => (v/n).toFixed(1), pc = (a,b) => b ? pct100(a,b)+'%' : '–';
   const att = total.kill + total.plase + total.aerr + total.att, srv = total.ace + total.serve + total.serr, rec = total.pass + total.rerr;
   return `
   <section class="player">
     <div class="jersey">${esc(num)}</div>
-    <div class="pinfo"><div class="pname">${esc(name || 'Player ' + num)}</div><div class="note">${esc(teamLabel(slot))} · ${n} team match${n>1?'es':''}</div>
+    <div class="pinfo"><div class="pname${nmLong(name || '')}">${esc(name || 'Player ' + num)}</div><div class="note">${esc(teamLabel(slot))} · ${n} team match${n>1?'es':''}</div>
       <div class="pline">
         <div><b>${avg(pts(total))}</b><span>Pts / match</span></div>
         <div><b>${avg(vir(total))}</b><span>Rtg / match</span></div>
@@ -1080,7 +1122,7 @@ function whoBar(m){
   if (!S.who || S.who.mid !== m.id) return '';
   const e = m.log[S.who.i]; if (!e) return '';
   return `<div class="tagbar who" role="group" aria-label="Which player">
-    <div class="q" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>${esc(evLabel(e,m).t)}: who?</span>${S.who.fix ? '' : `<button class="skip" id="b-whoundo" style="height:32px;padding:0 12px;font-size:13px">Wrong tap, undo</button>`}</div>
+    <div class="q" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>${esc(evLabel(e,m).t)}: who?</span>${S.who.fix ? '' : `<button class="skip" id="b-whoundo" style="height:40px;padding:0 14px;font-size:13px">Wrong tap, undo</button>`}</div>
     <div class="nums">${(m.roster||[]).map(p=>`<button data-who="${esc(p.num)}">${esc(p.num)}<small>${esc((p.name||'').split(/\s+/)[0])}</small></button>`).join('')}</div>
     <form class="more" id="whoform">
       <input id="who-other" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="Other number" aria-label="Other number">
@@ -1097,10 +1139,10 @@ function teamLive(m){
   <section class="player">
     <div class="jersey">${esc((homeName(m)[0]||'T').toUpperCase())}</div>
     <div class="pinfo">
-      <div class="pname">${esc(homeName(m))}</div>
+      <div class="pname${nmLong(homeName(m))}">${esc(homeName(m))}</div>
       <div class="note">Whole team · tap a stat, then the number</div>
       <div class="pline">
-        <div><b>${pts(all)}</b><span>Player pts</span></div>
+        <div><b>${pts(all)}</b><span>Points</span></div>
         <div><b>${errs(all)}</b><span>Errors</span></div>
         <div><b>${fmtVir(vir(all))}</b><span>Rating</span></div>
       </div>
@@ -1128,7 +1170,7 @@ function teamMatchView(m){
   <div class="tiles">
     <div class="tile hero"><b>${pts(c)}</b><span>Points by players</span><em>of ${teamPts} team points</em></div>
     <div class="tile"><b>${errs(c)}</b><span>Errors</span><em>points given away</em></div>
-    <div class="tile"><b>${c.ace}</b><span>Aces</span><em>${srv ? Math.round(100*(srv-c.serr)/srv)+'%' : '–'} serves in</em></div>
+    <div class="tile"><b>${c.ace}</b><span>Aces</span><em>${srv ? pct100(srv-c.serr, srv)+'%' : '–'} serves in</em></div>
     <div class="tile"><b>${c.block}</b><span>Blocks</span><em>${c.dig} defences</em></div>
   </div>
   ${pctRows(c)}
@@ -1160,7 +1202,7 @@ function teamSeason(list, seg, slot){
   return `${seg}
   <section class="player">
     <div class="jersey">${esc((teamLabel(slot)[0]).toUpperCase())}</div>
-    <div class="pinfo"><div class="pname">${esc(teamLabel(slot))}</div><div class="note">${n} match${n>1?'es':''} · ${w}W ${l}L</div>
+    <div class="pinfo"><div class="pname${nmLong(teamLabel(slot))}">${esc(teamLabel(slot))}</div><div class="note">${n} match${n>1?'es':''} · ${w}W ${l}L</div>
       <div class="pline">
         <div><b>${avg(pts(total))}</b><span>Pts / match</span></div>
         <div><b>${avg(errs(total))}</b><span>Err / match</span></div>
@@ -1253,7 +1295,7 @@ function liveView(m){
   <section class="player">
     <div class="jersey">${esc(S.player.num || '?')}</div>
     <div class="pinfo">
-      <div class="pname">${esc(pName())}</div>
+      <div class="pname${nmLong(pName())}">${esc(pName())}</div>
       <div class="note">${m.onCourt?'<span class="live-dot"></span>':''}${esc(since)}</div>
       <div class="pline">
         <div><b>${pts(all)}</b><span>Pts</span></div>
@@ -1387,7 +1429,7 @@ const LEGEND = `<p class="note">SPK spike · PLA plasé · BLK block · DEF defe
 
 function tiles(c, x){
   const att = c.kill + c.plase + c.aerr + c.att, srv = c.ace + c.serve + c.serr, rec = c.pass + c.rerr;
-  const pct = (a,b) => b ? Math.round(100*a/b)+'%' : '–';
+  const pct = (a,b) => b ? pct100(a,b)+'%' : '–';
   return `<div class="tiles">
     <div class="tile hero"><b>${x.pts ?? pts(c)}</b><span>Points</span>${x.ptsNote||''}</div>
     <div class="tile"><b>${x.vir ?? fmtVir(vir(c))}</b><span>Rating</span>${x.virNote||''}</div>
@@ -1407,12 +1449,14 @@ const WORDS = {ace:['ace','aces'], kill:['spike','spikes'], plase:['plasé','pla
 const nWord = (n, k) => n + ' ' + WORDS[k][n === 1 ? 0 : 1];
 const listOf = (c, keys) => keys.filter(k => c[k]).map(k => nWord(c[k], k)).join(', ');
 // Attack / serve / reception as "x of y" and a percentage. Only what was tapped counts.
+// 199 of 200 is 99%, not 100%; 1 of 300 is 1%, not 0%
+const pct100 = (a, b) => { const p = Math.round(100*a/b); return p === 100 && a < b ? 99 : p === 0 && a > 0 ? 1 : p; };
 function pctParts(c){
   return [
     {l:'Attack', a:c.kill + c.plase, b:c.kill + c.plase + c.aerr + c.att, n:'points from attacks'},
     {l:'Serve', a:c.ace + c.serve, b:c.ace + c.serve + c.serr, n:c.ace ? nWord(c.ace,'ace') : 'serves in'},
     {l:'Reception', a:c.pass, b:c.pass + c.rerr, n:'good receptions'},
-  ].map(r => Object.assign(r, {p: r.b ? Math.round(100*r.a/r.b) : null}));
+  ].map(r => Object.assign(r, {p: r.b ? pct100(r.a, r.b) : null}));
 }
 function pctRows(c){
   return `<div class="pct">${pctParts(c).map(r => `
@@ -1498,7 +1542,7 @@ function shortDate(d){ try{ const x = new Date(d+'T12:00'); return x.getDate() +
 // The match report drawn on a canvas (1080 wide, Instagram/WhatsApp friendly), always dark.
 const PIC = {bg:'#000000', soft:'#161616', soft2:'#2A2A2A', ink:'#FFFFFF', muted:'#9E9EA0', volt:'#D7FF3A', voltInk:'#111111', pos:'#3DDC84', neg:'#FF5A5F'};
 function picFont(ctx, weight, size, head){
-  ctx.font = `${weight} ${size}px ${head ? '"Archivo","Arial Narrow",Arial,sans-serif' : '"Archivo",Helvetica,Arial,sans-serif'}`;
+  ctx.font = `${weight} ${size}px ${head ? '"Archivo","Roboto Condensed","Arial Narrow",Arial,sans-serif' : '"Archivo",Helvetica,Arial,sans-serif'}`;
   try{ ctx.fontStretch = head ? 'ultra-condensed' : 'normal'; }catch(e){}
 }
 // largest size up to `size` at which the text fits in maxW
@@ -1513,7 +1557,7 @@ function picText(ctx, text, x, y, o){
   ctx.fillText(text, x, y);
 }
 // capitals the Greek way: no accents on capital letters
-const capsName = t => String(t||'').toUpperCase().normalize('NFD').replace(/([\u0370-\u03ff])[\u0300-\u036f]+/g, '$1').normalize('NFC');
+const capsName = t => greekPlain(String(t||'').toUpperCase());
 // a team name: one line when it fits big enough, otherwise two balanced lines
 function picTeam(ctx, text, x, y, maxW, align){
   text = capsName(text);
@@ -1532,7 +1576,7 @@ function picTeam(ctx, text, x, y, maxW, align){
 }
 function picRound(ctx, x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function drawReport(m){
-  const c = counts(m), a = analyze(m), {w, l} = setsWon(m), court = setCourt(m);
+  const c = counts(m), a = analyze(m), {w, l} = finalSets(m), court = setCourt(m);
   const sets = Object.keys(a.score).map(Number).sort((x,y)=>x-y).filter(n => { const x = a.score[n], cs = counts(m, n); return x.us || x.them || pts(cs) || errs(cs); });
   // sets start at y 1290 (after three 96-high bars from 990); the footer needs 90 below the last line
   const W = 1080, P = 72, H = 1290 + sets.length * 64 + (passLine(m) ? 60 : 0) + 90;
@@ -1608,7 +1652,7 @@ function picName(m){ return ('spike-sheet-' + (m.opp||'match') + '-' + (m.date||
 async function prepPicture(m){
   const key = picKey(m);
   if (S.pic && S.pic.key === key) return S.pic;
-  try{ await Promise.race([document.fonts.load('800 60px "Archivo"'), new Promise(r => setTimeout(r, 1500))]); }catch(e){}
+  try{ await Promise.race([document.fonts.load('800 60px "Archivo"'), document.fonts.load('800 60px "Roboto Condensed"', 'Ω'), new Promise(r => setTimeout(r, 1500))]); }catch(e){}
   // JPEG: about 10x faster to make than PNG on a phone, and WhatsApp turns pictures into JPEG anyway
   const blob = await new Promise(r => drawReport(m).toBlob(r, 'image/jpeg', 0.92));
   if (!blob) return null;
@@ -1674,6 +1718,7 @@ function historyView(){
   // each saved team has its own season; a team shows here once it has a match
   const slots = SLOTS.filter(k => all.some(m => isTeam(m) && slotOf(m) === k));
   const mode = slots.includes(S.seasonMode) ? S.seasonMode : S.seasonMode !== 'player' && slots.length && all.every(isTeam) ? slots[0] : 'player';
+  if (mode !== 'player') S.seasonMode = mode;
   const seg = slots.length ? `<div><div class="seg" role="group" aria-label="Season of">
     <button data-season="player" aria-pressed="${mode==='player'}">${esc(pName())}</button>${slots.map(k => `<button data-season="${k}" aria-pressed="${mode===k}">${esc(teamLabel(k))}</button>`).join('')}</div></div>` : '';
   if (mode !== 'player') return teamSeason(all.filter(m => isTeam(m) && slotOf(m) === mode), seg, mode);
@@ -1688,7 +1733,7 @@ function historyView(){
   return `${seg}
   <section class="player">
     <div class="jersey">${esc(S.player.num || '?')}</div>
-    <div class="pinfo"><div class="pname">${esc(pName())}</div><div class="note">${esc(S.player.pos||'')}${S.player.pos?' · ':''}${n} match${n>1?'es':''} · ${w}W ${l}L</div>
+    <div class="pinfo"><div class="pname${nmLong(pName())}">${esc(pName())}</div><div class="note">${esc(S.player.pos||'')}${S.player.pos?' · ':''}${n} match${n>1?'es':''} · ${w}W ${l}L</div>
       <div class="pline">
         <div><b>${avg(pts(total))}</b><span>Pts / match</span></div>
         <div><b>${avg(vir(total))}</b><span>Rtg / match</span></div>
@@ -1756,7 +1801,7 @@ document.addEventListener('click', async e => {
   const wasArmed = S.armed;
   if (t.id !== 'b-del') S.armed = null;
   // any other button closes the "who passed" picker
-  if (t.dataset.pass == null && t.dataset.who == null && !t.dataset.stat){ S.tag = null; S.who = null; clearTimeout(S.tagT); }
+  if (t.dataset.pass == null && t.dataset.who == null && !t.dataset.stat){ if (!['b-undo','b-whoundo'].includes(t.id)) whoLeft(); S.tag = null; S.who = null; clearTimeout(S.tagT); }
   if (t.dataset.to == null && t.form?.id !== 'fixform'){ S.toAsk = false; S.fixAsk = false; }
   if (t.dataset.to != null){ if (t.dataset.to) return timeOut(t.dataset.to); S.barClosedAt = Date.now(); return render(); }
   // new-match form: these switch in place, so what is typed stays
@@ -1808,6 +1853,7 @@ document.addEventListener('click', async e => {
     S.track = t.dataset.track; LS.set('ss.track', S.track);
     document.querySelectorAll('[data-track]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.track === S.track)));
     const ls = $('#l-starter'); if (ls) ls.hidden = S.track === 'team';
+    ['#h-team', '#h-player', '#b-addp'].forEach((id, i) => { const el = $(id); if (el) el.hidden = (S.track === 'team') === (i > 0); });
     const gt = $('#g-team'); if (gt) gt.hidden = S.track !== 'team';
     const bs = $('#b-start'); if (bs) bs.hidden = S.track === 'team' && !S.team.players.length;
     const fh = $('#f-home'); if (fh && S.track === 'team') fh.value = S.team.name || '';
@@ -1845,9 +1891,15 @@ document.addEventListener('click', async e => {
       if (!window.SS_auth) return;
       // signing out takes the matches off this phone: the account must have them all first
       if (navigator.onLine === false) return toast('No internet. Sign out when it is back, so nothing is lost.');
-      clearTimeout(S.flushT); await flush(); toast('Signing out…');
+      clearTimeout(S.flushT); await flush();
+      if (S.saveFailed || Object.keys(S.pending).length) return toast('Still saving to your account. Try again in a moment.');
+      toast('Signing out…');
       return window.SS_auth.signOut();
-    case 'b-finish': return finishMatch($('#fin-res').value, $('#fin-score').value.trim());
+    case 'b-finish': {
+      // "3-1" sets the result; Won with "1-3" is asked about, not saved
+      let res = $('#fin-res').value; const sc = $('#fin-score').value.trim(), x = /^(\d+)\s*[-–:.\/]\s*(\d+)$/.exec(sc);
+      if (x && +x[1] !== +x[2]){ const r = +x[1] > +x[2] ? 'W' : 'L'; if (res && res !== r) return toast(`${res === 'W' ? 'Won' : 'Lost'} with sets ${x[1]}-${x[2]}? Check the result`); res = r; }
+      return finishMatch(res, x ? x[1] + '-' + x[2] : sc); }
     case 'b-resume': return resume(t.dataset.id);
     case 'b-closenew': S.choose = false; return closeAndNew();
     case 'b-continue': S.choose = false; render(); window.scrollTo(0,0); return;
@@ -1884,15 +1936,17 @@ document.addEventListener('submit', e => {
   }
 });
 document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#teamform')) keepDraft(readTeamRaw()); });
-window.addEventListener('pagehide', () => { backup(); flush(); });
+window.addEventListener('pagehide', () => { backup(true); flush(); });
 // the same phone has the app open twice (home-screen app and a browser tab): take the other one's
 // changes at once, so an old screen can never save over newer taps
 window.addEventListener('storage', e => {
-  if (!['ss.matches','ss.active','ss.player','ss.team','ss.team2'].includes(e.key)) return;
+  if (!e.key || !(e.key.startsWith('ss.m.') || ['ss.active','ss.player','ss.team','ss.team2'].includes(e.key))) return;
   restore(); if (!isTyping()) render();
 });
 
 restore();
+// asks the browser not to clear this site's data when the phone runs low (Chrome on Android grants it)
+try{ navigator.storage?.persist?.(); }catch(e){}
 S.choose = idleLong();
 render();
 if (S.activeId) keepAwake();
