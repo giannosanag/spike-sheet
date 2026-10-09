@@ -393,6 +393,8 @@ html{scrollbar-gutter:stable}
 .toast{pointer-events:none}
 /* a live score link: the score only (no tabs, no sync line) */
 body.watch nav.tabs,body.watch #syncnote{display:none!important}
+/* the sign-in page: nothing of the app until Google says who this is */
+body.gate nav.tabs,body.gate #syncnote{display:none!important}
 /* Basic: three big buttons to a row */
 .pad-n3{grid-template-columns:repeat(3,1fr)}body.playing .pad-n3 .stat{min-height:84px}body.playing .pad-n3 .stat .n{font-size:30px}body.playing .pad-n3 .stat .l{font-size:15px}
 /* a practice match: marked above the stats, ended from the bar under the action row */
@@ -746,6 +748,7 @@ const EL = {
   // player card and account
   'Player card': 'Προφίλ', 'For one-player matches. A whole team is on the Team page.': 'Για τα «Ατομικά» στατιστικά. Την ομάδα τη φτιάχνεις στη σελίδα «Ομάδα».', 'Choose': 'Διάλεξε', 'Save player': 'Αποθήκευση', 'Account': 'Λογαριασμός', 'Sign out': 'Αποσύνδεση',
   'Signed in as {email}. Your matches are saved in your account and sync to every phone you sign in on.': 'Σύνδεση: {email}. Οι αγώνες σου αποθηκεύονται στον λογαριασμό σου και συγχρονίζονται σε κάθε κινητό όπου συνδέεσαι.',
+  'Sign in with Google to start. Your matches are saved in your account and sync to every phone you sign in on.': 'Σύνδεση με Google για να ξεκινήσεις. Οι αγώνες σου αποθηκεύονται στον λογαριασμό σου και συγχρονίζονται σε κάθε κινητό όπου συνδέεσαι.',
   'Not signed in. Matches are saved on this phone only.': 'Δεν έχεις συνδεθεί. Οι αγώνες αποθηκεύονται μόνο σε αυτό το κινητό.',
   "With Google sign-in, your matches, teams, player card and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.": 'Με σύνδεση Google, οι αγώνες, οι ομάδες, το προφίλ σου και το πότε ανοίγεις την εφαρμογή αποθηκεύονται στον λογαριασμό σου. Ο διαχειριστής της εφαρμογής μπορεί να τα δει, για να σε βοηθά και να διορθώνει προβλήματα.',
   // the admin page
@@ -776,8 +779,6 @@ const EL = {
   'A point or an error by {who}: tap what happened (Ace, Spike…). It adds the point too.': 'Όταν κάνει πόντο ή λάθος: πάτα τι έγινε (Άσος, Καρφί…). Μετράει και τον πόντο.',
   'Any other rally: tap +1 for the team that won it.': 'Σε κάθε άλλη φάση: πάτα +1 στην ομάδα που την κέρδισε.',
   'Sub in / Sub out when {who} goes on or off. A wrong tap? Undo.': 'Σε κάθε αλλαγή πάτα «Μπαίνει» ή «Βγαίνει». Λάθος πάτημα; «Αναίρεση».',
-  'This match is only on this phone.': 'Ο αγώνας είναι μόνο σε αυτό το κινητό.',
-  'Sign in with Google to keep your matches if the phone is lost, changed or cleaned.': 'Σύνδεση με Google για να μη χαθούν οι αγώνες σου, αν χαθεί, αλλάξει ή καθαριστεί το κινητό.',
   // sharing
   'Share score': 'Αποστολή σκορ', 'Copied': 'Αντιγράφηκε', 'Live score link': 'Ζωντανό σκορ: σύνδεσμος', 'Live link on': 'Ζωντανό σκορ ανοιχτό', 'Stop': 'Σταμάτημα',
   'Live link stopped': 'Το ζωντανό σκορ σταμάτησε', 'Live score: {vs}': 'Ζωντανό σκορ: {vs}', 'Live score': 'Ζωντανό σκορ',
@@ -1636,6 +1637,8 @@ function render(){
   // a live score link: this page shows only that score
   if (S.watch){ document.body.classList.add('watch'); document.body.classList.remove('playing'); $('#app').innerHTML = watchView(); capsFix($('#app')); clearInterval(S.timer);
     S.timer = setInterval(() => { if (S.watch.data === undefined) return render(); const x = $('#wago'); if (x && S.watch.data) x.textContent = ago(S.watch.data.at); }, 15000); return; }
+  document.body.classList.toggle('gate', !S.user && !LS.get('ss.uid'));
+  if (document.body.classList.contains('gate')){ document.body.classList.remove('playing'); clearInterval(S.timer); $('#app').innerHTML = gateView(); capsFix($('#app')); return; }
   document.querySelectorAll('.tabs button[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history') || (S.view==='admin' && b.dataset.view==='player'))));
   const app = $('#app');
   if (S.view === 'live') app.innerHTML = S.activeId && S.matches[S.activeId] ? (S.choose ? chooseView(S.matches[S.activeId]) : liveView(S.matches[S.activeId])) : newView();
@@ -2003,7 +2006,6 @@ function teamMatchView(m){
   return `
   <div class="row" style="align-items:center"><div><div class="kicker">${L(m.result==='W'?'Final · Win':m.result==='L'?'Final · Loss':'Final')}${m.score?' '+esc(m.score):''} · ${L('whole team')}</div><h2>${vsLine(m)}</h2></div></div>
   ${scoreBug(m, a, {live:false})}
-  ${keepCard(m)}
   <div class="row">
     <button class="btn btn-or" id="b-share" data-id="${m.id}">${L('Share picture')}</button>
     <button class="btn btn-dk" id="b-sharetext" data-id="${m.id}">${L('Share score')}</button>
@@ -3047,8 +3049,12 @@ window.SS_liveSeen = d => { if (!S.watch) return;
   S.watch.data = d && typeof d === 'object' ? {home:String(d.home || ''), opp:String(d.opp || ''), away:d.away === true, done:d.done === true, cur:liveInt(d.cur) || 1, at:+d.at > 0 ? +d.at : Date.now(),
     won:[0, 1].map(i => liveInt((d.won || [])[i])), sets:(Array.isArray(d.sets) ? d.sets : []).slice(0, 9).map(s => ({n:liveInt(s && s.n), u:liveInt(s && s.u), t:liveInt(s && s.t)}))} : null;
   render(); };
-// a finished match on a phone that is not signed in: the one way to keep it if the phone is lost, changed or cleaned
-const keepCard = m => m.done && !S.user && !LS.get('ss.uid') ? `<section class="panel"><p style="margin:0"><b>${L('This match is only on this phone.')}</b> ${L('Sign in with Google to keep your matches if the phone is lost, changed or cleaned.')}</p><button class="btn btn-or" id="b-signin">${L('Sign in with Google')}</button></section>` : '';
+// Signed out: only this page, until Google sign-in
+const gateView = () => `<section class="panel">
+    <p style="margin:0">${L('Sign in with Google to start. Your matches are saved in your account and sync to every phone you sign in on.')}</p>
+    <button class="btn btn-or" id="b-signin">${L('Sign in with Google')}</button>
+    <p class="note" style="margin:0">${L("With Google sign-in, your matches, teams, player card and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.")}</p>
+  </section>`;
 
 /* ---------- more stats: folded sections under every report and season ---------- */
 // One pass over a match's rallies, per set: the biggest lead each way, points from 20-all (10-all in the deciding
@@ -3360,7 +3366,6 @@ function matchView(m){
   return `
   <div class="row" style="align-items:center"><div><div class="kicker">${L(m.result==='W'?'Final · Win':m.result==='L'?'Final · Loss':'Final')}${m.score?' '+esc(m.score):''}</div><h2>${vsLine(m)}</h2></div></div>
   ${scoreBug(m, a, {live:false})}
-  ${keepCard(m)}
   ${tiles(c, {pm:a.pm, min:mins(playMs(m)), pmNote:`<em>${L('{a} won, {b} lost', {a:a.plus, b:a.minus})}</em>`, ptsNote:`<em>${L('{v} per set', {v:fmtVir(pts(c)/setsPlayed(m))})}</em>`})}
   <div class="row">
     <button class="btn btn-or" id="b-share" data-id="${m.id}">${L('Share picture')}</button>
