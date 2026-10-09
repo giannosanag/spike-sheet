@@ -39,13 +39,10 @@
 }
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--font);padding-inline:16px;padding-block:0 110px;-webkit-tap-highlight-color:transparent}
-.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:8;display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);padding:10px 18px 10px 14px;border-radius:999px;background:var(--btn);color:var(--btn-ink);box-shadow:0 6px 20px rgba(0,0,0,.25);text-align:left;font-weight:700;font-size:15px;line-height:1.1}
-.fab small{display:block;font-size:11px;font-weight:500;opacity:.75;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fab-i{font-size:22px;line-height:1}
-.fab:active{transform:scale(.96)}
 /* every button answers the finger, like a native app */
-.btn,.court button,.mitem,.seg button,.setsel button,.tabs button,.brand,.xdel,.tagbar button,.lnk{transition:transform .08s,opacity .08s}
-.btn:active,.court button:active,.xdel:active,.tagbar button:active{transform:scale(.97)}
+.btn,.mitem,.seg button,.setsel button,.tabs button,.brand,.xdel,.tagbar button,.lnk{transition:transform .08s,opacity .08s}
+.btn:active,.xdel:active,.tagbar button:active{transform:scale(.97)}
 .mitem:active,.seg button:active,.setsel button:active,.tabs button:active,.brand:active,.lnk:active{opacity:.6}
 .wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
 /* no double-tap zoom: quick repeated taps on a stat must count, not zoom the page */
@@ -95,6 +92,7 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 .score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:10px 18px 14px}
 .team{display:flex;flex-direction:column;gap:4px;min-width:0}
 .team.away{text-align:right;align-items:flex-end}
+.team{position:relative}.team>.srv{position:absolute;top:5px;left:-12px;margin:0}.team.away>.srv{left:auto;right:-12px}
 .team .nm{font-size:22px;line-height:1;overflow-wrap:normal;word-break:normal;hyphens:none}.team .nm.long{font-size:16px}.team .nm.xl{font-size:14px}@media (max-width:360px){.team .nm.long{font-size:13px}.team .nm.xl{font-size:11px}}
 /* a name never runs into the score: smaller on small phones, and a word still too long breaks inside its own half */
 .team .nm{max-width:100%;overflow-wrap:anywhere}
@@ -130,12 +128,7 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 .pline b{font-size:30px;line-height:.95}
 .pline span{font-size:12px;color:var(--muted)}
 .pos{color:var(--pos)}.neg{color:var(--neg)}
-.court{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:16px;background:var(--soft)}
-.court.is-on{background:var(--volt);color:var(--volt-ink)}
-.cst{min-width:0}.cst b{display:block;font-family:var(--head);font-stretch:62%;font-weight:800;text-transform:uppercase;font-size:24px;line-height:1}
-.cst>span{font-size:13px;opacity:.75}#clock{font-variant-numeric:tabular-nums}
-.court button{flex:none;font-size:15px;font-weight:600;padding:12px 18px;border-radius:999px;background:var(--volt);color:var(--volt-ink)}
-.court.is-on button{background:var(--volt-ink);color:var(--volt)}
+#clock{font-variant-numeric:tabular-nums}
 .choose{gap:12px}.choose p{margin:0}
 .dot-ok{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--pos);margin-right:7px;vertical-align:1px}
 #syncnote .lnk{padding:10px 2px;margin:-10px 0;font-size:13px}
@@ -223,8 +216,20 @@ label.qh{margin-bottom:0;gap:8px}
 .freeze .fz-clock{font-family:var(--head);font-stretch:62%;font-weight:800;font-size:56px;line-height:1;font-variant-numeric:tabular-nums}
 .freeze .btn{font-size:18px;font-weight:700;padding:20px}
 .freeze .btn-or{background:var(--volt);color:var(--volt-ink);border-color:var(--volt)}
+/* the time-out card: this set at a glance; the number bar can open over the time-out page */
+.freeze .tocard{background:var(--soft);border-radius:16px;padding:2px 14px;text-align:left}
+.freeze .tocard .kr{font-size:14px}.freeze .tocard .kr b{white-space:normal}
+.todots{display:inline-flex;gap:3px;margin-right:8px;vertical-align:1px}.todots i{width:8px;height:8px;border-radius:50%;background:var(--faint)}.todots i.w{background:var(--volt);box-shadow:0 0 0 1px var(--ink)}
+.freeze ~ .tagbar{z-index:12}
+/* time is up: a volt notice, and a tap anywhere goes back to the match */
+.freeze .fz-up{display:none}
+.freeze.up{cursor:pointer}.freeze.up .fz-clock{color:var(--muted)}
+.freeze.up .fz-up{display:block;align-self:center;width:auto;background:var(--volt);color:var(--volt-ink);font-weight:800;font-size:17px;padding:12px 20px;border-radius:999px;animation:upnow 1.2s ease-in-out infinite alternate}
+@keyframes upnow{to{transform:scale(1.06)}}
+/* the time-outs a team has left in this set, as dots under its name */
+.tod{display:inline-flex;gap:3px;margin-left:6px;vertical-align:1px}.tod i{width:6px;height:6px;border-radius:50%;background:var(--ink)}.tod i.used{background:transparent;box-shadow:inset 0 0 0 1px var(--muted)}
 /* team flow: who serves, season leaders */
-.srv{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--volt);box-shadow:0 0 0 1.5px var(--ink);margin-right:6px;vertical-align:2px}.srv.off{visibility:hidden}
+.srv{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--volt);box-shadow:0 0 0 1.5px var(--ink);margin-right:6px;vertical-align:2px}
 .serveq{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;font-weight:600}
 .leads{display:flex;flex-direction:column}
 .lead{display:grid;grid-template-columns:96px 1fr;gap:8px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line)}
@@ -243,11 +248,14 @@ body.playing .score{padding-top:10px}
 body.playing .serveq{flex-wrap:nowrap}
 body.playing .serveq .seg{flex-wrap:nowrap;min-width:0}
 body.playing .serveq .seg button{max-width:9.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* a narrow phone: the question above, the two team names the full width (not cut short) */
+@media (max-width:419px){body.playing .serveq{flex-direction:column;align-items:stretch;gap:6px}body.playing .serveq .seg button{flex:1;max-width:none}}
 body.playing #syncnote:not(.warn){display:none}
 body.playing #app{gap:10px}
 body.playing .bug-top{padding-top:10px}
 body.playing .score{padding:4px 18px 6px}
-body.playing .big{font-size:56px}body.playing .big i{font-size:34px}
+body.playing .big,body.watch .big{font-size:56px;gap:4px}body.playing .big i,body.watch .big i{font-size:34px}
+@media (min-width:361px){body.playing .team .nm.xl,body.watch .team .nm.xl{font-size:13px}}
 body.playing .pips{padding-bottom:8px}
 body.playing .plus{padding-bottom:10px}
 body.playing .plus button{padding:13px 10px}
@@ -259,6 +267,7 @@ body.playing .plus button{padding:13px 10px}
 }
 body.playing .sec{gap:5px}
 body.playing .sec h3{font-size:12px;font-weight:600;color:var(--muted)}
+body.playing .padzone .sec-h .note{font-size:12px;line-height:1.2}
 body.playing .stat{min-height:60px;padding:7px 2px 6px;border-radius:14px}
 body.playing .stat .n{font-size:24px}
 .padzone{display:flex;flex-direction:column;gap:10px}
@@ -268,6 +277,11 @@ body.playing .stat .n{font-size:24px}
 .act.who{display:flex;flex-direction:column;justify-content:center;align-items:center}
 .act.who small{font-size:11px;font-weight:500;opacity:.75}
 .act.who.on{background:var(--volt);color:var(--volt-ink)}
+/* one-player match: in / out of court, volt while on court, with the time played */
+.act.crt{display:flex;flex-direction:column;justify-content:center;align-items:center}
+.act.crt small{font-size:11px;font-weight:500;opacity:.75;font-variant-numeric:tabular-nums}
+.act.crt.on{background:var(--volt);color:var(--volt-ink)}
+.act.tob{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px}.act.tob .tod{margin:0}
 .act{min-height:50px;border-radius:14px;padding:8px;background:var(--soft);font-weight:600;font-size:14px;line-height:1.15}
 .act.undo{display:flex;align-items:center;gap:8px;text-align:left;background:var(--btn);color:var(--btn-ink);min-width:0}
 .act.undo>span:last-child{min-width:0}.act.undo .fab-i{flex:none}
@@ -328,6 +342,8 @@ body.playing .stat .n{font-size:24px}
 /* a phone on its side: the time-out screen scrolls and shrinks instead of cutting off its buttons */
 .freeze{overflow-y:auto;justify-content:safe center}
 @media (max-height:480px){.freeze{gap:8px}.freeze h2,.freeze .fz-clock{font-size:40px}.freeze .btn{padding:14px}}
+/* a smaller phone: Resume play and Wrong tap stay above the fold with the time-out card below them */
+@media (min-height:481px) and (max-height:700px){.freeze{gap:10px}.freeze h2,.freeze .fz-clock{font-size:46px}.freeze .btn{padding:15px}}
 /* a pull-down at the top must not reload the page in the middle of a match */
 html,body{overscroll-behavior-y:contain}
 /* no sideways jump of the column on a computer when a page starts to scroll */
@@ -337,14 +353,12 @@ html{scrollbar-gutter:stable}
 /* keyboard focus shows on the dark bars too */
 .tagbar :focus-visible{outline-color:var(--bg)}
 /* a mouse gets a hover, not only the press */
-@media (hover:hover){.btn:hover,.stat:hover,.mitem:hover,.tagbar button:hover,.court button:hover,.plus button:hover,.pick button:hover{filter:brightness(.92)}}
-/* tablet / computer: bars, Undo and the time-out screen stay with the 560 px column, not the window edges */
+@media (hover:hover){.btn:hover,.stat:hover,.mitem:hover,.tagbar button:hover,.plus button:hover,.pick button:hover{filter:brightness(.92)}}
+/* tablet / computer: bars and the time-out screen stay with the 560 px column, not the window edges */
 .freeze>*{width:100%;max-width:560px;margin-inline:auto}
 @media (min-width:600px){
   .tagbar{max-width:592px;margin-inline:auto;border-radius:20px 20px 0 0}
-  .fab{right:max(16px, calc(50% - 280px))}
 }
-@media (max-width:599px){.fab{right:max(16px, env(safe-area-inset-right, 0px))}}
 .chart svg{display:block;width:100%;height:auto;overflow:visible}
 .chart .bar{fill:var(--muted)}.chart .bar.sel{fill:var(--hi)}
 .chart .base{stroke:var(--line);stroke-width:1}
@@ -377,6 +391,17 @@ html{scrollbar-gutter:stable}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:999px;font-size:14px;font-weight:500;z-index:10;max-width:calc(100% - 32px);width:max-content;text-align:center;border-radius:16px}
 /* a message must never sit on, or take the tap of, a number in an open bar */
 .toast{pointer-events:none}
+/* a live score link: the score only (no tabs, no sync line) */
+body.watch nav.tabs,body.watch #syncnote{display:none!important}
+/* Basic: three big buttons to a row */
+.pad-n3{grid-template-columns:repeat(3,1fr)}body.playing .pad-n3 .stat{min-height:84px}body.playing .pad-n3 .stat .n{font-size:30px}body.playing .pad-n3 .stat .l{font-size:15px}
+/* a practice match: marked above the stats, ended from the bar under the action row */
+.prac{background:var(--volt);color:var(--volt-ink);border-radius:6px;padding:1px 6px;font-weight:700}
+.practice{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--volt);color:var(--volt-ink);border-radius:14px;padding:2px 4px 2px 14px;font-size:14px;font-weight:700}
+.practice .lnk{color:inherit}
+.tagbar.how ol{margin:0 0 4px;padding-left:22px;font-size:14px;line-height:1.35}.tagbar.how li{margin:3px 0}
+/* (only its button takes a tap) */
+.toast button{pointer-events:auto;margin:-6px -10px -6px 12px;padding:8px 14px;border:0;border-radius:999px;background:var(--volt);color:var(--volt-ink);font:800 14px var(--font)}
 body:has(.tagbar) .toast{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}
 /* during a team match messages show at the top, never over the error row or Undo */
 body.playing .toast{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}
@@ -440,13 +465,15 @@ input::-webkit-date-and-time-value{text-align:left}
   @page{margin:12mm}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body{background:#fff;color:#000}
-  header,#syncnote,.toast,.fab,.tagbar,.freeze,.btn,.lnk,.setsel,.plus{display:none!important}
+  header,#syncnote,.toast,.tagbar,.freeze,.btn,.lnk,.setsel,.plus{display:none!important}
   .wrap{max-width:none}
   .tbl{overflow:visible}.pbpbox{max-height:none;overflow:visible}
+  /* the play by play (hundreds of lines) is in the Excel file, not the PDF */
+  .pbpsec{display:none!important}
   .setc,.tile,.pr,.kr,tr{break-inside:avoid}
   details>summary{list-style:none}details>summary::after{content:''!important}
 }
-@media (prefers-reduced-motion:reduce){.stat,.live-dot{animation:none;transition:none}}
+@media (prefers-reduced-motion:reduce){.stat,.live-dot,.fz-up{animation:none;transition:none}}
 </style>
 
 </head>
@@ -496,6 +523,8 @@ const GROUPS = [{g:'pt',h:'Points won'},{g:'play',h:'Good plays'},{g:'err',h:'Er
 const TEAM_PADS = [{h:'Our points', keys:['ace','kill','plase','block']}, {h:'Reception', keys:['p3','p2','p1','rerr']},
   {h:'Good plays', keys:['dig','serve','assist','att']}, {h:'Our errors · their point', keys:['serr','aerr','berr','ferr','bhe','pos']}];
 const TEAM_LBL = {rerr:{l:'Pass 0', s:'error'}};
+// Basic (m.basic): the six plays that end most rallies, three to a row, for someone new to stats; Full: every stat
+const BASIC_PADS = [{h:'Our points', hp:'Points won', keys:['ace','kill','block']}, {h:'Our errors · their point', hp:'Errors', keys:['serr','aerr','rerr']}];
 const BYK = Object.fromEntries(STATS.map(s=>[s.k,s]));
 const PT_KEYS = ['ace','kill','plase','block'];
 const ERR_KEYS = ['serr','aerr','rerr','berr','ferr','bhe','pos'];
@@ -520,7 +549,7 @@ const EL = {
   'Handling': 'Κράτημα', 'double / lift': 'ή διπλή', 'Position': 'Θέση', 'fault': 'λάθος',
   'Serve error': 'Λάθος σερβίς', 'Attack error': 'Λάθος επίθεσης', 'Reception error': 'Λάθος υποδοχής', 'Net / fault error': 'Φιλέ / φάουλ',
   'Ball handling error': 'Κράτημα ή διπλή', 'Position fault': 'Λάθος θέσης',
-  'Points won': 'Πόντοι', 'Good plays': 'Καλές φάσεις', 'Errors': 'Λάθη', 'Our points': 'Δικοί μας πόντοι', 'Our errors · their point': 'Δικά μας λάθη · πόντος τους', 'so far': 'μέχρι τώρα',
+  'Points won': 'Πόντοι', 'Good plays': 'Καλές φάσεις', 'Errors': 'Λάθη', 'Our points': 'Δικοί μας πόντοι', 'Our errors · their point': 'Δικά μας λάθη · πόντος τους', 'in set {n}': 'στο σετ {n}',
   'Attack in|pad': 'Επίθ. μέσα', 'Block out|pad': 'Μπλοκ άουτ',
   // playing positions
   'Setter': 'Πάσα', 'Outside': 'Ακραίος/α', 'Opposite': 'Διαγώνιος', 'Middle': 'Κέντρο', 'Libero': 'Λίμπερο',
@@ -531,7 +560,7 @@ const EL = {
   'No player': 'Χωρίς αριθμό', 'no player': 'χωρίς αριθμό', 'Team 1': 'Ομάδα 1', 'Team 2': 'Ομάδα 2', '{team} (old)': '{team} (παλιά)',
   'W': 'Ν', 'L': 'Η', '{w}W {l}L': 'νίκες {w}, ήττες {l}', 'LIVE': 'ΤΩΡΑ', 'vs': '–', 'vs {opp}': '{opp}', 'Opponent': 'Αντίπαλος',
   'S{n}': 'Σ{n}', 'SET {n}': 'ΣΕΤ {n}', 'Set {n}': 'Σετ {n}', 'set {n}': 'σετ {n}', 'Sets': 'Σετ', 'Sets {n}': '{n} σετ',
-  'Pts': 'Πόν.', 'Rtg': 'Αξ.', 'Err': 'Λάθ.', 'PTS': 'πόντοι', 'RTG': 'αξιολόγηση', 'ERR': 'λάθη', 'pts': 'πόν.',
+  'Pts': 'Πόν.', 'Rtg': 'Αξ.', 'Err': 'Λάθ.', 'PTS': 'πόντοι', 'PTS|one': 'πόντος', 'RTG': 'αξιολόγηση', 'ERR': 'λάθη', 'ERR|one': 'λάθος', 'On bench|act': 'πάγκος', 'pts': 'πόν.',
   'K': 'Καρφ.', 'E': 'Λάθ.', 'TA': 'Προσπ.', 'Eff': 'Απόδ.', 'Aces': 'Άσοι', 'In %': 'Μέσα %', 'A:E': 'Άσοι:λάθη', 'Avg': 'Μ.Ο.', 'To': 'Προς', 'No': 'Νο',
   'points': 'πόντοι', 'errors': 'λάθη', 'rating': 'αξιολόγηση', 'spikes': 'καρφιά', 'plasé': 'πλασέ', 'bench': 'στον πάγκο', 'serves': 'σερβίρει', 'serving': 'σερβίρει',
   // play by play
@@ -547,7 +576,9 @@ const EL = {
   'Synced to {acct}': 'Συγχρονισμός με {acct}',
   'Saving on this phone only. {signin} to sync and back up.': 'Αποθήκευση μόνο σε αυτό το κινητό. {signin} για συγχρονισμό και αντίγραφο ασφαλείας.',
   'Sign in with Google': 'Σύνδεση με Google',
-  'On iPhone, also add it to the Home Screen: Safari deletes it after a week unused.': 'Στο iPhone, πρόσθεσέ το και στην οθόνη Αφετηρίας: το Safari το σβήνει μετά από μια εβδομάδα χωρίς χρήση.',
+  'On iPhone, add it to the Home Screen before your first match: Safari deletes its data after a week unused.': 'Στο iPhone, πρόσθεσέ το στην οθόνη Αφετηρίας πριν από τον πρώτο αγώνα: το Safari σβήνει τα δεδομένα του μετά από μια εβδομάδα χωρίς χρήση.',
+  'On iPhone, sign in to keep your matches: Safari deletes them after a week unused, and the Home Screen app does not see them.': 'Στο iPhone, συνδέσου για να κρατήσεις τους αγώνες σου: το Safari τους σβήνει μετά από μια εβδομάδα χωρίς χρήση και η εφαρμογή στην οθόνη Αφετηρίας δεν τους βλέπει.',
+  'Matches you tracked in Safari stay there: sign in with Google there and here to bring them over.': 'Οι αγώνες που κατέγραψες στο Safari μένουν εκεί: συνδέσου με το ίδιο Google και εκεί και εδώ για να έρθουν.',
   'This phone is full: new taps are not saved. Free some space.': 'Το κινητό είναι γεμάτο: τα νέα πατήματα δεν αποθηκεύονται. Ελευθέρωσε λίγο χώρο.',
   '{name} put on court': '{name}: μπήκε στο γήπεδο', '{stat}: point to {team}': '{stat}: πόντος — {team}', 'Pass from #{n}': 'Πάσα από το #{n}',
   '{stat}: no player yet. Tap Who? between rallies': '{stat}: χωρίς αριθμό ακόμα. Πάτα «Αριθμός;» ανάμεσα στις φάσεις',
@@ -576,6 +607,8 @@ const EL = {
   // time-out and fix score
   'Time-out': 'Τάιμ άουτ', 'Time-outs': 'Τάιμ άουτ', '{ord} in this set': '{ord} σε αυτό το σετ', 'Resume play': 'Συνέχεια παιχνιδιού',
   'Wrong tap, undo time-out': 'Λάθος πάτημα, αναίρεση τάιμ άουτ', 'Time-out: which team?': 'Τάιμ άουτ: ποια ομάδα;', 'Cancel': 'Άκυρο',
+  "Time's up · tap to go on": 'Τέλος χρόνου · πάτα για συνέχεια', 'Last rally': 'Τελευταία φάση', 'Last {n} rallies': 'Τελευταίες {n} φάσεις', '{n} won|one': '{n} κερδισμένη', '{n} won': '{n} κερδισμένες',
+  'Serving now': 'Σερβίρει τώρα', 'Our next server': 'Επόμενο δικό μας σερβίς', 'Time-outs left': 'Τάιμ άουτ που μένουν',
   'Fix score': 'Διόρθωση σκορ', 'Set {n} is not over ({score}). End it anyway?': 'Το σετ {n} δεν τελείωσε ({score}). Να κλείσει;', 'Go back to set {n}? New taps will count in set {n}.': 'Πίσω στο σετ {n}; Τα νέα πατήματα θα μετράνε στο σετ {n}.', 'Set {s} is not over ({score}). End it and go to set {n}?': 'Το σετ {s} δεν τελείωσε ({score}). Να κλείσει και να πάμε στο σετ {n};', 'Go to set {n}': 'Στο σετ {n}', 'Set {n} score now: {teams}': 'Σκορ στο σετ {n} τώρα: {teams}', 'Missed rallies count only for the score.': 'Οι φάσεις που δεν καταγράφηκαν μετράνε μόνο στο σκορ.',
   'Save': 'Αποθήκευση',
   // new match
@@ -598,14 +631,13 @@ const EL = {
   'Next': 'Επόμενο', 'Start match': 'Έναρξη αγώνα',
   // live screens
   'serving': 'σερβίρει', 'End set {n}': 'Τέλος σετ {n}', 'Serves first?': 'Πρώτο σερβίς;', 'First server in set {n}': 'Πρώτο σερβίς στο σετ {n}',
-  "Tap what happened, then the player's number. Not sure? Tap +1 for the team that won the point.": 'Πάτα τι έγινε και μετά τον αριθμό. Αν δεν ξέρεις, πάτα +1 στην ομάδα που πήρε τον πόντο.',
   'Who?': 'Αριθμός;', '{n} to name': 'λείπει {n}', '{n} to name|many': 'λείπουν {n}', 'all named': 'όλα έτοιμα', 'Whole team · tap a stat, then the number': 'Όλη η ομάδα · πάτα τη φάση και μετά τον αριθμό',
   'Points': 'Πόντοι', 'Rating': 'Αξιολόγηση', 'Play by play': 'Φάση‑φάση', 'tap a line to change the player': 'πάτα μια γραμμή για να αλλάξεις αριθμό',
   'Final whistle': 'Τελικό σφύριγμα', 'Switch to {name} only': 'Πέρασε σε ατομικά ({name})', 'Tap again to delete this match': 'Πάτα ξανά για διαγραφή του αγώνα', 'Delete this match': 'Διαγραφή αγώνα',
   'On at {score}, set {n}': 'Μπήκε στο {score}, σετ {n}', 'Off at {score}, set {n}': 'Βγήκε στο {score}, σετ {n}', 'Not on court yet': 'Όχι ακόμα στο γήπεδο',
-  'On court': 'Στο γήπεδο', 'On bench': 'Στον πάγκο', 'Playing now': 'Παίζει τώρα', 'Set break, clock stopped': 'Διάλειμμα σετ, το ρολόι σταμάτησε', 'Clock starts at the first point': 'Το ρολόι ξεκινά με τον πρώτο πόντο', 'Not playing': 'Δεν παίζει',
-  '{time} played': '{time} στο γήπεδο', 'Take off court': 'Βγαίνει', 'Put on court': 'Μπαίνει', 'Switch to the whole team': 'Πέρασε σε όλη την ομάδα',
-  'back to set {n}': 'στο σετ {n}', 'Undo': 'Αναίρεση', 'nothing yet': 'τίποτα ακόμα',
+  'Playing now': 'Παίζει τώρα', 'Set break, clock stopped': 'Διάλειμμα σετ, το ρολόι σταμάτησε', 'Clock starts at the first point': 'Το ρολόι ξεκινά με τον πρώτο πόντο', 'Not playing': 'Δεν παίζει',
+  'Switch to the whole team': 'Πέρασε σε όλη την ομάδα',
+  'back to set {n}': 'στο σετ {n}', 'Undo': 'Αναίρεση', 'nothing yet': 'τίποτα ακόμα', 'Sub in': 'Μπαίνει', 'Sub out': 'Βγαίνει',
   'Who passed to {who}': 'Πάσες ανά αριθμό', 'who passed to {who}?': 'πάσα από ποιον αριθμό;', 'Other number': 'Άλλος αριθμός', 'Add': 'Προσθήκη', 'None': 'Κανένας',
   "Don't know": 'Δεν ξέρω', 'Other': 'Άλλος', 'number': 'αριθμός', 'Later': 'Αργότερα', 'Who set it': 'Ποιος αριθμός έδωσε την πάσα', 'Which player': 'Ποιος αριθμός',
   'set by?': 'πάσα από;', 'who?': 'αριθμός;', 'Wrong tap, undo': 'Λάθος πάτημα',
@@ -615,25 +647,27 @@ const EL = {
   'Yes, save the match': 'Ναι, αποθήκευση', 'Keep tracking': 'Συνέχεια καταγραφής',
   'Set {n} has not started. End the match here?': 'Το σετ {n} δεν ξεκίνησε. Να λήξει ο αγώνας εδώ;', 'Yes, end the match': 'Ναι, λήξη αγώνα', 'End the match': 'Λήξη αγώνα',
   'Set {n}: who serves first?': 'Σετ {n}: ποια ομάδα σερβίρει πρώτη;', 'First serve: {team}': 'Πρώτο σερβίς: {team}', 'Who serves now?': 'Ποια ομάδα σερβίρει;', 'Pick who serves, then Save.': 'Διάλεξε ποια ομάδα σερβίρει και πάτα «Αποθήκευση εξάδας».',
+  'In set {n} the opponents ({team}) serve first. Did your team serve?': 'Στο σετ {n} σερβίρουν πρώτοι οι αντίπαλοι ({team}). Σέρβιρε η ομάδα σου;',
   'The score says {team} serves. Did your team serve? (a rally was missed)': 'Σύμφωνα με το σκορ σερβίρουν οι αντίπαλοι ({team}). Σέρβιρε η ομάδα σου; (κάποια φάση δεν καταγράφηκε)', 'Yes: {stat}': 'Ναι: {stat}',
   'Time-out: tap Resume play first': 'Τάιμ άουτ: πάτα πρώτα «Συνέχεια παιχνιδιού»', 'Libero #{n} {name} is in the front row: who comes in?': 'Λίμπερο #{n} {name} στην μπροστινή γραμμή: ποιος αριθμός μπαίνει;',
+  'Libero #{n} {name} in for #{o} {oname}?': 'Λίμπερο #{n} {name} αντί για το #{o} {oname};', 'Yes, #{n} in': 'Ναι, μπαίνει το #{n}',
   'Result': 'Αποτέλεσμα', 'Won': 'Νίκη', 'Lost': 'Ήττα', 'Not sure': 'Δεν ξέρω', 'e.g. 3-1': 'π.χ. 3-1',
   // line-up, court, subs
   'Line-up (optional): the six on court and the server, so aces and serve errors need no number.': 'Εξάδα (προαιρετικά): οι έξι στο γήπεδο και ο αριθμός που σερβίρει, ώστε οι άσοι και τα λάθη σερβίς να μη θέλουν αριθμό.',
   'Add the line-up': 'Βάλε την εξάδα', 'Court': 'Γήπεδο', 'Position {r}': 'Θέση {r}', 'Points were typed in: check the line-up': 'Γράφτηκαν πόντοι με το χέρι: έλεγξε την εξάδα',
   '#{n} serves · tap a player to sub': 'Σερβίρει το #{n} · πάτα έναν αριθμό για αλλαγή', '#{n} serves': 'σερβίρει το #{n}', 'Next to serve: #{n} · tap a player to sub': 'Επόμενο σερβίς: #{n} · πάτα έναν αριθμό για αλλαγή', 'Tap a player to sub': 'Πάτα έναν αριθμό για αλλαγή',
   'Line-up · set {n}': 'Εξάδα · σετ {n}', "Tap a spot, then the player standing there. The net is at the top, spot I is the server's.": 'Πάτα μια θέση και μετά τον αριθμό που στέκεται εκεί. Το φιλέ είναι πάνω, η θέση I είναι του σερβίς.',
-  'Same as set {n}': 'Ίδια με το σετ {n}', 'Clear': 'Καθαρισμός', 'Rotate': 'Περιστροφή', 'Rotate back': 'Μία θέση πίσω', 'Save line-up': 'Αποθήκευση εξάδας', 'Substitution': 'Αλλαγή',
+  'Same as set {n}': 'Ίδια με το σετ {n}', 'Clear': 'Καθαρισμός', 'Rotate': 'Μία θέση μπροστά', 'Rotate back': 'Μία θέση πίσω', 'Save line-up': 'Αποθήκευση εξάδας', 'Substitution': 'Αλλαγή',
   'Sub for #{n} {name}: who comes in?': 'Αλλαγή για το #{n} {name}: ποιος αριθμός μπαίνει;',
   'Time on court': 'Χρόνος στο γήπεδο', 'Rallies': 'Φάσεις', 'from the line-up and subs': 'από την εξάδα και τις αλλαγές', 'sets with a line-up only': 'μόνο τα σετ με εξάδα',
   '{n} set': '{n} σετ', '{n} sets': '{n} σετ', '{n} rally': '{n} φάση', '{n} rallies': '{n} φάσεις',
-  'Subs {n} of {max}': 'Αλλαγές {n} από {max}', 'Time-outs {n} of {max}': 'Τάιμ άουτ {n} από {max}', '{n} left|one': 'μένει {n}', '{n} left': 'μένουν {n}',
-  '{n} sub left': 'μένει {n} αλλαγή', 'Serve card': 'Σερβίς ανά αριθμό', 'Points: won while serving': 'Πόντοι: όσο σέρβιρε', '{n} subs left': 'μένουν {n} αλλαγές', 'Score flow, set {n}': 'Πορεία σκορ, σετ {n}',
-  'Rotations': 'Περιστροφές', 'Rotation': 'Περιστροφή', 'Setter in {r}': 'Πάσα στο {r}', 'Setters in {r}': 'Πάσες στο {r}', 'No setter on court': 'Χωρίς πάσα στο γήπεδο', 'by where the setter stands': 'ανά θέση της πάσας', 'by the player at I (the server)': 'ανά αριθμό στη θέση I (σερβίς)', 'At I': 'Στο I', 'Side-out': 'Σάιντ άουτ', 'Break pts': 'Μπρέικ',
+  'Subs {n}': 'Αλλαγές {n}', 'Time-outs {n} of {max}': 'Τάιμ άουτ {n} από {max}', '{n} left|one': 'μένει {n}', '{n} left': 'μένουν {n}',
+  'Serve card': 'Σερβίς ανά αριθμό', 'Points: won while serving': 'Πόντοι: όσο σέρβιρε', 'Score flow, set {n}': 'Πορεία σκορ, σετ {n}',
+  'Rotations': 'Περιστροφές', 'Rotation': 'Περιστροφή', 'Setter in {r}': 'Θέση πάσας: {r}', 'Setters in {r}': 'Θέσεις πάσας: {r}', 'No setter on court': 'Χωρίς πάσα στο γήπεδο', 'by where the setter stands': 'ανά θέση της πάσας', 'by the player at I (the server)': 'ανά αριθμό στη θέση I (σερβίς)', 'At I': 'Στο I', 'Side-out': 'Σάιντ άουτ', 'Break pts': 'Μπρέικ',
   'Sets that became points': 'Πάσες που έγιναν πόντοι', 'from "set by"': 'από το «πάσα από»', 'graded 3 / 2 / 1 / 0': 'βαθμός 3 / 2 / 1 / 0',
   // reports
   'Back to team season': 'Πίσω στη σεζόν της ομάδας', 'No team matches yet.': 'Δεν υπάρχουν αγώνες ομάδας ακόμα.', '{n} team match': '{n} αγώνας ομάδας', '{n} team matches': '{n} αγώνες ομάδας',
-  'Pts / match': 'Πόντοι / αγώνα', 'Rtg / match': 'Αξ. / αγώνα', 'Err / match': 'Λάθη / αγώνα', 'best {v} vs {opp}': 'ρεκόρ {v} ({opp})', '{v} a match': '{v} ανά αγώνα',
+  'Pts / match': 'Πόντοι / αγώνα', 'Earned / match': 'Κερδισμένοι / αγώνα', 'For coaches': 'Για προπονητές','Rtg / match': 'Αξ. / αγώνα', 'Err / match': 'Λάθη / αγώνα', 'best {v} vs {opp}': 'ρεκόρ {v} ({opp})', '{v} a match': '{v} ανά αγώνα',
   'Spike + plasé': 'Καρφιά + πλασέ', '{p} of attacks': '{p} των επιθέσεων', '{p} serves in': '{p} σερβίς μέσα', 'Blocks': 'Μπλοκ', '{n} defence': '{n} άμυνα', '{n} defences': '{n} άμυνες',
   '{p} clean receptions': '{p} καλές υποδοχές', 'Game log': 'Αγώνες', 'tap for the team report': 'πάτα για την αναφορά της ομάδας', '{n} error': '{n} λάθος', '{n} errors': '{n} λάθη',
   'Box score': 'Πίνακας', 'Match': 'Αγώνας',
@@ -665,7 +699,7 @@ const EL = {
   'to the end': 'μέχρι το τέλος', '{n} events': '{n} καταγραφές',
   // the picture
   '{v} points per set': '{v} πόντοι ανά σετ', 'score typed in, no stats': 'σκορ με το χέρι, χωρίς στατιστικά',
-  'Whole team · {n} player with stats': 'Όλη η ομάδα · {n} μέλος με στατιστικά', 'Whole team · {n} players with stats': 'Όλη η ομάδα · {n} μέλη με στατιστικά',
+  'Whole team · {n} player': 'Όλη η ομάδα · {n} μέλος', 'Whole team · {n} players': 'Όλη η ομάδα · {n} μέλη', '{n} good play': '{n} καλή φάση', '{n} good plays': '{n} καλές φάσεις',
   // legends
   "R3 / R2 / R1 reception graded 3 (perfect), 2 (good), 1 (poor); RE is the 0 · BH ball handling (double, lift, carry) · PF position fault (the team's, no player).":
     'Υ3 / Υ2 / Υ1 υποδοχή με βαθμό 3 (τέλεια), 2 (καλή), 1 (κακή), το ΛΥ είναι το 0 · ΚΔ κράτημα ή διπλή · ΛΘ λάθος θέσης (της ομάδας, χωρίς αριθμό).',
@@ -678,8 +712,8 @@ const EL = {
   'Typed in': 'Με το χέρι', 'with Fix score or a late start, no stat': 'με «Διόρθωση σκορ» ή όταν ο αγώνας είχε ήδη αρχίσει, χωρίς στατιστικό',
   'Their points from our errors': 'Πόντοι τους από δικά μας λάθη',
   '{p} of our points': '{p} των πόντων μας', '{p} of their points': '{p} των πόντων τους',
-  'Pressure': 'Κρίσιμες στιγμές', 'Biggest lead': 'Μεγαλύτερο προβάδισμα', 'opponents': 'αντίπαλοι', 'points in a row': 'πόντοι στη σειρά',
-  'Times tied': 'Ισοφαρίσεις', 'Lead changes': 'Αλλαγές προβαδίσματος', 'From 20-all': 'Από το 20–20',
+  'Pressure': 'Κρίσιμες στιγμές', 'opponents': 'αντίπαλοι', 'points in a row': 'πόντοι στη σειρά',
+  'From 20-all': 'Από το 20–20',
   'points won from 20–20 (10–10 in the deciding set)': 'πόντοι από το 20–20 (10–10 στο τάι μπρέικ)',
   'Sets won from behind': 'Σετ με ανατροπή', 'after trailing by 3 or more': 'αφού βρεθήκαμε πίσω με 3 ή περισσότερους πόντους',
   'Sets decided by 2': 'Σετ με διαφορά 2', 'won – lost': 'νίκες – ήττες', 'Won – lost': 'Νίκες – ήττες',
@@ -719,9 +753,40 @@ const EL = {
   'The accounts could not be read ({code}). Are the new Firestore rules published?': 'Οι λογαριασμοί δεν διαβάστηκαν ({code}). Έχουν δημοσιευτεί οι νέοι κανόνες του Firestore;',
   'Try again': 'Δοκίμασε ξανά', 'Read again': 'Ανανέωση', 'just now': 'μόλις τώρα', '{n} min ago': 'πριν {n} λεπ.', '{n} h ago': 'πριν {n} ώρ.',
   'Last seen': 'Τελευταία φορά', 'First seen': 'Πρώτη φορά', 'Opens': 'Επισκέψεις', 'Days used, last 30': 'Μέρες χρήσης, τελευταίες 30', 'Devices': 'Συσκευές', 'Language': 'Γλώσσα', 'Last days': 'Τελευταίες μέρες',
-  '{n} person': '{n} άτομο', '{n} people': '{n} άτομα', '{d} used the app today, {w} this week': 'σήμερα {d}, αυτή την εβδομάδα {w}',
+  '{n} person': '{n} άτομο', '{n} people': '{n} άτομα', 'Active this week': 'Ενεργοί αυτή την εβδομάδα', '{d} today': 'σήμερα {d}', '{n} this week': '{n} αυτή την εβδομάδα',
+  'Live now': 'Σε εξέλιξη', 'Problems': 'Προβλήματα', 'phones, last 7 days': 'κινητά, τελευταίες 7 μέρες', 'Versions': 'Εκδόσεις', 'Version': 'Έκδοση', 'Recent matches': 'Πρόσφατοι αγώνες',
+  'People': 'Άτομα', 'the last {n}': 'τα τελευταία {n}', 'No problems': 'Κανένα πρόβλημα', '{n} problem': '{n} πρόβλημα', '{n} problems': '{n} προβλήματα',
+  'People who never sign in keep their matches on their phone only.': 'Όσοι δεν συνδέονται ποτέ κρατούν τους αγώνες μόνο στο κινητό τους.',
   'Someone shows here after opening this version of the app once while signed in.': 'Ένα άτομο εμφανίζεται εδώ αφού ανοίξει μία φορά αυτή την έκδοση ενώ είναι συνδεδεμένο.',
-  '{n} open': '{n} επίσκεψη', '{n} opens': '{n} επισκέψεις', '{n} day in 30': '{n} μέρα στις 30', '{n} days in 30': '{n} μέρες στις 30', '{t} team, {p} one player': 'ομάδα {t}, ατομικά {p}',
+  '{n} day in 30': '{n} μέρα στις 30', '{n} days in 30': '{n} μέρες στις 30', '{t} team, {p} one player': 'ομάδα {t}, ατομικά {p}',
+  'Came back': 'Ξαναγύρισαν', 'a 2nd match within 30 days': '2ος αγώνας μέσα σε 30 μέρες', 'Unfinished': 'Ανοιχτοί', 'matches open over a day': 'αγώνες ανοιχτοί πάνω από μία μέρα',
+  'Phones': 'Κινητά', 'seen {t}': 'άνοιξε {t}', 'uploaded {t}': 'ανέβασμα {t}', 'nothing uploaded yet': 'τίποτα δεν ανέβηκε ακόμα',
+  '{n} save waiting': '{n} αποθήκευση περιμένει', '{n} saves waiting': '{n} αποθηκεύσεις περιμένουν',
+  // Basic / Full stat buttons
+  'Stat buttons': 'Κουμπιά στατιστικών', 'Basic': 'Βασικά', '6 buttons, for anyone': '6 κουμπιά, για όλους', 'Full': 'Όλα', 'every stat, for coaches': 'κάθε στατιστικό, για προπονητές',
+  'All stat buttons': 'Όλα τα κουμπιά', 'Fewer stat buttons': 'Λιγότερα κουμπιά', 'Basic: 6 stat buttons': 'Βασικά: 6 κουμπιά', 'Full: every stat button': 'Όλα τα κουμπιά στατιστικών',
+  // practice match, first-time help, keeping matches
+  'Practice': 'Δοκιμή', 'Practice: nothing is saved': 'Δοκιμή: δεν αποθηκεύεται τίποτα', 'End practice': 'Τέλος δοκιμής',
+  'Practice over. Nothing was saved.': 'Η δοκιμή τελείωσε. Δεν αποθηκεύτηκε τίποτα.', 'Practice match: nothing is saved. Leave it any time.': 'Αγώνας δοκιμής: δεν αποθηκεύεται τίποτα. Βγες όποτε θέλεις.',
+  'Try it first: a practice match (nothing is saved)': 'Δοκίμασέ το πρώτα: αγώνας δοκιμής (δεν αποθηκεύεται)',
+  'How it works': 'Πώς λειτουργεί', 'OK': 'Εντάξει',
+  'Each rally: tap what happened (Ace, Spike, an error…). It adds the point too.': 'Σε κάθε φάση: πάτα τι έγινε (Άσος, Καρφί, ένα λάθος…). Μετράει και τον πόντο.',
+  "Then tap the player's number, or Later.": 'Μετά πάτα τον αριθμό, ή «Αργότερα».',
+  'Not sure? Tap +1 for the team that won. A wrong tap? Undo.': 'Δεν ξέρεις τι έγινε; Πάτα +1 στην ομάδα που κέρδισε. Λάθος πάτημα; «Αναίρεση».',
+  'A point or an error by {who}: tap what happened (Ace, Spike…). It adds the point too.': 'Όταν κάνει πόντο ή λάθος: πάτα τι έγινε (Άσος, Καρφί…). Μετράει και τον πόντο.',
+  'Any other rally: tap +1 for the team that won it.': 'Σε κάθε άλλη φάση: πάτα +1 στην ομάδα που την κέρδισε.',
+  'Sub in / Sub out when {who} goes on or off. A wrong tap? Undo.': 'Σε κάθε αλλαγή πάτα «Μπαίνει» ή «Βγαίνει». Λάθος πάτημα; «Αναίρεση».',
+  'This match is only on this phone.': 'Ο αγώνας είναι μόνο σε αυτό το κινητό.',
+  'Sign in with Google to keep your matches if the phone is lost, changed or cleaned.': 'Σύνδεση με Google για να μη χαθούν οι αγώνες σου, αν χαθεί, αλλάξει ή καθαριστεί το κινητό.',
+  // sharing
+  'Share score': 'Αποστολή σκορ', 'Copied': 'Αντιγράφηκε', 'Live score link': 'Ζωντανό σκορ: σύνδεσμος', 'Live link on': 'Ζωντανό σκορ ανοιχτό', 'Stop': 'Σταμάτημα',
+  'Live link stopped': 'Το ζωντανό σκορ σταμάτησε', 'Live score: {vs}': 'Ζωντανό σκορ: {vs}', 'Live score': 'Ζωντανό σκορ',
+  'Sign in with Google first: the live score goes through your account.': 'Πρώτα σύνδεση με Google: το ζωντανό σκορ περνά από τον λογαριασμό σου.',
+  'The live link is not working ({code}).': 'Ο σύνδεσμος του ζωντανού σκορ δεν λειτουργεί ({code}).',
+  "Can't reach the live score. Check the internet.": 'Δεν φορτώνει το ζωντανό σκορ. Έλεγξε το ίντερνετ.', 'Opening the live score…': 'Άνοιγμα του ζωντανού σκορ…',
+  'This live score has ended, or the link is not complete.': 'Αυτό το ζωντανό σκορ έληξε, ή ο σύνδεσμος δεν είναι ολόκληρος.',
+  'Live score from Spike Sheet: only the score is shared, and it updates by itself.': 'Ζωντανό σκορ από το Spike Sheet: φαίνεται μόνο το σκορ και ενημερώνεται μόνο του.',
+  'Open Spike Sheet': 'Άνοιγμα του Spike Sheet', 'First name': 'Μικρό όνομα',
 };
 function L(s, v){ const w = s.split('|')[0]; let t = (S.lang === 'el' && (EL[s] || EL[w])) || w; if (v) t = t.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? ''); return t; }
 // Two saved teams per account (settings/team and settings/team2). S.team is the one chosen now.
@@ -746,20 +811,25 @@ const LS = {
   // true when it was written
   set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); if (S.lsFail && k.startsWith('ss.m.')){ S.lsFail = false; syncNote(); } return true; }catch(e){ if (!S.lsFail){ S.lsFail = true; setTimeout(()=>{ toast(L('This phone cannot save. Free some space.')); syncNote(); }, 0); } return false; } },
 };
+// Problems on this phone (a page error, a save the account refused), the last 10, for the owner's admin page
+function noteIssue(msg){ try{ const a = JSON.parse(localStorage.getItem('ss.issues') || '[]'); a.push({t:Date.now(), m:String(msg).slice(0, 140)}); localStorage.setItem('ss.issues', JSON.stringify(a.slice(-10))); }catch(e){} }
+window.addEventListener('error', e => noteIssue((e.message || 'error') + (e.lineno ? ' (line ' + e.lineno + ')' : '')));
+window.addEventListener('unhandledrejection', e => noteIssue('promise: ' + ((e.reason && (e.reason.code || e.reason.message)) || e.reason)));
 // Each match has its own key (ss.m.<id>): a tap writes only the match that changed, not the whole
 // season (a season is over 1 MB, too slow to write on every tap on a cheap phone).
 // written: id -> the updatedAt that is on the phone (only set when the write worked, so a write
 // refused for space is tried again on the next save).
 let written = {};
 function backup(){
-  Object.values(S.matches).forEach(m => { if (written[m.id] !== (m.updatedAt||0) && LS.set('ss.m.' + m.id, m)) written[m.id] = m.updatedAt||0; });
+  // (a practice match is never kept)
+  Object.values(S.matches).forEach(m => { if (!m.practice && written[m.id] !== (m.updatedAt||0) && LS.set('ss.m.' + m.id, m)) written[m.id] = m.updatedAt||0; });
   Object.keys(written).forEach(id => { if (!S.matches[id]){ try{ localStorage.removeItem('ss.m.' + id); }catch(e){} delete written[id]; } });
   // the old one-key copy still holds matches that did not fit before: drop each one once it has its own
   // key or was deleted, so it can never bring a deleted match back
   if (S.oldLeft){ const old = LS.get('ss.matches') || {}; let ch = false;
     Object.keys(old).forEach(id => { if (!S.matches[id] || written[id] != null){ delete old[id]; ch = true; } });
     if (!Object.keys(old).length){ try{ localStorage.removeItem('ss.matches'); }catch(e){} S.oldLeft = false; } else if (ch) LS.set('ss.matches', old); }
-  LS.set('ss.active', S.activeId); LS.set('ss.player', S.player); LS.set('ss.team', S.teams.team); LS.set('ss.team2', S.teams.team2);
+  LS.set('ss.active', S.matches[S.activeId]?.practice ? null : S.activeId); LS.set('ss.player', S.player); LS.set('ss.team', S.teams.team); LS.set('ss.team2', S.teams.team2);
 }
 function restore(){
   const ms = {};
@@ -794,11 +864,12 @@ function save(m){
   m.updatedAt = stamp(m);
   S.matches[m.id] = m;
   backup(); queue('matches/'+m.id);
+  if (m.liveId) liveSend(m);
 }
 function saveTeam(){ S.team.updatedAt = stamp(S.team); backup(); queue('settings/' + S.slot); }
 function savePlayer(){ S.player.updatedAt = stamp(S.player); backup(); queue('settings/player'); }
 function queue(path){
-  if (!S.db) return;
+  if (!S.db || S.matches[path.slice(8)]?.practice) return;
   S.pending[path] = true;
   clearTimeout(S.flushT); S.flushT = setTimeout(flush, 500);
 }
@@ -908,7 +979,7 @@ function disconnect(){
 // or never sent its list
 function clearLocal(keepUnsaved, keepCards, unsent){
   const had = keepUnsaved && LS.get('ss.cloud'), keep = {};
-  if (keepUnsaved) Object.values(S.matches).forEach(m => { if (keepCards || !Array.isArray(had) || !had.includes(m.id) || (unsent && unsent.has(m.id))) keep[m.id] = m; });
+  if (keepUnsaved) Object.values(S.matches).forEach(m => { if (!m.practice && (keepCards || !Array.isArray(had) || !had.includes(m.id) || (unsent && unsent.has(m.id)))) keep[m.id] = m; });
   S.matches = keep; S.activeId = null; dropDraft();
   try{ localStorage.removeItem('ss.matches'); }catch(e){} S.oldLeft = false;
   // keepCards: a save was being refused, so the player card and roster may exist only here
@@ -939,12 +1010,12 @@ window.SS_writeFailed = (e, path) => {
   if (!S.db) return;
   if (path) S.pending[path] = true;
   if (!S.saveFailed){
-    S.saveFailed = true; syncNote();
+    S.saveFailed = true; syncNote(); noteIssue('save refused: ' + ((e && e.code) || e));
     toast(e && e.code === 'permission-denied' ? L('Not saved to your account. Sign out and in again.') : L('Not saved to your account yet. Trying again.'));
   }
   clearTimeout(S.flushT); S.flushT = setTimeout(flush, 20000);
 };
-window.SS_writeOk = () => { if (S.saveFailed){ S.saveFailed = false; syncNote(); } };
+window.SS_writeOk = () => { LS.set('ss.upAt', Date.now()); if (S.saveFailed){ S.saveFailed = false; syncNote(); } };
 window.SS_toast = t => toast(t);
 window.SS_L = (t, v) => L(t, v);
 function syncNote(){
@@ -955,8 +1026,12 @@ function syncNote(){
     ? (S.saveFailed ? L('Saved on this phone. Not in your account yet ({acct}). Trying again.', {acct})
       : `<span class="dot-ok"></span>` + L('Synced to {acct}', {acct}))
     : L('Saving on this phone only. {signin} to sync and back up.', {signin:`<button class="lnk" id="b-signin">${L('Sign in with Google')}</button>`})
-      // iPhone Safari deletes a site's data after 7 days unused; the home-screen app keeps it
-      + (/iPhone|iPad/.test(navigator.userAgent) && !navigator.standalone ? ' ' + L('On iPhone, also add it to the Home Screen: Safari deletes it after a week unused.') : '');
+      // iPhone Safari deletes a site's data after 7 days unused. The home-screen app keeps its own, separate copy:
+      // matches already in Safari do not move there, only an account carries them over.
+      + (!/iPhone|iPad/.test(navigator.userAgent) ? '' : ' ' + (navigator.standalone
+        ? (Object.keys(S.matches).length ? '' : L('Matches you tracked in Safari stay there: sign in with Google there and here to bring them over.'))
+        : Object.keys(S.matches).length ? L('On iPhone, sign in to keep your matches: Safari deletes them after a week unused, and the Home Screen app does not see them.')
+        : L('On iPhone, add it to the Home Screen before your first match: Safari deletes its data after a week unused.')));
   // the phone is full: said all the time, not once
   if (S.lsFail) n.innerHTML = `<b style="color:var(--neg)">${L('This phone is full: new taps are not saved. Free some space.')}</b> ` + n.innerHTML;
   // a warning stays on screen in court mode too
@@ -1046,18 +1121,22 @@ function setsWon(m){
 const scoredSets = score => Object.keys(score).map(Number).filter(s => score[s].us || score[s].them);
 function playMs(m){ return (m.playMs||0) + (m.onCourt && m.courtSince ? Date.now() - m.courtSince : 0); }
 function fmtTime(ms){
-  const t = Math.floor(ms/1000), h = Math.floor(t/3600), mi = Math.floor(t%3600/60), s = t%60;
+  // (never below 0: the phone's clock can be moved back)
+  const t = Math.floor(Math.max(0, ms)/1000), h = Math.floor(t/3600), mi = Math.floor(t%3600/60), s = t%60;
   return h ? `${h}:${String(mi).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${mi}:${String(s).padStart(2,'0')}`;
 }
 const mins = ms => Math.round(ms/60000);
 function fmtDate(d){ try{ return new Date(d+'T12:00').toLocaleDateString(S.lang === 'el' ? 'el-GR' : undefined,{weekday:'short',day:'numeric',month:'short'}); }catch(e){ return d; } }
 const today = () => { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
-function toast(t){ const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(S.toastT); S.toastT = setTimeout(()=>el.hidden = true, 3500); }
+// a message with a button (Undo) stays 10 s and takes the tap
+function toast(t, act){ const el = $('#toast'); el.textContent = t; S.toastAct = act ? act.fn : null;
+  if (act){ const b = document.createElement('button'); b.type = 'button'; b.id = 'b-toastact'; b.textContent = act.label; el.append(b); }
+  el.hidden = false; clearTimeout(S.toastT); S.toastT = setTimeout(()=>{ el.hidden = true; S.toastAct = null; }, act ? 10000 : 3500); }
 function buzz(){ try{ navigator.vibrate && navigator.vibrate(12); }catch(e){} }
 let wake = null;
 async function keepAwake(){ try{ if (!wake && navigator.wakeLock) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', ()=>wake=null); } }catch(e){} }
 document.addEventListener('visibilitychange', ()=>{
-  if (document.visibilityState !== 'visible'){ S.hiddenAt = Date.now(); return; }
+  if (document.visibilityState !== 'visible'){ S.hiddenAt = Date.now(); markSeen(); keepOpen(); return; }
   if (!S.activeId) return;
   keepAwake();
   if (S.hiddenAt && idleLong() && !S.choose){ S.choose = true; S.view = 'live'; render(); window.scrollTo(0,0); }
@@ -1078,6 +1157,8 @@ const posName = k => { const p = POS.find(x => x.k === k); return p ? L(p.l) : '
 const resLetter = r => r === 'W' ? L('W') : r === 'L' ? L('L') : '–';
 // "1 match" / "3 matches" in the chosen language
 const nL = (n, one, many) => L(n === 1 ? one : many, {n});
+// a short label under a number in a list ("1 πόντος", "3 πόντοι")
+const unitW = (n, k) => L(n === 1 ? k + '|one' : k);
 function evLabel(e, m){
   if (e.late) return {t:L('Score typed in'), c:'team'};
   if (e.k === 'to') return {t:L('Time-out {team}', {team:e.side === 'us' ? homeName(m) : (m.opp||L('them'))}), c:'sub'};
@@ -1110,17 +1191,41 @@ function startMatch(f){
   const id = 'm' + Date.now().toString(36);
   const m = {id, opp:f.opp||L('Opponent'), home:f.home||'', date:f.date||today(), team:f.team||'', log:[], playMs:0, onCourt:false, courtSince:null, curSet:1, maxSet:1, ended:[], result:'', score:'', done:false, createdAt:Date.now(), bestOf:5};
   if (f.away) m.away = true;
-  if (f.mode === 'team'){ m.mode = 'team'; m.teamSlot = S.slot; m.roster = JSON.parse(JSON.stringify(S.team.players)); if (!m.home) m.home = S.team.name || ''; }
+  if (f.basic) m.basic = true;
+  if (f.practice) m.practice = true;
+  if (f.mode === 'team'){ m.mode = 'team'; m.teamSlot = S.slot; m.roster = JSON.parse(JSON.stringify(f.roster || S.team.players)); if (!m.home) m.home = S.team.name || ''; }
   // started late: the sets already played are over, the match carries on in the next one
   (f.sets||[]).forEach(([u, t], i) => { pushLate(m, i+1, u, t); m.ended.push(i+1); });
   S.set = (f.sets||[]).length + 1; m.curSet = m.maxSet = S.set;
   if (f.now) pushLate(m, S.set, f.now[0], f.now[1]);
-  S.activeId = id; S.choose = false; S.nfAway = false; S.nfDraft = null; S.nfStep = 1;
+  S.activeId = id; S.choose = false;
+  // (a practice leaves the new-match steps as they were, to go on with after it)
+  if (!f.practice){ S.nfAway = false; S.nfDraft = null; S.nfStep = 1; S.nfBasic = null; LS.set('ss.basic', !!f.basic); }
   if (f.starter && !isTeam(m)) courtOn(m);
   save(m);
   keepAwake(); render(); window.scrollTo(0,0);
 }
+// Basic or Full stat buttons for a new match: the choice made last time; someone new starts with Basic
+const nfBasic = () => S.nfBasic ?? LS.get('ss.basic') ?? !Object.keys(S.matches).length;
+// "Try it first": the real match screen against "Opponent" (with numbers 1-12 when there is no team yet).
+// Never saved or uploaded, and gone as soon as its screen is left.
+function startPractice(){
+  const team = trackMode() === 'team', demo = ['S','OH','MB','OPP','OH','MB','L','','','','',''].map((pos, i) => ({num:String(i + 1), name:'', pos}));
+  startMatch({opp:L('Opponent'), mode:team ? 'team' : 'player', practice:true, basic:nfBasic(), roster:team && !S.team.players.length ? demo : null});
+  toast(L('Practice match: nothing is saved. Leave it any time.'));
+}
+function dropPractice(){ const m = S.matches[S.activeId]; if (m && m.practice){ delete S.matches[m.id]; S.activeId = null; S.lu = null; S.who = null; S.sub = null; } }
 function push(m, e){ m.log = (m.log||[]).concat(Object.assign({set:S.set, t:Date.now()}, e)); }
+// Without a line-up: the server named at our last serve in this set, while we keep the serve (no point to them
+// since). A lost serve, typed-in points or a new set: null, the number is asked again.
+function keptServer(m){
+  const log = m.log || [];
+  for (let i = log.length - 1; i >= 0; i--){
+    const e = log[i]; if (e.set !== S.set || e.late || e.k === 'them' || e.k === 'lineup') return null;
+    if (['ace','serve','serr'].includes(e.k)) return e.p || null;
+  }
+  return null;
+}
 function tap(k){
   const m = S.matches[S.activeId]; if (!m) return;
   // a double tap is one stat: nobody plays two aces in 0.4 s
@@ -1129,8 +1234,9 @@ function tap(k){
   if (closed(m)) return render();
   whoLeft();
   S.tag = null; S.who = null; clearTimeout(S.tagT);
-  const team = isTeam(m);
-  const stc = team && ['ace','serve','serr'].includes(k) && court(m, S.set), server = stc && stc.serving === 'us' && !stc.unsure ? stc.pos[0] : null;
+  const team = isTeam(m), sv = team && ['ace','serve','serr'].includes(k), stc = sv && court(m, S.set);
+  // our server: from the line-up, or without one the number of the last serve while we keep the serve
+  const server = stc ? (stc.serving === 'us' && !stc.unsure ? stc.pos[0] : null) : sv ? keptServer(m) : null;
   // a stat means the player is playing: put them on court if the tap was forgotten
   let rs = false;
   if (team){} else if (!m.onCourt){ courtOn(m, true); toast(L('{name} put on court', {name:pName()})); } else rs = resumeClock(m);
@@ -1171,7 +1277,8 @@ function setPasser(n){
 function whoLeft(){
   const m = S.who && !S.who.fix && S.matches[S.who.mid], e = m && m.log[S.who.i];
   // after the tap's own message ("Set 1: 25-20"), so this one is the one left on screen
-  if (e && BYK[e.k] && !e.p){ const t = L('{stat}: no player yet. Tap Who? between rallies', {stat:evLabel(e, m).t}); setTimeout(() => toast(t), 0); }
+  // (not about a practice that was just ended)
+  if (e && BYK[e.k] && !e.p){ const t = L('{stat}: no player yet. Tap Who? between rallies', {stat:evLabel(e, m).t}); setTimeout(() => { if (S.matches[m.id]) toast(t); }, 0); }
 }
 // n: a jersey number, or '' for "Skip". A number that is not on the roster joins it for this match.
 function setWho(n){
@@ -1188,12 +1295,13 @@ function setWho(n){
   // a spike or plasé: who set it, when the team asks it (Team page switch; once, "Don't know" keeps it unknown)
   const st = e && n && TAG_KEYS.includes(e.k) && e.s === undefined && teamOf(slotOf(m)).setBy && court(m, e.set, S.who.i), setters = st ? st.pos.filter(x => x !== n && rosterP(m, x).pos === 'S') : [];
   if (setters.length === 1){ e.s = setters[0]; save(m); toast(evLabel(e, m).t); }
-  if (e && n && TAG_KEYS.includes(e.k) && e.s === undefined && teamOf(slotOf(m)).setBy){ S.who = {mid:m.id, i:S.who.i, setby:1, chain, fix:S.who.fix}; S.barAt = Date.now(); return render(); }
+  if (e && n && TAG_KEYS.includes(e.k) && e.s === undefined && teamOf(slotOf(m)).setBy){ S.who = {mid:m.id, i:S.who.i, setby:1, chain, fix:S.who.fix, set:S.who.set}; S.barAt = Date.now(); return render(); }
   nextWho(m, chain && n);
 }
-// After a number: with the Who? button the next stat without a number comes up at once (until none is left or Cancel)
+// After a number: with the Who? button the next stat without a number comes up at once (until none is left or Cancel);
+// from the time-out page (set) only that set's, newest first
 function nextWho(m, chain){
-  if (chain){ const nx = firstUnnamed(m); if (nx >= 0){ S.who = {mid:m.id, i:nx, fix:1, chain:1}; S.barAt = Date.now(); return render(); } }
+  if (chain){ const set = S.who && S.who.set, nx = set ? lastUnnamed(m, set) : firstUnnamed(m); if (nx >= 0){ S.who = {mid:m.id, i:nx, fix:1, chain:1, set}; S.barAt = Date.now(); return render(); } }
   S.who = null; S.barAt = S.barClosedAt = Date.now(); clearTimeout(S.tagT); render();
 }
 // n: the setter's number, or '' for "don't know" (kept as asked, so it is not asked again)
@@ -1209,6 +1317,7 @@ function setBy(n){
 }
 // A team match: the first stat still without a player (-1 when every stat has one)
 const firstUnnamed = m => (m.log||[]).findIndex(needsWho);
+const lastUnnamed = (m, s) => { const log = m.log||[]; for (let i = log.length - 1; i >= 0; i--) if (log[i].set === s && needsWho(log[i])) return i; return -1; };
 // A set that is over takes no more points until End set or Keep playing, and a match that is over none until it is
 // confirmed or Keep tracking: a tap meant for the next set added a point to this one (26-18).
 function closed(m){
@@ -1248,17 +1357,38 @@ function resumePlay(){
   if (e && e.seg != null) resumeClock(m);
   save(m); buzz(); render();
 }
+// What to look at in the 30 seconds, this set only: the last rallies, a run, the errors, side-out, who serves next,
+// the time-outs left, and the stats still without a number (named here, during the time-out)
+function toCard(m, set){
+  const team = isTeam(m), rl = (m.log||[]).filter(e => e.set === set && (e.k === 'us' || e.k === 'them') && !e.late), last = rl.slice(-8), won = last.filter(e => e.k === 'us').length;
+  let run = 0; const rk = rl.length ? rl[rl.length-1].k : null; for (let i = rl.length - 1; i >= 0 && rl[i].k === rk; i--) run++;
+  const c = counts(m, set), er = errs(c) ? nL(errs(c), '{n} error', '{n} errors') + ': ' + listOf(c, ERR_KEYS) : nL(0, '{n} error', '{n} errors');
+  const sv = team && serveStats(m).sets[set], st = team && court(m, set), nx = st && !st.unsure && st.serving ? rosterP(m, st.pos[st.serving === 'us' ? 0 : 1]) : null;
+  const unnamed = team ? (m.log||[]).filter(e => e.set === set && needsWho(e)).length : 0, left = side => Math.max(0, TOS - tosUsed(m, set, side));
+  const rows = [
+    last.length ? [nL(last.length, 'Last rally', 'Last {n} rallies'), `<span class="todots" aria-hidden="true">${last.map(e => `<i class="${e.k === 'us' ? 'w' : ''}"></i>`).join('')}</span>${nL(won, '{n} won|one', '{n} won')}`] : null,
+    run >= 3 ? [L('Run'), esc(rk === 'us' ? homeName(m) : m.opp) + ' ' + run] : null,
+    team ? [L('Our errors'), er] : [esc(pName()), nL(pts(c), '{n} point', '{n} points') + ' · ' + er],
+    sv && sv.soOf ? [L('Side-out'), L('{a} of {b}', {a:sv.so, b:sv.soOf})] : null,
+    nx ? [L(st.serving === 'us' ? 'Serving now' : 'Our next server'), '#' + esc(nx.num) + ' ' + esc(first(nx.name))] : null,
+    [L('Time-outs left'), (m.away ? ['them', 'us'] : ['us', 'them']).map(k => `${esc(k === 'us' ? homeName(m) : m.opp)} ${left(k)}`).join('<br>')]].filter(Boolean);
+  return `<div class="tocard kpis">${rows.map(([l, v]) => `<div class="kr"><span>${l}</span><b>${v}</b></div>`).join('')}</div>
+    ${unnamed ? `<button class="btn btn-dk" id="b-toname">${L('Who?')} · ${nL(unnamed, '{n} to name', '{n} to name|many')}</button>` : ''}`;
+}
+// At 0:00 the page says time is up and waits: a time-out in a real match often runs longer. Then a tap anywhere goes on.
 function freezeView(m){
   const e = [...(m.log||[])].reverse().find(x => x.k === 'to'); if (!e) return '';
   const sc = analyze(m).score[e.set] || {us:0, them:0}, n = m.log.filter(x => x.k === 'to' && x.side === e.side && x.set === e.set).length;
   const ord = S.lang === 'el' ? n + 'ο' : n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th');
-  return `<div class="freeze" role="dialog" aria-label="${L('Time-out')}">
+  return `<div class="freeze${toLeft(e) ? '' : ' up'}" role="dialog" aria-label="${L('Time-out')}">
     <div class="kicker">${L('Set {n}', {n:e.set})} · ${m.away ? sc.them + '–' + sc.us : sc.us + '–' + sc.them}</div>
     <h2>${L('Time-out')}</h2>
     <div class="fz-team">${esc(e.side === 'us' ? homeName(m) : m.opp)} · ${L('{ord} in this set', {ord})}</div>
     <div class="fz-clock" id="toclock">${fmtTime(toLeft(e))}</div>
+    <div class="fz-up" role="status">${L("Time's up · tap to go on")}</div>
     <button class="btn btn-or" id="b-resumeplay">${L('Resume play')}</button>
     <button class="btn btn-dk" id="b-toundo">${L('Wrong tap, undo time-out')}</button>
+    ${toCard(m, e.set)}
   </div>`;
 }
 // Fix score: rallies were missed, the current set jumps to the score typed (points only go up; Undo takes points back)
@@ -1388,8 +1518,8 @@ function askSet(n){
 function askBar(m){
   const sc = analyze(m).score[S.set] || {us:0, them:0}, now = ordS(m, sc.us, sc.them);
   if (S.serveAsk) return `<div class="tagbar" role="group" aria-label="${L('Serve')}">
-    <div class="q">${L('The score says {team} serves. Did your team serve? (a rally was missed)', {team:esc(m.opp)})}</div>
-    <div class="two"><button id="b-servey" data-k="${S.serveAsk}">${L('Yes: {stat}', {stat:statName(S.serveAsk)})}</button><button class="skip" id="b-fix">${L('Fix score')}</button><button class="skip" id="b-askno">${L('Cancel')}</button></div></div>`;
+    <div class="q">${sc.us || sc.them ? L('The score says {team} serves. Did your team serve? (a rally was missed)', {team:esc(m.opp)}) : L('In set {n} the opponents ({team}) serve first. Did your team serve?', {n:S.set, team:esc(m.opp)})}</div>
+    <div class="two"><button id="b-servey" data-k="${S.serveAsk}">${L('Yes: {stat}', {stat:statName(S.serveAsk)})}</button>${sc.us || sc.them ? `<button class="skip" id="b-fix">${L('Fix score')}</button>` : ''}<button class="skip" id="b-askno">${L('Cancel')}</button></div></div>`;
   if (S.endAsk === 'match') return `<div class="tagbar" role="group" aria-label="${L('Match over')}">
     <div class="q">${L('Set {n} has not started. End the match here?', {n:S.set})}</div>
     <div class="two"><button id="b-endmatch">${L('Yes, end the match')}</button><button class="skip" id="b-askno">${L('Cancel')}</button></div></div>`;
@@ -1403,6 +1533,7 @@ function askBar(m){
 }
 function finishMatch(result, score, endAt){
   const m = S.matches[S.activeId]; if (!m) return;
+  if (m.practice){ dropPractice(); S.view = 'live'; render(); window.scrollTo(0,0); return toast(L('Practice over. Nothing was saved.')); }
   // the final whistle belongs to the last set that was played, not an empty next set or one looked back at
   const played = scoredSets(analyze(m).score), offSet = played.length ? Math.max(...played) : S.set;
   if (m.onCourt){ const end = Math.max(endAt || Date.now(), m.courtSince||0), seg = m.courtSince ? end-m.courtSince : 0, pre = m.stintMs||0; push(m,{k:'off',dur:pre+seg,onAt:m.courtSince,pre,set:offSet,t:end,fin:1}); m.playMs=(m.playMs||0)+seg; m.onCourt=false; m.courtSince=null; m.stintMs=0; }
@@ -1418,13 +1549,15 @@ function finishMatch(result, score, endAt){
 // Close the open match (result guessed from sets won) and go straight to the new-match form.
 function closeAndNew(){
   const m = S.matches[S.activeId]; if (!m) return;
+  if (m.practice) return finishMatch();
   // an open set counts only when its score finishes it (5-0 in set 1 is not a set won)
   const {w, l} = setsDone(m), log = m.log||[];
   // a result saved before "Keep tracking" wins over the guess from sets won
   const sv = savedResult(m, w, l);
   finishMatch(sv.result, sv.score, log.length ? log[log.length-1].t : m.createdAt);
   S.view = 'live'; render(); window.scrollTo(0,0);
-  toast(L('Saved. It is in Season.'));
+  // a tap on the wrong button: Undo is "Keep tracking"
+  toast(L('Saved. It is in Season.'), {label:L('Undo'), fn:() => resume(m.id)});
 }
 // Player match -> team match: the player's taps so far go to their number, the chosen team's roster is copied in.
 function switchToTeam(){
@@ -1462,12 +1595,19 @@ function resume(id){
   S.set = m.curSet || 1; S.view = 'live'; render(); window.scrollTo(0,0);
 }
 function removeMatch(id){
+  const m = S.matches[id], was = {live:S.activeId === id, view:S.view, open:S.openId};
   delete S.matches[id];
   // remembered until the cloud copy is gone, so a delete made before sign-in finishes still happens
   LS.set('ss.deleted', [...new Set([...(LS.get('ss.deleted')||[]), id])]);
   if (S.activeId === id) S.activeId = null;
   backup(); queue('matches/'+id);
-  S.view = 'history'; S.openId = null; render(); toast(L('Match deleted'));
+  if (m.liveId){ window.SS_live?.stop(m.liveId).catch(() => {}); S.liveSent = null; }
+  S.view = 'history'; S.openId = null; render();
+  // a delete by mistake: Undo brings it back, here and in the account, where it was
+  toast(L('Match deleted'), {label:L('Undo'), fn(){
+    LS.set('ss.deleted', (LS.get('ss.deleted')||[]).filter(x => x !== id));
+    if (was.live && !S.activeId) S.activeId = id;
+    save(m); S.view = was.view; S.openId = was.open; render(); }});
 }
 
 /* ---------- views ---------- */
@@ -1493,6 +1633,9 @@ function applyLang(){
 }
 function render(){
   applyLang();
+  // a live score link: this page shows only that score
+  if (S.watch){ document.body.classList.add('watch'); document.body.classList.remove('playing'); $('#app').innerHTML = watchView(); capsFix($('#app')); clearInterval(S.timer);
+    S.timer = setInterval(() => { if (S.watch.data === undefined) return render(); const x = $('#wago'); if (x && S.watch.data) x.textContent = ago(S.watch.data.at); }, 15000); return; }
   document.querySelectorAll('.tabs button[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history') || (S.view==='admin' && b.dataset.view==='player'))));
   const app = $('#app');
   if (S.view === 'live') app.innerHTML = S.activeId && S.matches[S.activeId] ? (S.choose ? chooseView(S.matches[S.activeId]) : liveView(S.matches[S.activeId])) : newView();
@@ -1503,23 +1646,32 @@ function render(){
   else if (S.view === 'match' && S.matches[S.openId]){ app.innerHTML = matchView(S.matches[S.openId]); prepPicture(S.matches[S.openId]); }
   else { S.view = 'history'; app.innerHTML = historyView(); }
   capsFix(app);
-  // a full-screen sheet (time-out, line-up): the keyboard and screen readers stay on it
+  // a full-screen sheet (time-out, line-up): the keyboard and screen readers stay on it (and on a bar opened over it)
   const sheet = app.querySelector(':scope > .freeze');
-  [...document.querySelectorAll('header, #syncnote'), ...app.children].forEach(el => { if (el !== sheet) el.inert = !!sheet; });
-  // court mode: a live team match (a compact header, no sync note unless it warns)
-  document.body.classList.toggle('playing', S.view === 'live' && !S.choose && isTeam(S.activeId && S.matches[S.activeId]));
+  [...document.querySelectorAll('header, #syncnote'), ...app.children].forEach(el => { el.inert = !!sheet && el !== sheet && !el.classList.contains('tagbar'); });
+  // court mode: a live match, team or one player (a compact header, no sync note unless it warns)
+  document.body.classList.toggle('playing', S.view === 'live' && !S.choose && !!(S.activeId && S.matches[S.activeId]));
   clearInterval(S.timer);
   const m = S.activeId && S.matches[S.activeId];
   if (S.view === 'live' && m && (m.onCourt || m.toOn)) S.timer = setInterval(()=>{ const c = $('#clock'); if (c) c.textContent = fmtTime(playMs(m));
-    const tc = $('#toclock'), e = m.toOn && [...(m.log||[])].reverse().find(x => x.k === 'to'); if (tc && e) tc.textContent = fmtTime(toLeft(e)); }, 1000);
+    const tc = $('#toclock'), e = m.toOn && [...(m.log||[])].reverse().find(x => x.k === 'to'); if (tc && e) tc.textContent = fmtTime(toLeft(e));
+    // time is up: the page says so (and an Android phone buzzes once)
+    if (tc && e && !toLeft(e)){ $('.freeze')?.classList.add('up'); if (S.toUp !== e.t){ S.toUp = e.t; try{ navigator.vibrate && navigator.vibrate([300, 150, 300]); }catch(x){} } } }, 1000);
 }
 
 // Opening the app on an open match: carry on with it, or save it and start another.
-// Asked only after 20 minutes without a tap, so a reload in the middle of a set goes straight back.
+// Asked only after 20 minutes without a tap or a look at the match, so a reload in the middle of a set
+// goes straight back, and after "Continue" a minute in another app does not ask again.
 function idleLong(){
-  const m = S.activeId && S.matches[S.activeId]; if (!m) return false;
-  const last = Math.max(m.createdAt||0, ...(m.log||[]).map(e => e.t||0));
+  const m = S.activeId && S.matches[S.activeId]; if (!m || m.practice) return false;
+  const seen = LS.get('ss.seen'), last = Math.max(m.createdAt||0, seen && seen.id === m.id ? seen.t : 0, ...(m.log||[]).map(e => e.t||0));
   return Date.now() - last > 20*60e3;
+}
+const markSeen = () => { if (S.view === 'live' && !S.choose && S.activeId) LS.set('ss.seen', {id:S.activeId, t:Date.now()}); };
+// Closed by mistake (or by the phone) halfway through a line-up or the new-match steps: it waits for the next open
+function keepOpen(){
+  if (S.view === 'live' && !S.activeId) keepNf();
+  LS.set('ss.open', {t:Date.now(), lu:S.lu, nf:S.view === 'live' && (!S.activeId || S.matches[S.activeId]?.practice) ? {d:S.nfDraft, step:S.nfStep, away:S.nfAway, basic:S.nfBasic} : null});
 }
 function chooseView(m){
   const a = analyze(m), sc = a.score[m.curSet||1] || {us:0, them:0}, {w, l} = setsWon(m);
@@ -1561,6 +1713,7 @@ function newView(){
         <button type="button" class="lnk" data-view="player">${L('Change the player')}</button>`
         : `<div class="row"><label>${L('Name')}<input id="f-pname" autocomplete="off" value="${esc(nd['f-pname']||'')}" placeholder="${L('e.g. Theo')}"></label>
         <label>${L('Number')}<input id="f-pnum" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(nd['f-pnum']||'')}" placeholder="7"></label></div>`}`}
+        <button type="button" class="lnk" id="b-practice" style="text-align:left">${L('Try it first: a practice match (nothing is saved)')} ›</button>
       </div>
       <div class="step" ${st(3)}>
         <h2>${L('The match')}</h2>
@@ -1571,6 +1724,8 @@ function newView(){
       </div>
       <div class="step" ${st(4)}>
         <h2>${L('Last details')}</h2>
+        <div style="margin:14px 0 18px"><div class="qh">${L('Stat buttons')}</div><div class="pick" role="group" aria-label="${L('Stat buttons')}">
+          <button type="button" data-lvl="basic" aria-pressed="${nfBasic()}">${L('Basic')}<small>${L('6 buttons, for anyone')}</small></button><button type="button" data-lvl="full" aria-pressed="${!nfBasic()}">${L('Full')}<small>${L('every stat, for coaches')}</small></button></div></div>
         <div class="row">
           <label>${L('Date')}<input id="f-date" type="date" value="${esc(nd['f-date'] || today())}"></label>
           <label>${L('Competition')}<input id="f-team" autocomplete="off" placeholder="${L('League, cup, friendly')}" value="${esc(nd['f-team'] ?? last?.team ?? '')}"></label>
@@ -1609,10 +1764,13 @@ function nfNext(){
   S.nfStep = Math.min(4, step + 1); render(); window.scrollTo(0,0);
 }
 // a long word (PANATHINAIKOS) would split mid-word on a phone: shrink it instead
-const nmLong = n => { const w = Math.max(...String(n).split(/\s+/).map(x => x.length)); return w > 11 ? ' long xl' : w > 9 ? ' long' : ''; };
-// srv: this team serves now (a volt dot before the name)
-// srv: this team serves now: a volt dot before the name, its place kept when it is off, so a side-out never re-wraps the names
-const teamCell = (t, side) => `<div class="team${side}"><span class="nm${nmLong(t.name)}"><i class="srv${t.srv ? '' : ' off'}" ${t.srv ? `role="img" aria-label="${L('serving')}"` : 'aria-hidden="true"'}></i>${esc(t.name)}</span><span class="sw">${L('Sets {n}', {n:t.sets})}</span></div>`;
+// (Greek capitals come from a wider font: a Greek word counts a quarter longer)
+const nmLong = n => { const w = Math.max(...String(n).split(/\s+/).map(x => x.length * (/[Ͱ-Ͽἀ-῿]/.test(x) ? 1.25 : 1))); return w > 11 ? ' long xl' : w > 9 ? ' long' : ''; };
+// n time-outs left of TOS as dots (on the score card and on the Time-out button)
+const toDots = n => `<span class="tod" aria-hidden="true">${Array.from({length:TOS}, (_, i) => `<i class="${i < n ? '' : 'used'}"></i>`).join('')}</span>`;
+// to: the time-outs left in this set (live), as dots after the sets won.
+// srv: the serving dot sits in the margin beside the name, so it never takes the name's room (or re-wraps it at a side-out)
+const teamCell = (t, side) => `<div class="team${side}">${t.srv ? `<i class="srv" role="img" aria-label="${L('serving')}"></i>` : ''}<span class="nm${nmLong(t.name)}">${esc(t.name)}</span><span class="sw">${L('Sets {n}', {n:t.sets})}${t.to == null ? '' : `<span role="img" aria-label="${L('Time-outs left')}: ${t.to}">${toDots(t.to)}</span>`}</span></div>`;
 // sets won: the "3-1" typed at the final whistle wins over the sets tracked (tracking may have stopped early)
 function finalSets(m){ const x = /^(\d+)-(\d+)$/.exec(m.score||''); return x ? {w:+x[1], l:+x[2]} : setsWon(m); }
 // the sets already over as chips ("S1 25–20"), in the hall's order
@@ -1624,7 +1782,8 @@ function scoreBug(m, a, opts){
   const s = S.set, sc = opts.live ? (a.score[s] || {us:0,them:0}) : {us:w, them:l};
   // away: the home team (the opponent) is on the left, like the hall's scoreboard. Taps still count for your team.
   const ord = (a2, b2) => m.away ? b2 + a2 : a2 + b2;
-  const us = {name:homeName(m), sets:w, pts:sc.us, srv:opts.serving === 'us'}, them = {name:m.opp, sets:l, pts:sc.them, srv:opts.serving === 'them'};
+  const toL = side => opts.live ? Math.max(0, TOS - tosUsed(m, s, side)) : null;
+  const us = {name:homeName(m), sets:w, pts:sc.us, srv:opts.serving === 'us', to:toL('us')}, them = {name:m.opp, sets:l, pts:sc.them, srv:opts.serving === 'them', to:toL('them')};
   const lt = m.away ? them : us, R = m.away ? us : them;
   // court mode: the sets played go under the action row, so a new set never moves the buttons
   const pips = opts.court ? '' : pipsHTML(m, a);
@@ -1656,14 +1815,18 @@ const setSel = m => `<div class="setsel" role="group" aria-label="${L('Sets')}">
 
 // team: {server, theyServe} for a team match. server = our server from the line-up (on the serve buttons, so a
 // missed sub shows before the tap); while they serve our serve stats are off (a parent tapped Ace for their ace).
-function pads(all, team){
-  const btn = s => { const o = Object.assign({}, s, team && TEAM_LBL[s.k] || {}), sv = ['ace','serve','serr'].includes(o.k), srv = team && team.server && sv, off = team && team.theyServe && sv;
-    return `<button class="stat ${o.g}${off ? ' off' : ''}" data-stat="${o.k}" ${off ? 'data-off="1"' : ''} aria-label="${esc(L(o.l)+' '+L(o.s))}${srv ? ', ' + L('#{n} serves', {n:team.server}) : ''}, ${all[o.k]} ${L('so far')}"><span class="n">${all[o.k]}</span><span class="l">${esc(L(o.l + '|pad'))}</span><span class="s">${srv ? '#' + esc(team.server) : esc(L(o.s + '|pad|' + o.k))}</span></button>`; };
+// all: this set's counts (at a time-out the whole match's totals read as the set's); the first title says which set
+function pads(all, team, basic, prac){
+  const btn = s => { const o = Object.assign({}, s, team && !basic && TEAM_LBL[s.k] || {}), sv = ['ace','serve','serr'].includes(o.k), srv = team && team.server && sv, off = team && team.theyServe && sv;
+    return `<button class="stat ${o.g}${off ? ' off' : ''}" data-stat="${o.k}" ${off ? 'data-off="1"' : ''} aria-label="${esc(L(o.l)+' '+L(o.s))}${srv ? ', ' + L('#{n} serves', {n:team.server}) : ''}, ${all[o.k]} ${L('in set {n}', {n:S.set})}"><span class="n">${all[o.k]}</span><span class="l">${esc(L(o.l + '|pad'))}</span><span class="s">${srv ? (o.k === 'serr' ? esc(L('error')) + ' · #' : '#') + esc(team.server) : esc(L(o.s + '|pad|' + o.k))}</span></button>`; };
+  const head = (h, i) => i ? `<h3>${L(h)}</h3>` : `<div class="sec-h"><h3>${L(h)}</h3><span class="note">${prac ? `<b class="prac">${L('Practice')}</b> · ` : ''}${L('set {n}', {n:S.set})}</span></div>`;
+  if (basic) return BASIC_PADS.map((G, i) => `
+  <section class="sec">${head(team ? G.h : G.hp, i)}<div class="pad pad-n3">${G.keys.map(k => btn(BYK[k])).join('')}</div></section>`).join('');
   // a team match: reception graded in a row of its own, and two more errors
-  if (team) return TEAM_PADS.map(G => `
-  <section class="sec"><h3>${L(G.h)}</h3><div class="pad pad-n${G.keys.length}">${G.keys.map(k => btn(BYK[k])).join('')}</div></section>`).join('');
-  return GROUPS.map(G=>`
-  <section class="sec"><h3>${L(G.h)}</h3><div class="pad pad-${G.g}">
+  if (team) return TEAM_PADS.map((G, i) => `
+  <section class="sec">${head(G.h, i)}<div class="pad pad-n${G.keys.length}">${G.keys.map(k => btn(BYK[k])).join('')}</div></section>`).join('');
+  return GROUPS.map((G, i) =>`
+  <section class="sec">${head(G.h, i)}<div class="pad pad-${G.g}">
     ${STATS.filter(s=>s.g===G.g && !s.team).map(btn).join('')}
   </div></section>`).join('');
 }
@@ -1713,7 +1876,7 @@ function teamPlayerView(num){
     <button class="mitem" data-open="${m.id}"><span class="res ${live?'live':(m.result||'')}">${live?L('LIVE'):resLetter(m.result)}</span>
       <span><div class="t">${L('vs {opp}', {opp:esc(m.opp)})}</div><div class="d">${esc(fmtDate(m.date))}${m.score?' · '+esc(m.score):''} · ${nL(errs(c), '{n} error', '{n} errors')}</div></span>
       <span class="p vir">${fmtVir(vir(c))}<small>${L('RTG')}</small></span>
-      <span class="p">${pts(c)}<small>${L('PTS')}</small></span>
+      <span class="p">${pts(c)}<small>${unitW(pts(c), 'PTS')}</small></span>
     </button>`; }).join('')}</div></section>
   ${rosterMore(per, num)}
   <section class="sec"><div class="sec-h"><h3>${L('Box score')}</h3></div>${boxTable(per.map(({m,c})=>({label:fmtDate(m.date)+' '+m.opp, c})).concat({label:L('Season'), c:total, sum:true}), L('Match'), true)}${legend()}${legendTeam()}</section>
@@ -1726,7 +1889,7 @@ function whoBar(m){
   // sb: who set the spike or plasé (asked right after its player)
   const sb = !!S.who.setby, attr = sb ? 'data-setby' : 'data-who';
   // naming later: which rally it was, and how many are still to name
-  const f = S.who.fix && analyze(m).feed.find(x => x.e === e), left = S.who.chain ? (m.log||[]).filter(needsWho).length : 0;
+  const f = S.who.fix && analyze(m).feed.find(x => x.e === e), left = S.who.chain ? (m.log||[]).filter(x => needsWho(x) && (!S.who.set || x.set === S.who.set)).length : 0;
   // short: "Other number" and "Later" are in the grid, so the bar leaves the stat buttons free on most phones
   const tail = sb ? `<button type="button" class="skip" data-setby="">${L("Don't know")}</button>`
     : `<button type="button" class="skip" data-whoother="1">${L('Other')}<small>${L('number')}</small></button><button type="button" class="skip" data-who="?">${L("Don't know")}</button><button type="button" class="skip" data-who="">${S.who.fix ? L('Cancel') : L('Later')}</button>`;
@@ -1756,20 +1919,21 @@ function teamLive(m){
   const unnamed = (m.log||[]).filter((e, i) => needsWho(e) && !(S.who && !S.who.fix && S.who.mid === m.id && S.who.i === i)).length;
   // court mode: what a rally needs (score, +1, every stat, Undo / Time-out / End set) fits one phone screen
   // with no scrolling; the rest is below it
-  const serving = over ? null : servingNow(m, S.set), cs = court(m, S.set), server = cs && cs.serving === 'us' && !cs.unsure ? cs.pos[0] : null;
+  const serving = over ? null : servingNow(m, S.set), cs = court(m, S.set), server = cs ? (cs.serving === 'us' && !cs.unsure ? cs.pos[0] : null) : serving === 'us' ? keptServer(m) : null;
   return `
   ${scoreBug(m, a, {live:true, court:true, serving})}
   <div class="padzone">
-  ${pads(all, {server, theyServe:serving === 'them'})}
+  ${pads(counts(m, S.set), {server, theyServe:serving === 'them'}, m.basic, m.practice)}
   <div class="acts">
-    ${undoFab(m, true)}
+    ${undoFab(m)}
     <button class="act who${unnamed ? ' on' : ''}" id="b-name" ${unnamed ? '' : 'disabled'}>${L('Who?')}<small>${unnamed ? nL(unnamed, '{n} to name', '{n} to name|many') : L('all named')}</small></button>
-    <button class="act" id="b-timeout">${L('Time-out')}</button>
+    <button class="act tob" id="b-timeout">${L('Time-out')}${toDots(Math.max(0, TOS - tosUsed(m, S.set, 'us')))}</button>
     <button class="act" id="b-endset">${L('End set {n}', {n:S.set})} ›</button>
   </div>
   </div>
+  ${practiceBar(m)}
   ${fieldHTML(m)}
-  <section class="bug">${(p => p ? `<div class="pips" style="padding-top:14px">${p}</div>` : '')(pipsHTML(m, a))}<div class="bug-foot">${setSel(m)}<button class="lnk" id="b-fix">${L('Fix score')}</button></div></section>
+  <section class="bug">${(p => p ? `<div class="pips" style="padding-top:14px">${p}</div>` : '')(pipsHTML(m, a))}<div class="bug-foot">${setSel(m)}<button class="lnk" id="b-fix">${L('Fix score')}</button></div>${liveFoot(m)}</section>
   <section class="player">
     <div class="jersey">${esc((homeName(m)[0]||'T').toUpperCase())}</div>
     <div class="pinfo">
@@ -1778,7 +1942,6 @@ function teamLive(m){
       <div class="pline">
         <div><b>${pts(all)}</b><span>${L('Points')}</span></div>
         <div><b>${errs(all)}</b><span>${L('Errors')}</span></div>
-        <div><b>${fmtVir(vir(all))}</b><span>${L('Rating')}</span></div>
       </div>
     </div>
   </section>
@@ -1790,18 +1953,16 @@ function teamLive(m){
     ${finishForm(m)}
   </section>
   ${S.player.num ? `<button class="btn btn-dk" id="b-toplayer">${L('Switch to {name} only', {name:esc(pName())})}</button>` : ''}
-  <button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?L('Tap again to delete this match'):L('Delete this match')}</button>
-  ${m.toOn && freezeView(m) || lineupSheet(m) || subBar(m) || whoBar(m) || timeoutBar(m) || askBar(m) || setBar(m, a) || libBar(m) || serveBar(m, a)}`;
+  ${m.practice ? '' : `<button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?L('Tap again to delete this match'):L('Delete this match')}</button>`}
+  ${m.toOn ? freezeView(m) + whoBar(m) : lineupSheet(m) || subBar(m) || whoBar(m) || timeoutBar(m) || askBar(m) || setBar(m, a) || libBar(m) || libInBar(m) || serveBar(m, a) || howBar(m)}`;
 }
 // At 0-0 of a set nobody has said who serves (no line-up): asked in a bar at the bottom, so nothing on the screen
-// moves when it goes (it went as a row at the first point and every button jumped). The first rally of a new
-// match also says what to tap. Any tap (a point, a stat) answers it too; "Later" hides it for this set.
+// moves when it goes (it went as a row at the first point and every button jumped). Any tap (a point, a stat)
+// answers it too; "Later" hides it for this set.
 function serveBar(m, a){
   const sc = a.score[S.set] || {us:0, them:0}, {w, l} = setsWon(m);
   if (sc.us || sc.them || w >= winSets(m) || l >= winSets(m) || court(m, S.set) || firstServer(m, S.set) || S.serveSkip === m.id + ':' + S.set || (m.ended||[]).includes(S.set)) return '';
-  const fresh = !(m.log||[]).some(e => BYK[e.k] || e.k === 'us' || e.k === 'them');
   return `<div class="tagbar" role="group" aria-label="${L('First server in set {n}', {n:S.set})}">
-    ${fresh ? `<p class="note" style="margin:0;color:inherit;opacity:.85">${L("Tap what happened, then the player's number. Not sure? Tap +1 for the team that won the point.")}</p>` : ''}
     <div class="q">${L('Set {n}: who serves first?', {n:S.set})}</div>
     <div class="two">${(m.away ? ['them','us'] : ['us','them']).map(k => `<button data-serve="${k}">${esc(k === 'us' ? homeName(m) : m.opp)}</button>`).join('')}</div>
     <div class="two"><button class="skip" id="b-serveskip">${L('Later')}</button></div></div>`;
@@ -1818,6 +1979,23 @@ function libBar(m){
     <div class="nums">${bench.map(p => `<button data-libin="${esc(p.num)}" data-libout="${esc(lib.num)}"${p.num === was ? ' class="hint"' : ''}>${esc(p.num)}<small>${esc(first(p.name))}</small><small>${minutes((pt[p.num] || {ms:0}).ms)}′</small></button>`).join('')}<button type="button" class="skip" data-libin="" data-libkey="${key}">${L('Later')}</button></div>
   </div>`;
 }
+// The libero is on the bench and a player the libero replaces (one it came in for before, or a middle) is in the
+// back row and not serving: one tap puts the libero in ("Later" leaves it for the rest of the set)
+function libInBar(m){
+  const st = court(m, S.set), key = m.id + ':' + S.set; if (!st || st.unsure || (m.ended||[]).includes(S.set) || S.libInSkip === key) return '';
+  // never with a libero on court; the libero who came in last, else the first on the roster
+  const libs = (m.roster||[]).filter(p => p.pos === 'L'); if (!libs.length || libs.some(p => st.pos.includes(p.num))) return '';
+  const ins = (m.log||[]).filter(e => e.k === 'sub' && libs.some(p => p.num === e.in)), lib = rosterP(m, ins.length ? ins[ins.length - 1].in : libs[0].num);
+  const pref = [...new Set([...ins.map(e => e.out).reverse(), ...(m.roster||[]).filter(p => p.pos === 'MB').map(p => p.num)])];
+  // the back row: V and VI, and I while the other team serves (a libero does not serve)
+  const back = [4, 5].concat(st.serving === 'them' ? [0] : []), out = pref.find(n => back.some(i => st.pos[i] === n)); if (!out) return '';
+  const o = rosterP(m, out);
+  return `<div class="tagbar" role="group" aria-label="${L('Substitution')}">
+    <div class="q">${L('Libero #{n} {name} in for #{o} {oname}?', {n:esc(lib.num), name:esc(first(lib.name)), o:esc(out), oname:esc(first(o.name))})}</div>
+    <div class="two"><button data-lin="${esc(lib.num)}" data-lout="${esc(out)}">${L('Yes, #{n} in', {n:esc(lib.num)})}</button><button class="skip" data-lin="" data-lkey="${esc(key)}">${L('Later')}</button></div></div>`;
+}
+// The numbers a coach reads, folded under one title so a parent's page stays short (open in the PDF)
+const forCoaches = html => html.trim() ? `<details class="more sec coach"${S.coachOpen ? ' open' : ''}><summary>${L('For coaches')}</summary><div class="wrap" style="gap:20px;margin-top:6px">${html}</div></details>` : '';
 function teamMatchView(m){
   const a = analyze(m), c = counts(m), rows = playerRows([m]), armed = S.armed === 'del-'+m.id;
   const sets = scoredSets(a.score).sort((x,y)=>x-y), teamPts = sets.reduce((t,s)=>t+a.score[s].us, 0);
@@ -1825,8 +2003,10 @@ function teamMatchView(m){
   return `
   <div class="row" style="align-items:center"><div><div class="kicker">${L(m.result==='W'?'Final · Win':m.result==='L'?'Final · Loss':'Final')}${m.score?' '+esc(m.score):''} · ${L('whole team')}</div><h2>${vsLine(m)}</h2></div></div>
   ${scoreBug(m, a, {live:false})}
+  ${keepCard(m)}
   <div class="row">
-    <button class="btn btn-or" id="b-share" data-id="${m.id}" style="flex:1">${L('Share picture')}</button>
+    <button class="btn btn-or" id="b-share" data-id="${m.id}">${L('Share picture')}</button>
+    <button class="btn btn-dk" id="b-sharetext" data-id="${m.id}">${L('Share score')}</button>
   </div>
   <div class="row"><button class="btn btn-dk" id="b-xlsx" data-id="${m.id}">Excel</button><button class="btn btn-dk" id="b-pdf">PDF</button></div>
   <div class="tiles">
@@ -1835,15 +2015,7 @@ function teamMatchView(m){
     <div class="tile"><b>${c.ace}</b><span>${L('Aces')}</span>${sp.p == null ? '' : `<em>${L('{p} serves in', {p:sp.p + '%'})}</em>`}</div>
     <div class="tile"><b>${c.block}</b><span>${L('Blocks')}</span><em>${nL(c.dig, '{n} defence', '{n} defences')}</em></div>
   </div>
-  ${pctRows(c, rs)}
-  ${flowHTML([m])}
-  ${rotationHTML([m])}
   ${rows.length ? `<section class="sec"><div class="sec-h"><h3>${L('Players')}</h3><span class="note">${L('tap a player')}</span></div>${playerList(rows, true)}</section>` : ''}
-  ${playTimeHTML([m])}
-  ${teamMore([m])}
-  ${attackServeHTML(rows, c, [m])}
-  ${receptionHTML(rows, c)}
-  ${setByHTML([m])}
   ${sets.length ? `<section class="sec"><div class="sec-h"><h3>${L('Set by set')}</h3></div>${sets.map(s => {
     const cs = counts(m, s), x = a.score[s], p = pts(cs), e = errs(cs), good = listOf(cs, ['dig','pass','p3','p2','assist','serve','att']);
     const sv = svSets[s], rn = runs(m, s);
@@ -1857,8 +2029,9 @@ function teamMatchView(m){
       ${rn.us || rn.them ? `<p class="m">${L('Longest run: {a} {x} · {b} {y}', {a:esc(homeName(m)), x:rn.us, b:esc(m.opp), y:rn.them})}</p>` : ''}`}
       ${toLine(m, a, s)}
     </div>`; }).join('')}</section>` : ''}
-  <details class="more sec"><summary>${L('Full table')}</summary>${boxTable(rows.map(r=>({label:pLabel(r), c:r.c})).concat({label:L('Team'), c, sum:true}), L('Player'), true)}${legend()}${legendTeam()}</details>
-  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>${L('Play by play')}</h3><span class="note">${L('tap a line to change the player')}</span></div><div class="pbpbox">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
+  ${forCoaches(`${pctRows(c, rs)}${flowHTML([m])}${rotationHTML([m])}${playTimeHTML([m])}${attackServeHTML(rows, c, [m])}${receptionHTML(rows, c)}${setByHTML([m])}${teamMore([m])}
+    <section class="sec"><div class="sec-h"><h3>${L('Full table')}</h3></div>${boxTable(rows.map(r=>({label:pLabel(r), c:r.c})).concat({label:L('Team'), c, sum:true, noRtg:true}), L('Player'), true)}${legend()}${legendTeam()}</section>`)}
+  ${a.feed.length ? `<section class="sec pbpsec"><div class="sec-h"><h3>${L('Play by play')}</h3><span class="note">${L('tap a line to change the player')}</span></div><div class="pbpbox">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
   <div class="row">
     <button class="btn btn-dk" id="b-resume" data-id="${m.id}">${L('Keep tracking')}</button>
     <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${m.id}">${armed?L('Tap again to delete'):L('Delete')}</button>
@@ -1877,24 +2050,13 @@ function teamSeason(list, seg, slot){
     <div class="jersey">${esc((seasonLabel(slot)[0]).toUpperCase())}</div>
     <div class="pinfo"><div class="pname${nmLong(seasonLabel(slot))}">${esc(seasonLabel(slot))}</div><div class="note">${nL(n, '{n} match', '{n} matches')} · ${L('{w}W {l}L', {w, l})}</div>
       <div class="pline">
-        <div><b>${avg(pts(total))}</b><span>${L('Pts / match')}</span></div>
+        <div><b>${avg(pts(total))}</b><span>${L('Earned / match')}</span></div>
         <div><b>${avg(errs(total))}</b><span>${L('Err / match')}</span></div>
         <div><b>${rows.filter(r=>r.num).length}</b><span>${L('Players|count')}</span></div>
       </div>
     </div>
   </section>
-  ${pctRows(total, rallyServes(list))}
-  <div class="row"><button class="btn btn-dk" id="b-pdf">PDF</button></div>
   ${newMatchBtn()}
-  ${leadersHTML(rows)}
-  ${flowHTML(list)}
-  ${rotationHTML(list)}
-  <section class="sec"><div class="sec-h"><h3>${L('Players')}</h3><span class="note">${L('whole season · tap a player')}</span></div>${playerList(rows, true)}</section>
-  ${playTimeHTML(list)}
-  ${attackServeHTML(rows, total, list)}
-  ${receptionHTML(rows, total)}
-  ${setByHTML(list)}
-  ${teamMore(list, true)}
   <section class="sec"><div class="sec-h"><h3>${L('Game log')}</h3><button class="lnk" id="b-editlist">${S.editList?L('Done'):L('Remove matches')}</button></div>
   <div class="mlist">${per.map(({m,c})=>{ const live = m.id===S.activeId, armed = S.armed==='x-'+m.id;
     const info = `<span class="res ${live?'live':(m.result||'')}">${live?L('LIVE'):resLetter(m.result)}</span>
@@ -1904,11 +2066,15 @@ function teamSeason(list, seg, slot){
       <button class="btn btn-del xdel ${armed?'armed':''}" data-xdel="${m.id}" aria-label="${armed?L('Tap again to delete'):L('Delete')} ${L('vs {opp}', {opp:esc(m.opp)})}">${armed?L('Sure?'):L('Delete')}</button>
     </div>` : `
     <button class="mitem" data-open="${m.id}">${info}
-      <span class="p vir">${errs(c)}<small>${L('ERR')}</small></span>
-      <span class="p">${pts(c)}<small>${L('PTS')}</small></span>
+      <span class="p vir">${errs(c)}<small>${unitW(errs(c), 'ERR')}</small></span>
+      <span class="p">${pts(c)}<small>${unitW(pts(c), 'PTS')}</small></span>
     </button>`; }).join('')}</div>
   ${S.editList ? `<p class="note">${L('Tap Delete, then tap again to remove the match from every phone.')}</p>` : ''}</section>
-  <section class="sec"><div class="sec-h"><h3>${L('Season box score')}</h3></div>${boxTable(rows.map(r=>({label:pLabel(r), c:r.c})).concat({label:L('Team'), c:total, sum:true}), L('Player'), true)}${legend()}${legendTeam()}</section>`;
+  <section class="sec"><div class="sec-h"><h3>${L('Players')}</h3><span class="note">${L('whole season · tap a player')}</span></div>${playerList(rows, true)}</section>
+  ${leadersHTML(rows)}
+  ${forCoaches(`${pctRows(total, rallyServes(list))}${flowHTML(list)}${rotationHTML(list)}${playTimeHTML(list)}${attackServeHTML(rows, total, list)}${receptionHTML(rows, total)}${setByHTML(list)}${teamMore(list, true)}
+    <section class="sec"><div class="sec-h"><h3>${L('Season box score')}</h3></div>${boxTable(rows.map(r=>({label:pLabel(r), c:r.c})).concat({label:L('Team'), c:total, sum:true, noRtg:true}), L('Player'), true)}${legend()}${legendTeam()}</section>`)}
+  <div class="row"><button class="btn btn-dk" id="b-pdf">PDF</button></div>`;
 }
 // The roster, typed once before the season. Each team match takes a copy when it starts.
 // What is typed on the team page and not saved yet. Kept on the phone too: iOS can reload a page
@@ -1924,7 +2090,7 @@ function teamView(){
       <label>${L('Team name')}<input id="t-name" autocomplete="off" enterkeyhint="next" value="${esc(t.name)}" placeholder="${L('e.g. Panathinaikos U16')}"></label>
       <div class="roster">${rows.map((p,i)=>`<div class="rrow">
         <input class="t-num" inputmode="numeric" maxlength="3" autocomplete="off" enterkeyhint="next" value="${esc(p.num)}" placeholder="${L('No')}" aria-label="${L('Number')}">
-        <input class="t-pn" autocomplete="off" enterkeyhint="next" value="${esc(p.name)}" placeholder="${L('Name')}" aria-label="${L('Name')}">
+        <input class="t-pn" autocomplete="off" enterkeyhint="next" value="${esc(p.name)}" placeholder="${L('First name')}" aria-label="${L('First name')}">
         <select class="t-pos" aria-label="${L('Position')}"><option value="">${L('Position')}</option>${POS.map(o => `<option value="${o.k}" ${o.k === p.pos ? 'selected' : ''}>${L(o.l)}</option>`).join('')}</select>
         <button type="button" class="rm${S.armed === 'rm-' + i ? ' armed' : ''}" data-rm="${i}" aria-label="${S.armed === 'rm-' + i ? L('Tap again to delete') : L('Remove this player')}">✕</button></div>`).join('')}</div>
       <p id="t-err" class="note" style="color:var(--neg);font-weight:600" role="alert" hidden></p>
@@ -1990,41 +2156,60 @@ function liveView(m){
   const lastE = m.log?.[m.log.length-1];
   const lastStint = a.stints[a.stints.length-1];
   const since = m.onCourt && lastStint ? L('On at {score}, set {n}', {score:ordS(m, lastStint.inUs, lastStint.inThem), n:lastStint.inSet}) : (lastStint ? L('Off at {score}, set {n}', {score:ordS(m, lastStint.outUs, lastStint.outThem), n:lastStint.outSet}) : L('Not on court yet'));
+  // like the team screen: score, +1, every stat and one action row (Undo, in / out of court, Time-out, End set)
+  // on one phone screen; the player's card and the rest below
   return `
-  ${scoreBug(m, a, {live:true})}
+  ${scoreBug(m, a, {live:true, court:true})}
+  <div class="padzone">
+  ${pads(counts(m, S.set), null, m.basic, m.practice)}
+  <div class="acts">
+    ${undoFab(m)}
+    <button class="act crt${m.onCourt ? ' on' : ''}" id="b-court">${m.onCourt ? L('Sub out') : L('Sub in')}<small>${m.onCourt ? `<span id="clock">${fmtTime(playMs(m))}</span>` : L('On bench|act') + ' · ' + minutes(playMs(m)) + '′'}</small></button>
+    <button class="act tob" id="b-timeout">${L('Time-out')}${toDots(Math.max(0, TOS - tosUsed(m, S.set, 'us')))}</button>
+    <button class="act" id="b-endset">${L('End set {n}', {n:S.set})} ›</button>
+  </div>
+  </div>
+  ${practiceBar(m)}
+  <section class="bug">${(p => p ? `<div class="pips" style="padding-top:14px">${p}</div>` : '')(pipsHTML(m, a))}<div class="bug-foot">${setSel(m)}<button class="lnk" id="b-fix">${L('Fix score')}</button></div>${liveFoot(m)}</section>
   <section class="player">
     <div class="jersey">${esc(S.player.num || '?')}</div>
     <div class="pinfo">
       <div class="pname${nmLong(pName())}">${esc(pName())}</div>
-      <div class="note">${m.onCourt?'<span class="live-dot"></span>':''}${esc(since)}</div>
+      <div class="note">${m.onCourt?'<span class="live-dot"></span>':''}${esc(since)} · ${m.onCourt?(m.courtSince?L('Playing now'):scoredSets(a.score).length?L('Set break, clock stopped'):L('Clock starts at the first point')):L('Not playing')}</div>
       <div class="pline">
         <div><b>${pts(all)}</b><span>${L('Pts')}</span></div>
         <div><b class="${pmClass(a.pm)}">${fmtPM(a.pm)}</b><span>+/-</span></div>
         <div><b>${fmtVir(vir(all))}</b><span>${L('Rating')}</span></div>
       </div>
     </div>
-    <div class="court ${m.onCourt?'is-on':''}">
-      <div class="cst"><b>${m.onCourt?L('On court'):L('On bench')}</b><span>${m.onCourt?(m.courtSince?L('Playing now'):scoredSets(a.score).length?L('Set break, clock stopped'):L('Clock starts at the first point')):L('Not playing')} ·${L('{time} played', {time:`<span id="clock">${fmtTime(playMs(m))}</span>`})}</span></div>
-      <button id="b-court">${m.onCourt?L('Take off court'):L('Put on court')}</button>
-    </div>
   </section>
-  ${pads(all)}
   ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>${L('Play by play')}</h3></div>${feedHTML(m, a.feed.slice(-8).reverse())}</section>` : ''}
   <section class="panel">
     <h2>${L('Final whistle')}</h2>
     ${finishForm(m)}
   </section>
   <button class="btn btn-dk" id="b-toteam">${L('Switch to the whole team')}</button>
-  <button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?L('Tap again to delete this match'):L('Delete this match')}</button>
-  ${undoFab(m)}
-  ${m.toOn && freezeView(m) || tagBar(m) || timeoutBar(m) || askBar(m) || setBar(m, a)}`;
+  ${m.practice ? '' : `<button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?L('Tap again to delete this match'):L('Delete this match')}</button>`}
+  ${m.toOn && freezeView(m) || tagBar(m) || timeoutBar(m) || askBar(m) || setBar(m, a) || howBar(m)}`;
 }
-// Always-visible undo, naming the tap it will take back. inline: a button in the court-mode row, not floating.
-function undoFab(m, inline){
+// Under the live screen: fewer or all stat buttons, and the live score link (a practice is never shared)
+const liveFoot = m => `<div class="bug-foot" style="padding-top:0"><button class="lnk" id="b-level">${m.basic ? L('All stat buttons') : L('Fewer stat buttons')}</button>${m.practice ? ''
+  : m.liveId ? `<span><button class="lnk" id="b-live"><span class="live-dot"></span>${L('Live link on')}</button><button class="lnk" id="b-livestop">${L('Stop')}</button></span>` : `<button class="lnk" id="b-live">${L('Live score link')}</button>`}</div>`;
+const practiceBar = m => m.practice ? `<div class="practice"><span>${L('Practice: nothing is saved')}</span><button class="lnk" id="b-endpractice">${L('End practice')}</button></div>` : '';
+// Until OK is pressed on this phone, a new match starts with what to tap (the first point or stat closes it too)
+function howBar(m){
+  if (LS.get('ss.howto') || (m.log||[]).some(e => BYK[e.k] || e.k === 'us' || e.k === 'them')) return '';
+  const lines = isTeam(m) ? [L('Each rally: tap what happened (Ace, Spike, an error…). It adds the point too.'), L("Then tap the player's number, or Later."), L('Not sure? Tap +1 for the team that won. A wrong tap? Undo.')]
+    : [L('A point or an error by {who}: tap what happened (Ace, Spike…). It adds the point too.', {who:pWho()}), L('Any other rally: tap +1 for the team that won it.'), L('Sub in / Sub out when {who} goes on or off. A wrong tap? Undo.', {who:pWho()})];
+  return `<div class="tagbar how" role="group" aria-label="${L('How it works')}"><div class="q">${L('How it works')}</div>
+    <ol>${lines.map(x => `<li>${x}</li>`).join('')}</ol><div class="two"><button id="b-howok">${L('OK')}</button></div></div>`;
+}
+// Undo in the action row of a live match, naming the tap it will take back.
+function undoFab(m){
   const log = m.log||[]; let e = log[log.length-1];
   if (e && e.auto && log.length > 1) e = log[log.length-2];
   const back = undoBack(m), what = back != null ? L('back to set {n}', {n:back}) : e ? evLabel(e,m).t : '';
-  return `<button class="${inline ? 'act undo' : 'fab'}" id="b-undo" ${what?'':'disabled'} aria-label="${L('Undo')} ${esc(what)}">
+  return `<button class="act undo" id="b-undo" ${what?'':'disabled'} aria-label="${L('Undo')} ${esc(what)}">
     <span class="fab-i" aria-hidden="true">↶</span><span>${L('Undo')}<small>${what?esc(what):L('nothing yet')}</small></span></button>`;
 }
 function tagBar(m){
@@ -2118,11 +2303,12 @@ function feedHTML(m, rows){
 }
 
 function boxTable(rows, head, team){
-  // a team table has the graded passes, ball handling and position faults; a player table does not
-  const cols = STATS.filter(x => team || !x.team);
+  // a team table has the graded passes, ball handling and position faults; a player table does not.
+  // Only stats that were tapped get a column (the Excel file has them all). noRtg: a team total has no rating.
+  const cols = STATS.filter(x => (team || !x.team) && rows.some(r => r.c[x.k]));
   return `<div class="tbl"><table>
     <thead><tr><th>${head}</th><th>${L('Pts')}</th><th>${L('Rtg')}</th>${cols.map(s=>`<th title="${esc(L(s.l)+' '+L(s.s))}">${abbr(s)}</th>`).join('')}</tr></thead>
-    <tbody>${rows.map(r=>`<tr class="${r.sum?'sum':''}"><td>${esc(r.label)}</td><td class="k">${pts(r.c)}</td><td>${fmtVir(vir(r.c))}</td>${cols.map(s=>`<td>${r.c[s.k]||0}</td>`).join('')}</tr>`).join('')}</tbody>
+    <tbody>${rows.map(r=>`<tr class="${r.sum?'sum':''}"><td>${esc(r.label)}</td><td class="k">${pts(r.c)}</td><td>${r.noRtg ? '' : fmtVir(vir(r.c))}</td>${cols.map(s=>`<td>${r.c[s.k]||0}</td>`).join('')}</tr>`).join('')}</tbody>
   </table></div>`;
 }
 
@@ -2171,13 +2357,14 @@ function pctParts(c, rs){
   const kills = c.kill + c.plase, good = c.pass + c.p3 + c.p2, pr = passRating(c);
   const only = (...x) => x.filter(Boolean).join(' · ') || L('none tapped');
   return [
+    // (pos: the same line without the errors, for the team picture)
     c.att ? {l:L('Attack'), a:kills, b:kills + c.aerr + c.att, n:L('efficiency {e}', {e:fmtEff(c)})}
-      : {l:L('Attack'), n:only(kills && nWord(kills, 'kill'), c.aerr && nL(c.aerr, '{n} error', '{n} errors'))},
+      : {l:L('Attack'), n:only(kills && nWord(kills, 'kill'), c.aerr && nL(c.aerr, '{n} error', '{n} errors')), pos:kills ? nWord(kills, 'kill') : '–'},
     c.serve ? {l:L('Serve'), a:c.ace + c.serve, b:c.ace + c.serve + c.serr, n:c.ace ? nWord(c.ace,'ace') : L('serves in')}
       : rs && rs.of ? {l:L('Serve'), a:rs.of - rs.err, b:rs.of, n:c.ace ? nWord(c.ace,'ace') : L('serves in')}
-      : {l:L('Serve'), n:only(c.ace && nWord(c.ace, 'ace'), c.serr && nL(c.serr, '{n} error', '{n} errors'))},
+      : {l:L('Serve'), n:only(c.ace && nWord(c.ace, 'ace'), c.serr && nL(c.serr, '{n} error', '{n} errors')), pos:c.ace ? nWord(c.ace, 'ace') : '–'},
     good + c.p1 ? {l:L('Reception'), a:good, b:good + c.p1 + c.rerr, n:pr ? L('pass rating {r}', {r:pr}) : L('good receptions')}
-      : {l:L('Reception'), n:only(c.rerr && nL(c.rerr, '{n} error', '{n} errors'))},
+      : {l:L('Reception'), n:only(c.rerr && nL(c.rerr, '{n} error', '{n} errors')), pos:'–'},
   ].map(r => Object.assign(r, {p: r.b ? pct100(r.a, r.b) : null}));
 }
 function pctRows(c, rs){
@@ -2255,10 +2442,12 @@ function firstServer(m, s){
   if (m.serve && m.serve[s]) return m.serve[s];
   for (const e of (m.log||[])){
     if (e.set !== s || e.late) continue;
-    if (e.k === 'us' || e.k === 'them') return null;
+    if (e.k === 'us' || e.k === 'them') break;
     if (['ace','serve','serr'].includes(e.k)) return 'us';
     if (['pass','p3','p2','p1','rerr'].includes(e.k)) return 'them';
   }
+  // sets 2-4 (not the deciding set, which has a new toss): the team that received first in the set before serves first
+  if (s > 1 && s < lastSet(m)){ const p = firstServer(m, s - 1); if (p) return p === 'us' ? 'them' : 'us'; }
   return null;
 }
 // The team serving now: the winner of the last rally (the first server before any). null after typed-in points.
@@ -2427,8 +2616,9 @@ function playTimeHTML(ms){
     <div class="tbl"><table><thead><tr><th>${L('Player')}</th>${many ? `<th>${L('Matches')}</th>` : ''}<th>${L('Sets')}</th><th>${L('Minutes')}</th><th>${L('Rallies')}</th><th>+/-</th></tr></thead>
     <tbody>${rows.map(r => `<tr><td>${esc(pLabel({num:r.num, name:names[r.num]||''}))}</td>${many ? `<td>${r.matches.size}</td>` : ''}<td>${r.sets.size}</td><td>${minutes(r.ms)}</td><td>${r.rallies}</td><td class="${pmClass(r.pm)}">${fmtPM(r.pm)}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
-// Subs and time-outs used in a set (FIVB: 6 subs, 2 time-outs a team; the libero's swaps are no subs)
-const SUBS = 6, TOS = 2;
+// Subs and time-outs used in a set (2 time-outs a team; subs only counted: the youth leagues allow more than FIVB's 6;
+// the libero's swaps are no subs)
+const TOS = 2;
 const subsUsed = (m, s) => (m.log||[]).filter(e => e.k === 'sub' && e.set === s && rosterP(m, e.in).pos !== 'L' && rosterP(m, e.out).pos !== 'L').length;
 const tosUsed = (m, s, side) => (m.log||[]).filter(e => e.k === 'to' && e.set === s && e.side === side).length;
 // The six on court in set s now (or before log index upto); null without a line-up in that set
@@ -2456,7 +2646,7 @@ function fieldHTML(m){
     <div class="six">${COURT_ORDER.map(i => { const p = rosterP(m, st.pos[i]), srv = i === 0 && st.serving === 'us' && !st.unsure, nx = i === 1 && st.serving === 'them' && !st.unsure;
       return `<button type="button" data-subspot="${i}" class="${srv ? 'srv-on' : ''}${p.pos === 'L' ? ' lib' : ''}" aria-label="${L('Position {r}', {r:ROMAN[i]})}: #${esc(p.num)} ${esc(p.name)}">${srv ? '<i class="srv"></i>' : nx ? '<i class="srv nx"></i>' : ''}<span class="rn" aria-hidden="true">${ROMAN[i]}</span>${esc(p.num)}<small>${p.pos ? esc(posAb(p.pos)) + ' · ' : ''}${esc(first(p.name))}</small></button>`; }).join('')}</div>
     <div class="cap"><span>${st.unsure ? L('Points were typed in: check the line-up') : st.serving === 'us' ? L('#{n} serves · tap a player to sub', {n:st.pos[0]}) : st.serving === 'them' ? L('Next to serve: #{n} · tap a player to sub', {n:st.pos[1]}) : L('Tap a player to sub')}</span><button class="lnk" id="b-lineup">${L('Line-up')} ›</button></div>
-    <div class="cap">${(su => `<span class="${su >= SUBS ? 'neg' : ''}">${L('Subs {n} of {max}', {n:su, max:SUBS})}</span>`)(subsUsed(m, S.set))}${(tu => `<span class="${tu >= TOS ? 'neg' : ''}">${L('Time-outs {n} of {max}', {n:tu, max:TOS})}</span>`)(tosUsed(m, S.set, 'us'))}</div>
+    <div class="cap"><span>${L('Subs {n}', {n:subsUsed(m, S.set)})}</span>${(tu => `<span class="${tu >= TOS ? 'neg' : ''}">${L('Time-outs {n} of {max}', {n:tu, max:TOS})}</span>`)(tosUsed(m, S.set, 'us'))}</div>
   </section>`;
 }
 // Opens the line-up sheet: at the start of a set it also asks who serves first
@@ -2497,7 +2687,7 @@ function subBar(m){
   // each bench player's minutes so far, to keep playing time fair
   const out = rosterP(m, st.pos[S.sub.i]), bench = (m.roster||[]).filter(p => !st.pos.includes(p.num)), pt = playTime([m]);
   return `<div class="tagbar who" role="group" aria-label="${L('Substitution')}">
-    <div class="q">${L('Sub for #{n} {name}: who comes in?', {n:esc(out.num), name:esc(first(out.name))})} <small style="font-weight:400;opacity:.7">(${(n => nL(n, '{n} sub left', '{n} subs left'))(Math.max(0, SUBS - subsUsed(m, S.set)))})</small></div>
+    <div class="q">${L('Sub for #{n} {name}: who comes in?', {n:esc(out.num), name:esc(first(out.name))})}</div>
     <div class="nums">${bench.map(p => `<button data-subin="${esc(p.num)}">${esc(p.num)}<small>${p.pos === 'L' ? posAb('L') + ' · ' : ''}${esc(first(p.name))}</small><small>${minutes((pt[p.num] || {ms:0}).ms)}′</small></button>`).join('')}<button type="button" class="skip" data-subin="">${L('Cancel')}</button></div>
   </div>`;
 }
@@ -2635,7 +2825,8 @@ function drawReport(m){
   const py = 640;
   ctx.fillStyle = PIC.volt; ctx.beginPath(); ctx.arc(P+64, py, 64, 0, 7); ctx.fill();
   picText(ctx, S.player.num || '?', P+64, py+2, {w:800, size:70, head:true, color:PIC.voltInk, align:'center', base:'middle'});
-  picText(ctx, capsName(pName()), P+160, py+10, {w:800, size:76, head:true, fit:W-P-P-160});
+  // first names only on a picture that goes around (child-protection advice: never a child's full name)
+  picText(ctx, capsName(first(pName())), P+160, py+10, {w:800, size:76, head:true, fit:W-P-P-160});
   picText(ctx, [S.player.pos ? L(S.player.pos) : '', L('{v} points per set', {v:fmtVir(pts(c)/setsPlayed(m))})].filter(Boolean).join(' · '), P+160, py+58, {size:30, color:PIC.muted, fit:W-P-P-160, w:500});
   // hero numbers
   picTiles(ctx, [[String(pts(c)), capsName(L('Points')), PIC.ink], [fmtVir(vir(c)), capsName(L('Rating')), PIC.ink], [fmtPM(a.pm), '+/-', a.pm > 0 ? PIC.pos : a.pm < 0 ? PIC.neg : PIC.ink], [String(mins(playMs(m))), capsName(L('Minutes')), PIC.ink]], W, P);
@@ -2660,11 +2851,17 @@ function drawReport(m){
 }
 // A team match: the same top, then the team's numbers, every player with a stat, and set by set.
 function drawTeamReport(m){
-  // each child's points only: errors and minus ratings stay off a picture shared with the team (Ian 2026-10-07)
-  const c = counts(m), a = analyze(m), sets = picSets(m, a), rows = playerRows([m]), scorers = rows.filter(r => pts(r.c) > 0);
+  // each child's points only: errors and minus ratings stay off a picture shared with the team (Ian 2026-10-07),
+  // and so do the team's error totals and the children's surnames (2026-10-09)
+  const c = counts(m), a = analyze(m), sets = picSets(m, a), rows = playerRows([m]);
+  // everyone who played (a stat tapped, or on court in a line-up): points first, else the good plays (never errors);
+  // points tapped without a number are a row too, so the column adds up
+  const pt = playTime([m]), byNum = Object.fromEntries(rows.filter(r => r.num).map(r => [r.num, r])), good = x => x.dig + x.pass + x.p3 + x.p2 + x.assist;
+  Object.keys(pt).forEach(n => { if (!byNum[n]) byNum[n] = {num:n, name:rosterP(m, n).name || '', c:zeroCounts()}; });
+  const scorers = Object.values(byNum).sort((x, y) => pts(y.c) - pts(x.c) || good(y.c) - good(x.c) || +x.num - +y.num).concat(rows.filter(r => !r.num && pts(r.c) > 0));
   // the flow line (side-out, where the points came from) under the bars
   const sv = serveStats(m).tot, ps = pointSources(m);
-  const flow = [sv.soOf ? L('Side-out') + ' ' + pct100(sv.so, sv.soOf) + '%' : '', sv.bpOf ? L('Break points') + ' ' + pct100(sv.bp, sv.bpOf) + '%' : '', L('Earned') + ' ' + ps.earned, L('Our errors') + ' ' + ps.given].filter(Boolean).join('  ·  ');
+  const flow = [sv.soOf ? L('Side-out') + ' ' + pct100(sv.so, sv.soOf) + '%' : '', sv.bpOf ? L('Break points') + ' ' + pct100(sv.bp, sv.bpOf) + '%' : '', L('Earned') + ' ' + ps.earned].filter(Boolean).join('  ·  ');
   // players start at 1360 (after the bars from 990 and a heading), 58 each; sets 64 each; footer 90; flow line 56
   const W = 1080, P = 72, H = 1360 + 56 + scorers.length * 58 + 40 + sets.length * 64 + 90;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -2675,10 +2872,10 @@ function drawTeamReport(m){
   ctx.fillStyle = PIC.volt; ctx.beginPath(); ctx.arc(P+64, py, 64, 0, 7); ctx.fill();
   picText(ctx, capsName(name[0] || 'T'), P+64, py+2, {w:800, size:70, head:true, color:PIC.voltInk, align:'center', base:'middle'});
   picText(ctx, capsName(name), P+160, py+10, {w:800, size:76, head:true, fit:W-P-P-160});
-  const np = rows.filter(r => r.num).length;
-  picText(ctx, nL(np, 'Whole team · {n} player with stats', 'Whole team · {n} players with stats'), P+160, py+58, {size:30, color:PIC.muted, fit:W-P-P-160, w:500});
-  picTiles(ctx, [[String(pts(c)), capsName(L('Points')), PIC.ink], [String(errs(c)), capsName(L('Errors')), PIC.ink], [String(c.ace), capsName(L('Aces')), PIC.ink], [String(c.block), capsName(L('Blocks')), PIC.ink]], W, P);
-  let y = picBars(ctx, c, W, P, 990, rallyServes([m]));
+  const np = scorers.filter(r => r.num).length;
+  picText(ctx, nL(np, 'Whole team · {n} player', 'Whole team · {n} players'), P+160, py+58, {size:30, color:PIC.muted, fit:W-P-P-160, w:500});
+  picTiles(ctx, [[String(pts(c)), capsName(L('Points')), PIC.ink], [String(c.kill + c.plase), capsName(L('Spikes')), PIC.ink], [String(c.ace), capsName(L('Aces')), PIC.ink], [String(c.block), capsName(L('Blocks')), PIC.ink]], W, P);
+  let y = picBars(ctx, c, W, P, 990, rallyServes([m]), true);
   picText(ctx, flow, P, y + 6, {size:28, color:PIC.muted, fit:W-2*P, w:500});
   y += 56;
   // the players who scored, best first (points tapped without a number are a row too, so the column adds up)
@@ -2691,18 +2888,19 @@ function drawTeamReport(m){
   scorers.forEach((r, i) => {
     if (i % 2 === 0){ ctx.fillStyle = PIC.soft; picRound(ctx, P-12, y-40, W-2*P+24, 54, 12); ctx.fill(); }
     if (r.num) picText(ctx, '#' + r.num, P+8, y-4, {w:800, size:34, head:true, color:PIC.volt});
-    picText(ctx, r.num ? r.name || '' : L('No player'), P+100, y-4, {w:600, size:30, fit:W-P-120-(P+100), color:r.num ? PIC.ink : PIC.muted});
-    picText(ctx, String(pts(r.c)), W-P, y-4, {w:700, size:32, align:'right'});
+    picText(ctx, r.num ? first(r.name) : L('No player'), P+100, y-4, {w:600, size:30, fit:W-P-120-(P+100), color:r.num ? PIC.ink : PIC.muted});
+    const p = pts(r.c), gp = good(r.c);
+    picText(ctx, p || !gp ? String(p || '–') : nL(gp, '{n} good play', '{n} good plays'), W-P, y-4, p ? {w:700, size:32, align:'right'} : {w:500, size:26, align:'right', color:PIC.muted});
     y += 58;
   });
-  // set by set: the team's points and errors
+  // set by set: the team's points
   y += 40;
   sets.forEach(n => {
-    const x = a.score[n], cs = counts(m, n), p = pts(cs), e = errs(cs);
+    const x = a.score[n], p = pts(counts(m, n));
     ctx.fillStyle = PIC.soft; picRound(ctx, P, y-40, W-2*P, 54, 14); ctx.fill();
     picText(ctx, capsName(L('Set {n}', {n})), P+22, y-4, {w:800, size:34, head:true});
     picText(ctx, ordS(m, x.us, x.them), P+170, y-4, {w:700, size:30});
-    picText(ctx, typedOnly(m, n) ? L('score typed in, no stats') : nL(p, '{n} pt', '{n} pts') + ' · ' + nL(e, '{n} error', '{n} errors'), P+330, y-4, {size:30, color:PIC.muted});
+    picText(ctx, typedOnly(m, n) ? L('score typed in, no stats') : nL(p, '{n} pt', '{n} pts'), P+330, y-4, {size:30, color:PIC.muted});
     y += 64;
   });
   return cv;
@@ -2715,12 +2913,12 @@ function picTiles(ctx, hero, W, P){
     picText(ctx, v, x+24, 850, {w:800, size:88, head:true, color:i === 0 ? PIC.voltInk : col, fit:hw-40});
     picText(ctx, lab, x+24, 892, {w:600, size:24, color:i === 0 ? PIC.voltInk : PIC.muted}); });
 }
-// Attack / serve / reception bars from y; returns the y after them.
-function picBars(ctx, c, W, P, y, rs){
+// Attack / serve / reception bars from y; returns the y after them. noErr: a line without a % names no errors.
+function picBars(ctx, c, W, P, y, rs, noErr){
   pctParts(c, rs).forEach(r => {
     picText(ctx, r.l, P, y, {w:700, size:36});
     picFont(ctx, 700, 36); const lw = ctx.measureText(r.l).width;
-    picText(ctx, r.b ? L('{a} of {b}', {a:r.a, b:r.b}) : r.n, P + lw + 18, y, {size:28, color:PIC.muted});
+    picText(ctx, r.b ? L('{a} of {b}', {a:r.a, b:r.b}) : noErr ? r.pos : r.n, P + lw + 18, y, {size:28, color:PIC.muted});
     if (r.p != null){ picText(ctx, r.p + '%', W-P, y+4, {w:800, size:56, head:true, align:'right'});
       ctx.fillStyle = PIC.soft2; picRound(ctx, P, y+20, W-2*P, 14, 7); ctx.fill(); }
     if (r.p){ ctx.fillStyle = PIC.volt; picRound(ctx, P, y+20, Math.max(14, (W-2*P)*r.p/100), 14, 7); ctx.fill(); }
@@ -2793,15 +2991,73 @@ function savePicture(file){
   setTimeout(() => URL.revokeObjectURL(url), 5000);
   toast(L('Picture saved'));
 }
+// The result as one line for WhatsApp, in the hall's order: "Pana 3–1 Oly (25–20, 22–25, 25–18, 25–23)"
+function scoreText(m){
+  const a = analyze(m), {w, l} = finalSets(m), sets = scoredSets(a.score).sort((x, y) => x - y);
+  return (m.away ? `${m.opp} ${l}–${w} ${homeName(m)}` : `${homeName(m)} ${w}–${l} ${m.opp}`)
+    + (sets.length ? ' (' + sets.map(s => ordS(m, a.score[s].us, a.score[s].them)).join(', ') + ')' : '') + (m.team ? ' · ' + m.team : '');
+}
+// a line of text (and a link) through the phone's share sheet; without one (a computer) it is copied
+function shareLine(text, url){
+  const all = url ? text + ' ' + url : text, copy = () => navigator.clipboard ? navigator.clipboard.writeText(all).then(() => toast(L('Copied')), () => toast(all)) : toast(all);
+  if (navigator.share) return navigator.share(url ? {text, url} : {text}).catch(e => { if (!e || e.name !== 'AbortError') copy(); });
+  copy();
+}
+// The live score link: anyone with it sees the two team names and the score (no players) as it changes, without
+// signing in. live/<code> goes through the scorer's account and ends 12 h after the last point, 3 h after the
+// match (firestore.rules). Sent again only when the score changes.
+const liveBody = m => { const a = analyze(m), {w, l} = m.done ? finalSets(m) : setsWon(m), sets = Object.keys(a.score).map(Number).sort((x, y) => x - y);
+  return {home:homeName(m), opp:m.opp, away:!!m.away, sets:sets.map(n => ({n, u:a.score[n].us, t:a.score[n].them})), cur:m.curSet || 1, won:[w, l], done:!!m.done}; };
+function liveSend(m){
+  if (!window.SS_live || !S.user) return;
+  const b = liveBody(m), k = m.liveId + JSON.stringify(b); if (S.liveSent === k) return;
+  S.liveSent = k;
+  window.SS_live.put(m.liveId, b).catch(e => { S.liveSent = null; const code = (e && e.code) || String(e); noteIssue('live link: ' + code);
+    if (!S.liveWarned){ S.liveWarned = true; toast(L('The live link is not working ({code}).', {code})); } });
+}
+function liveShare(m){
+  if (!m) return;
+  if (!S.user || !window.SS_live) return toast(L('Sign in with Google first: the live score goes through your account.'));
+  if (!m.liveId){ m.liveId = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => (b % 36).toString(36)).join(''); save(m); render(); }
+  shareLine(L('Live score: {vs}', {vs:vsText(m)}), location.origin + location.pathname + '#live=' + m.liveId);
+}
+function liveStop(m){
+  if (!m || !m.liveId) return;
+  window.SS_live?.stop(m.liveId).catch(() => {}); delete m.liveId; S.liveSent = null; save(m); render(); toast(L('Live link stopped'));
+}
+// A live score link opened on this phone: only that score, read-only, as it changes
+function watchView(){
+  const w = S.watch, d = w.data, box = p => `<section class="panel"><h2>${L('Live score')}</h2><p class="note">${p}</p><a class="btn btn-dk" href="./">Spike Sheet</a></section>`;
+  if (d === undefined) return Date.now() - w.t0 > 12000 ? box(L("Can't reach the live score. Check the internet.")) : `<section class="panel"><p class="note">${L('Opening the live score…')}</p></section>`;
+  if (!d) return box(L('This live score has ended, or the link is not complete.'));
+  const sc = (d.sets || []).find(s => s.n === d.cur) || {u:0, t:0}, won = d.won || [0, 0];
+  const us = {name:d.home, sets:won[0], pts:d.done ? won[0] : sc.u}, them = {name:d.opp, sets:won[1], pts:d.done ? won[1] : sc.t}, [lt, rt] = d.away ? [them, us] : [us, them];
+  const chips = (d.sets || []).filter(s => d.done || s.n !== d.cur).map(s => `<span class="pip ${s.u > s.t ? 'w' : s.t > s.u ? 'l' : ''}">${L('S{n}', {n:s.n})} ${d.away ? s.t + '–' + s.u : s.u + '–' + s.t}</span>`).join('');
+  return `<section class="bug">
+    <div class="bug-top"><span class="comp">${d.done ? L('Final') : `<span class="live-dot"></span>${L('LIVE')}`} · <span id="wago">${ago(d.at)}</span></span><span class="setflag">${d.done ? L('Sets') : L('Set {n}', {n:d.cur})}</span></div>
+    <div class="score">${teamCell(lt, '')}<div class="big"><span class="${lt.pts >= rt.pts ? 'hi' : ''}">${lt.pts}</span><i>:</i><span class="${rt.pts >= lt.pts ? 'hi' : ''}">${rt.pts}</span></div>${teamCell(rt, ' away')}</div>
+    ${chips ? `<div class="pips">${chips}</div>` : ''}
+  </section>
+  <p class="note">${L('Live score from Spike Sheet: only the score is shared, and it updates by itself.')}</p>
+  <a class="lnk" href="./" style="align-self:flex-start;color:var(--ink)">${L('Open Spike Sheet')} ›</a>`;
+}
+// Any account can write a live score, so what comes in is rebuilt as two names (escaped where shown) and numbers
+const liveInt = v => Math.max(0, Math.min(999, parseInt(v, 10) || 0));
+window.SS_liveSeen = d => { if (!S.watch) return;
+  S.watch.data = d && typeof d === 'object' ? {home:String(d.home || ''), opp:String(d.opp || ''), away:d.away === true, done:d.done === true, cur:liveInt(d.cur) || 1, at:+d.at > 0 ? +d.at : Date.now(),
+    won:[0, 1].map(i => liveInt((d.won || [])[i])), sets:(Array.isArray(d.sets) ? d.sets : []).slice(0, 9).map(s => ({n:liveInt(s && s.n), u:liveInt(s && s.u), t:liveInt(s && s.t)}))} : null;
+  render(); };
+// a finished match on a phone that is not signed in: the one way to keep it if the phone is lost, changed or cleaned
+const keepCard = m => m.done && !S.user && !LS.get('ss.uid') ? `<section class="panel"><p style="margin:0"><b>${L('This match is only on this phone.')}</b> ${L('Sign in with Google to keep your matches if the phone is lost, changed or cleaned.')}</p><button class="btn btn-or" id="b-signin">${L('Sign in with Google')}</button></section>` : '';
 
 /* ---------- more stats: folded sections under every report and season ---------- */
-// One pass over a match's rallies, per set: the biggest lead each way, ties, lead changes, points from 20-all
-// (10-all in the deciding set), the side-out after each pass grade, and our serving turns (a turn starts with
-// our first serve of the set or when we win the serve back). Typed-in points count for the score only.
+// One pass over a match's rallies, per set: the biggest lead each way, points from 20-all (10-all in the deciding
+// set), the side-out after each pass grade, and our serving turns (a turn starts with our first serve of the set
+// or when we win the serve back). Typed-in points count for the score only.
 function rallyWalk(m){
   const out = {};
   (m.log||[]).forEach(e => {
-    const x = out[e.set] || (out[e.set] = {us:0, them:0, lead:{us:0, them:0}, ties:0, changes:0, leader:null, clutch:{us:0, them:0},
+    const x = out[e.set] || (out[e.set] = {us:0, them:0, lead:{us:0, them:0}, clutch:{us:0, them:0},
       pass:{3:[0, 0], 2:[0, 0], 1:[0, 0]}, pg:null, srv:firstServer(m, e.set), turnOf:null, turns:0, run:0, best:0});
     if (e.k === 'p3' || e.k === 'p2' || e.k === 'p1') x.pg = e.k[1];
     if (e.k !== 'us' && e.k !== 'them') return;
@@ -2813,10 +3069,8 @@ function rallyWalk(m){
     if (x.srv === 'us'){ if (x.turnOf !== 'us'){ x.turns++; x.run = 0; } if (w === 'us') x.best = Math.max(x.best, ++x.run); }
     x.turnOf = x.srv;
     x[w]++; x.srv = w;
-    const d = x.us - x.them, ld = d > 0 ? 'us' : d < 0 ? 'them' : x.leader;
-    if (d > 0) x.lead.us = Math.max(x.lead.us, d); else if (d < 0) x.lead.them = Math.max(x.lead.them, -d); else x.ties++;
-    if (x.leader && ld !== x.leader) x.changes++;
-    x.leader = ld;
+    const d = x.us - x.them;
+    if (d > 0) x.lead.us = Math.max(x.lead.us, d); else if (d < 0) x.lead.them = Math.max(x.lead.them, -d);
   });
   return out;
 }
@@ -2877,14 +3131,14 @@ function teamMore(ms, season){
   // typed-in points (Fix score, a late start): in the totals, with no stat
   const typed = ms.reduce((t, m) => { (m.log||[]).forEach(e => { if (e.late && (e.k === 'us' || e.k === 'them')) t[e.k]++; }); return t; }, {us:0, them:0});
   const sv = sumKeys(ms.map(m => serveStats(m).tot), ['so', 'soOf', 'bp', 'bpOf']), us = ps.earned + ps.theirErr + typed.us, them = ps.given + ps.theyEarned + typed.them;
-  const t = {lead:{us:0, them:0}, ties:0, changes:0, clutch:{us:0, them:0}, pass:{3:[0, 0], 2:[0, 0], 1:[0, 0]}, turns:0, best:0, back:0, run:{us:0, them:0}, close:[0, 0], to:{us:[0, 0], them:[0, 0]}};
+  const t = {clutch:{us:0, them:0}, pass:{3:[0, 0], 2:[0, 0], 1:[0, 0]}, turns:0, best:0, back:0, run:{us:0, them:0}, close:[0, 0], to:{us:[0, 0], them:[0, 0]}};
   let sets = 0;
   ms.forEach(m => {
     const wk = rallyWalk(m), tos = afterTimeouts(m), a = analyze(m);
     ['us', 'them'].forEach(k => { t.to[k][0] += tos[k][0]; t.to[k][1] += tos[k][1]; });
     Object.keys(wk).map(Number).forEach(n => { const x = wk[n], sc = a.score[n]; if (!sc || !(sc.us || sc.them) || typedOnly(m, n)) return;
-      sets++; ['us', 'them'].forEach(k => { t.lead[k] = Math.max(t.lead[k], x.lead[k]); t.clutch[k] += x.clutch[k]; });
-      t.ties += x.ties; t.changes += x.changes; t.turns += x.turns; t.best = Math.max(t.best, x.best);
+      sets++; ['us', 'them'].forEach(k => { t.clutch[k] += x.clutch[k]; });
+      t.turns += x.turns; t.best = Math.max(t.best, x.best);
       [3, 2, 1].forEach(g => { t.pass[g][0] += x.pass[g][0]; t.pass[g][1] += x.pass[g][1]; });
       const rn = runs(m, n); t.run.us = Math.max(t.run.us, rn.us); t.run.them = Math.max(t.run.them, rn.them);
       if ((m.ended||[]).includes(n) && sc.us !== sc.them){ const won = sc.us > sc.them; if (won && x.lead.them >= 3) t.back++; if (Math.abs(sc.us - sc.them) === 2) t.close[won ? 0 : 1]++; }
@@ -2903,10 +3157,7 @@ function teamMore(ms, season){
       [L('Their points from our errors'), ps.given, ofThem(ps.given)],
       [ms.length === 1 ? L('With +1 {team}', {team:esc(ms[0].opp)}) : L('With +1 the opponents'), ps.theyEarned, ofThem(ps.theyEarned) + ' · ' + L('their spikes, aces and blocks, or no stat tapped')]]),
     kpiSec(L('Pressure'), [
-      [L('Biggest lead'), `${t.lead.us} : ${t.lead.them}`, sides],
-      [L('Longest run'), `${t.run.us} : ${t.run.them}`, L('points in a row')],
-      [L('Times tied'), t.ties, season ? L('{v} per set', {v:per(t.ties, sets)}) : ''],
-      [L('Lead changes'), t.changes, season ? L('{v} per set', {v:per(t.changes, sets)}) : ''],
+      [L('Longest run'), `${t.run.us} : ${t.run.them}`, sides + ' · ' + L('points in a row')],
       [L('From 20-all'), `${t.clutch.us} : ${t.clutch.them}`, L('points won from 20–20 (10–10 in the deciding set)')],
       [L('Sets won from behind'), t.back, L('after trailing by 3 or more')],
       t.close[0] + t.close[1] ? [L('Sets decided by 2'), `${t.close[0]} – ${t.close[1]}`, L('won – lost')] : null,
@@ -3109,9 +3360,11 @@ function matchView(m){
   return `
   <div class="row" style="align-items:center"><div><div class="kicker">${L(m.result==='W'?'Final · Win':m.result==='L'?'Final · Loss':'Final')}${m.score?' '+esc(m.score):''}</div><h2>${vsLine(m)}</h2></div></div>
   ${scoreBug(m, a, {live:false})}
+  ${keepCard(m)}
   ${tiles(c, {pm:a.pm, min:mins(playMs(m)), pmNote:`<em>${L('{a} won, {b} lost', {a:a.plus, b:a.minus})}</em>`, ptsNote:`<em>${L('{v} per set', {v:fmtVir(pts(c)/setsPlayed(m))})}</em>`})}
   <div class="row">
-    <button class="btn btn-or" id="b-share" data-id="${m.id}" style="flex:1">${L('Share picture')}</button>
+    <button class="btn btn-or" id="b-share" data-id="${m.id}">${L('Share picture')}</button>
+    <button class="btn btn-dk" id="b-sharetext" data-id="${m.id}">${L('Share score')}</button>
   </div>
   <div class="row"><button class="btn btn-dk" id="b-xlsx" data-id="${m.id}">Excel</button><button class="btn btn-dk" id="b-pdf">PDF</button></div>
   ${pctRows(c)}
@@ -3121,7 +3374,7 @@ function matchView(m){
   ${passTable([m])}
   ${playerMore([m])}
   <details class="more sec"><summary>${L('Full table')}</summary><span class="note">${esc(pName())}${S.player.num?' #'+esc(S.player.num):''}</span>${boxTable(rows,L('Sets'),!!m.soloNum)}${legend()}</details>
-  ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>${L('Play by play')}</h3><span class="note">${L('{n} events', {n:a.feed.length})}</span></div><div class="pbpbox">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
+  ${a.feed.length ? `<section class="sec pbpsec"><div class="sec-h"><h3>${L('Play by play')}</h3><span class="note">${L('{n} events', {n:a.feed.length})}</span></div><div class="pbpbox">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
   <div class="row">
     <button class="btn btn-dk" id="b-resume" data-id="${m.id}">${L('Keep tracking')}</button>
     <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${m.id}">${armed?L('Tap again to delete'):L('Delete')}</button>
@@ -3178,7 +3431,7 @@ function historyView(){
     </div>` : `
     <button class="mitem" data-open="${m.id}">${info}
       <span class="p vir">${fmtVir(vir(c))}<small>${L('RTG')}</small></span>
-      <span class="p">${pts(c)}<small>${L('PTS')}</small></span>
+      <span class="p">${pts(c)}<small>${unitW(pts(c), 'PTS')}</small></span>
     </button>`; }).join('')}</div>
   ${S.editList ? `<p class="note">${L('Tap Delete, then tap again to remove the match from every phone.')}</p>` : ''}</section>
   ${passTable(list)}
@@ -3253,43 +3506,77 @@ function adminView(){
       <div class="row"><button class="btn btn-dk" id="b-adback">‹ ${L('Back')}</button><button class="btn btn-dk" id="b-pdf">PDF</button></div>`; } }
   // one account
   if (u){ const p = u.profile || {}, ms = u.matches.slice().sort((a, b) => (b.date||'').localeCompare(a.date||'') || (b.createdAt||0) - (a.createdAt||0));
-    const days = Object.keys(p.days || {}).sort().reverse().slice(0, 14);
+    const days = Object.keys(p.days || {}).sort().reverse().slice(0, 14), iss = admIssues(p).slice().reverse();
     return `${head(esc(p.email || u.uid))}${p.name ? `<p class="note" style="margin:0">${esc(p.name)}</p>` : ''}
-      <div class="kpis">${[[L('Last seen'), ago(p.last)], [L('First seen'), ago(p.first)], [L('Opens'), +p.opens || 0], [L('Days used, last 30'), activeDays(p)],
+      <div class="kpis">${[[L('Last seen'), ago(p.last)], [L('Version'), esc(p.ver || '?')], [L('First seen'), ago(p.first)], [L('Opens'), +p.opens || 0], [L('Days used, last 30'), activeDays(p)],
         [L('Devices'), Object.entries(p.devices || {}).sort((a, b) => b[1] - a[1]).map(([k, t]) => esc(k) + ' (' + ago(t) + ')').join('<br>') || '–'],
         [L('Language'), esc(p.lang || '–')], [L('Last days'), days.map(d => esc(shortDate(d)) + (p.days[d] > 1 ? ' ×' + p.days[d] : '')).join(' · ') || '–']]
         .map(([l, v]) => `<div class="kr"><span>${l}</span><b style="white-space:normal">${v}</b></div>`).join('')}</div></section>
+      <section class="sec"><div class="sec-h"><h3>${L('Problems')}</h3><span class="note">${iss.length ? L('the last {n}', {n:iss.length}) : ''}</span></div>${iss.length ? `<div class="kpis">${iss.map(x => `<div class="kr"><span>${esc(x.m)}</span><b>${ago(x.t)}</b></div>`).join('')}</div>` : `<p class="note" style="margin:0">${L('No problems')}</p>`}</section>
+      ${admPhones(p).length ? `<section class="sec"><div class="sec-h"><h3>${L('Phones')}</h3></div><div class="kpis">${admPhones(p).sort((x, y) => (y.at||0) - (x.at||0)).map(q => `<div class="kr"><span>${esc(q.kind || '?')} · ${esc(q.ver || '?')}</span><b style="white-space:normal">${L('seen {t}', {t:ago(q.at)})} · ${q.up ? L('uploaded {t}', {t:ago(q.up)}) : L('nothing uploaded yet')}${q.wait ? ` · <span class="neg">${nL(+q.wait, '{n} save waiting', '{n} saves waiting')}</span>` : ''}</b></div>`).join('')}</div></section>` : ''}
       ${u.player && (u.player.name || u.player.num) ? `<section class="sec"><div class="sec-h"><h3>${L('Player card')}</h3></div><p class="note" style="margin:0">#${esc(u.player.num || '?')} ${esc(u.player.name || '')}${u.player.pos ? ' · ' + esc(L(u.player.pos)) : ''}</p></section>` : ''}
       ${u.teams.filter(t => t && (t.name || (t.players||[]).length)).map(t => `<section class="sec"><div class="sec-h"><h3>${esc(t.name || L('Team'))}</h3><span class="note">${nL((t.players||[]).length, '{n} player', '{n} players')}</span></div>
         <p class="note" style="margin:0">${(t.players||[]).map(x => '#' + esc(x.num) + ' ' + esc(x.name) + (x.pos ? ' (' + esc(posAb(x.pos)) + ')' : '')).join(' · ')}</p></section>`).join('')}
       <section class="sec"><div class="sec-h"><h3>${L('Matches')}</h3><span class="note">${ms.length}</span></div>
-      <div class="mlist">${ms.map(m => `<button class="mitem" data-amatch="${esc(m.id)}"><span class="res ${m.done ? esc(m.result||'') : 'live'}">${m.done ? resLetter(m.result) : L('LIVE')}</span>
+      <div class="mlist">${ms.map(m => `<button class="mitem" data-amatch="${esc(m.id)}"><span class="res ${admLive(m) ? 'live' : m.done ? esc(m.result||'') : ''}">${admLive(m) ? L('LIVE') : m.done ? resLetter(m.result) : '–'}</span>
         <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${isTeam(m) ? L('whole team') : L('One player')}</div></span>
-        <span class="p">${pts(counts(m))}<small>${L('PTS')}</small></span></button>`).join('') || `<p class="empty">${L('No matches yet.')}</p>`}</div></section>
+        <span class="p">${pts(counts(m))}<small>${unitW(pts(counts(m)), 'PTS')}</small></span></button>`).join('') || `<p class="empty">${L('No matches yet.')}</p>`}</div></section>
       <button class="btn btn-dk" id="b-adback">‹ ${L('Back')}</button>`; }
-  // everyone
-  const allM = users.reduce((t, x) => t + x.matches.length, 0), dayAgo = Date.now() - 864e5, weekAgo = Date.now() - 7 * 864e5;
+  // everyone: the totals, the versions in use, the latest matches, then each person (a problem or a live match marked)
+  const now = Date.now(), dayAgo = now - 864e5, weekAgo = now - 7 * 864e5, seen = x => (x.profile||{}).last || 0;
+  const all = users.flatMap(x => x.matches.map(m => ({m, x}))), probs = x => admIssues(x.profile).filter(i => i.t > weekAgo);
+  const count = vals => Object.entries(vals.reduce((t, v) => (t[v] = (t[v] || 0) + 1, t), {})).sort((a, b) => b[1] - a[1]).map(([k, n]) => esc(k) + ' ×' + n).join(' · ');
+  const recent = all.slice().sort((a, b) => (b.m.updatedAt || b.m.createdAt || 0) - (a.m.updatedAt || a.m.createdAt || 0)).slice(0, 8);
+  // came back: of the accounts old enough to tell (matches on two days, or the 1st over 30 days ago), those whose
+  // 2nd match day came within 30 days of the 1st; unfinished: left open over a day (confusion, or a lost phone)
+  const dayOf = t => new Date(t).toDateString(), firsts = users.map(x => x.matches.map(m => m.createdAt || 0).filter(Boolean).sort((p, q) => p - q)
+    .filter((t, i, a) => !i || dayOf(t) !== dayOf(a[i-1]))).filter(t => t.length >= 2 || (t.length && now - t[0] > 30 * 864e5));
+  const back = firsts.filter(t => t.length >= 2 && t[1] - t[0] <= 30 * 864e5).length, open = all.filter(({m}) => !m.done && now - (m.updatedAt || m.createdAt || 0) > 864e5).length;
+  const upOf = p => { const ph = admPhones(p); return {up:Math.max(0, ...ph.map(q => q.up || 0)), wait:ph.reduce((t, q) => t + (+q.wait || 0), 0)}; };
   return `${head(nL(users.length, '{n} person', '{n} people'))}
-    <p class="note" style="margin:0">${nL(allM, '{n} match', '{n} matches')} · ${L('{d} used the app today, {w} this week', {d:users.filter(x => ((x.profile||{}).last||0) > dayAgo).length, w:users.filter(x => ((x.profile||{}).last||0) > weekAgo).length})}</p>
-    <p class="note" style="margin:0">${L('Someone shows here after opening this version of the app once while signed in.')}</p>
+    <p class="note" style="margin:0">${L('Someone shows here after opening this version of the app once while signed in.')} ${L('People who never sign in keep their matches on their phone only.')}</p>
     <button class="btn btn-dk" id="b-adload">${L('Read again')}</button></section>
-    <div class="mlist">${users.map(x => { const p = x.profile || {}, team = x.matches.filter(isTeam).length;
-      return `<button class="mitem adu" data-auid="${esc(x.uid)}"><span><div class="t">${esc(p.email || x.uid)}</div>
-        <div class="d">${L('Last seen')} ${ago(p.last)} · ${nL(+p.opens || 0, '{n} open', '{n} opens')} · ${nL(activeDays(p), '{n} day in 30', '{n} days in 30')}</div>
-        <div class="d">${nL(x.matches.length, '{n} match', '{n} matches')} (${L('{t} team, {p} one player', {t:team, p:x.matches.length - team})})${x.teams.filter(t => t && t.name).map(t => ' · ' + esc(t.name)).join('')}</div></span></button>`; }).join('')}</div>`;
+    <div class="tiles">
+      <div class="tile hero"><b>${users.filter(x => seen(x) > weekAgo).length}</b><span>${L('Active this week')}</span><em>${L('{d} today', {d:users.filter(x => seen(x) > dayAgo).length})}</em></div>
+      <div class="tile"><b>${all.length}</b><span>${L('Matches')}</span><em>${L('{n} this week', {n:all.filter(({m}) => (m.createdAt||0) > weekAgo).length})}</em></div>
+      <div class="tile"><b>${all.filter(({m}) => admLive(m)).length}</b><span>${L('Live now')}</span></div>
+      <div class="tile"><b class="${users.some(x => probs(x).length) ? 'neg' : ''}">${users.filter(x => probs(x).length).length}</b><span>${L('Problems')}</span><em>${L('phones, last 7 days')}</em></div>
+      <div class="tile"><b>${firsts.length ? back + '/' + firsts.length : '–'}</b><span>${L('Came back')}</span><em>${L('a 2nd match within 30 days')}</em></div>
+      <div class="tile"><b class="${open ? 'neg' : ''}">${open}</b><span>${L('Unfinished')}</span><em>${L('matches open over a day')}</em></div>
+    </div>
+    <div class="kpis">
+      <div class="kr"><span>${L('Versions')}</span><b style="white-space:normal">${count(users.map(x => (x.profile||{}).ver || '?'))}</b></div>
+      <div class="kr"><span>${L('Devices')}</span><b style="white-space:normal">${count(users.map(x => (x.profile||{}).kind || '?'))}</b></div>
+    </div>
+    ${recent.length ? `<section class="sec"><div class="sec-h"><h3>${L('Recent matches')}</h3></div><div class="mlist">${recent.map(({m, x}) => `<button class="mitem" data-arecent="${esc(x.uid)}|${esc(m.id)}"><span class="res ${admLive(m) ? 'live' : m.done ? esc(m.result||'') : ''}">${admLive(m) ? L('LIVE') : m.done ? resLetter(m.result) : '–'}</span>
+      <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${esc((x.profile||{}).email || x.uid)}</div></span><span class="p">${pts(counts(m))}<small>${unitW(pts(counts(m)), 'PTS')}</small></span></button>`).join('')}</div></section>` : ''}
+    <section class="sec"><div class="sec-h"><h3>${L('People')}</h3></div>
+    <div class="mlist">${users.slice().sort((a, b) => probs(b).length - probs(a).length || seen(b) - seen(a)).map(x => { const p = x.profile || {}, team = x.matches.filter(isTeam).length, pr = probs(x).length, lv = x.matches.some(admLive), u = upOf(p);
+      return `<button class="mitem adu" data-auid="${esc(x.uid)}"><span><div class="t">${esc(p.email || x.uid)}${lv ? ` <span class="res live" style="display:inline-grid;vertical-align:1px">${L('LIVE')}</span>` : ''}${pr ? ` <span class="neg" style="font-size:13px">⚠ ${nL(pr, '{n} problem', '{n} problems')}</span>` : ''}</div>
+        <div class="d">${L('Last seen')} ${ago(p.last)} · ${esc(p.ver || '?')} · ${esc(p.kind || '?')} · ${nL(activeDays(p), '{n} day in 30', '{n} days in 30')}${u.up ? ' · ' + L('uploaded {t}', {t:ago(u.up)}) : ''}${u.wait ? ` · <span class="neg">${nL(u.wait, '{n} save waiting', '{n} saves waiting')}</span>` : ''}</div>
+        <div class="d">${nL(x.matches.length, '{n} match', '{n} matches')} (${L('{t} team, {p} one player', {t:team, p:x.matches.length - team})})${x.teams.filter(t => t && t.name).map(t => ' · ' + esc(t.name)).join('')}</div></span></button>`; }).join('')}</div></section>`;
 }
+// a match not finished and changed in the last two hours is being tracked now; a profile's problems, newest last
+const admLive = m => !m.done && Date.now() - (m.updatedAt || 0) < 2 * 3600e3;
+const admIssues = p => (p && Array.isArray(p.issues) ? p.issues : []).filter(i => i && i.t && i.m);
+// (each account writes its own profile: anything that is not a phone's entry is left out)
+const admPhones = p => Object.values((p && p.phones) || {}).filter(q => q && typeof q === 'object');
 
 /* ---------- events ---------- */
 document.addEventListener('click', async e => {
   // a bar in the season chart (SVG, not a button)
   const cs = e.target.closest('[data-csel]'); if (cs){ S.chartSel = cs.dataset.csel; S.armed = null; return render(); }
+  // the time-out is over: a tap anywhere on its page goes back to the match ("Wrong tap" still undoes; Who? still names)
+  if (e.target.closest('.freeze.up') && !e.target.closest('#b-toundo, #b-toname')){ S.who = null; S.whoOther = false; return resumePlay(); }
   const t = e.target.closest('button'); if (!t || (t.type === 'submit' && t.form)) return;
   // A bar opens or closes right under the finger: the second half of a double tap must not pick a number,
   // end a set, save the match, or tap the stat that was under the bar.
   const sinceBar = Date.now() - (S.barAt||0);
   if ((t.dataset.who != null || t.dataset.setby != null || t.dataset.pass != null || t.dataset.to != null) && sinceBar < 350) return;
-  if ((t.dataset.subin != null || t.dataset.libin != null) && sinceBar < 500) return;
+  if ((t.dataset.subin != null || t.dataset.libin != null || t.dataset.lin != null) && sinceBar < 500) return;
   if (['b-setkeep','b-matchkeep','b-resumeplay','b-toundo','b-askno','b-serveskip'].includes(t.id) && sinceBar < 500) return;
+  // ("How it works" opens where "Later" of the first-serve question was: a double tap must not close it for good)
+  if (t.id === 'b-howok' && Date.now() - (S.barClosedAt||0) < 500) return;
   // a "Yes" that opens where the finger just was (End set, then the match-over question): a slow second tap too
   if (['b-setend','b-matchend','b-endyes','b-setgo','b-servey','b-endmatch'].includes(t.id) && sinceBar < 800) return;
   // (Undo sits where Skip was: a double tap on Skip must not take the stat back)
@@ -3299,13 +3586,14 @@ document.addEventListener('click', async e => {
   // any other button closes the "who passed" picker
   // ("Other #" opens the number box inside the bar; Who? names the stats left without one, so it says nothing)
   if (t.dataset.whoother){ S.whoOther = true; render(); $('#who-other')?.focus(); return; }
-  if (t.dataset.pass == null && t.dataset.who == null && t.dataset.setby == null && !t.dataset.stat){ if (!['b-undo','b-whoundo','b-name'].includes(t.id)) whoLeft(); S.tag = null; S.who = null; S.whoOther = false; clearTimeout(S.tagT); }
+  if (t.dataset.pass == null && t.dataset.who == null && t.dataset.setby == null && !t.dataset.stat){ if (!['b-undo','b-whoundo','b-name','b-toname'].includes(t.id)) whoLeft(); S.tag = null; S.who = null; S.whoOther = false; clearTimeout(S.tagT); }
   if (t.dataset.subin == null) S.sub = null;
   if (t.dataset.to == null && t.form?.id !== 'fixform'){ S.toAsk = false; S.fixAsk = false; }
   S.endAsk = false; S.setAsk = null; S.serveAsk = null;
   if (t.dataset.to != null){ if (t.dataset.to) return timeOut(t.dataset.to); S.toAsk = false; S.barClosedAt = Date.now(); return render(); }
   // new-match form: these switch in place, so what is typed stays
   if (t.dataset.ha){ S.nfAway = t.dataset.ha === 'away'; document.querySelectorAll('[data-ha]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ha === t.dataset.ha))); return; }
+  if (t.dataset.lvl){ S.nfBasic = t.dataset.lvl === 'basic'; document.querySelectorAll('[data-lvl]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lvl === t.dataset.lvl))); return; }
   if (t.dataset.slot){
     const keep = {}; document.querySelectorAll('#newform input').forEach(i => keep[i.id] = i.type === 'checkbox' ? i.checked : i.value);
     const late = $('#f-late')?.open;
@@ -3334,7 +3622,10 @@ document.addEventListener('click', async e => {
     const lm = S.activeId && S.matches[S.activeId];
     if (t.dataset.view === 'team' && isTeam(lm) && slotOf(lm) !== S.slot) pickSlot(slotOf(lm));
     if (S.view === 'team' && !waits) dropDraft();
-    S.teamFrom = t.dataset.view === 'team' && !!t.closest('#newform'); S.view = t.dataset.view; S.openId = null; S.editList = false; render(); window.scrollTo(0,0);
+    if (t.dataset.view !== 'live') dropPractice();
+    // the logo on a live score page leads into the app (a scorer may open their own link in the installed app)
+    if (S.watch){ S.watch = null; document.body.classList.remove('watch'); history.replaceState(history.state, '', location.pathname + location.search); syncNote(); }
+    S.teamFrom =t.dataset.view === 'team' && !!t.closest('#newform'); S.view = t.dataset.view; S.openId = null; S.editList = false; render(); window.scrollTo(0,0);
     if (waits) toast(L('Team not saved yet: finish it on the Team page'));
     return; }
   // Season list in remove mode: first tap arms the row, second tap deletes it
@@ -3363,7 +3654,7 @@ document.addEventListener('click', async e => {
   }
   // a player row goes on a second tap (the ✕ sits next to the position box)
   if (t.dataset.rm != null){
-    if (wasArmed !== 'rm-' + t.dataset.rm) return arm('rm-' + t.dataset.rm);
+    if (wasArmed !== 'rm-' + t.dataset.rm){ arm('rm-' + t.dataset.rm); return toast(L('Tap again to delete')); }
     if (Date.now() - (S.armAt||0) < 400){ S.armed = wasArmed; return; }
     const d = readTeamRaw(); d.players.splice(+t.dataset.rm, 1); keepDraft(d); return render(); }
   if (t.id === 'b-addrow') return addRow();
@@ -3375,6 +3666,11 @@ document.addEventListener('click', async e => {
   if (t.dataset.libin != null){ const m = S.matches[S.activeId];
     if (m && t.dataset.libin){ push(m, {k:'sub', out:t.dataset.libout, in:t.dataset.libin}); save(m); toast(L('Sub: #{a} in for #{b}', {a:t.dataset.libin, b:t.dataset.libout})); }
     else S.libSkip = t.dataset.libkey;
+    S.barClosedAt = Date.now(); return render(); }
+  // the libero in for a player in the back row (or Later, for this rotation)
+  if (t.dataset.lin != null){ const m = S.matches[S.activeId];
+    if (m && t.dataset.lin){ push(m, {k:'sub', out:t.dataset.lout, in:t.dataset.lin}); save(m); toast(L('Sub: #{a} in for #{b}', {a:t.dataset.lin, b:t.dataset.lout})); }
+    else S.libInSkip = t.dataset.lkey;
     S.barClosedAt = Date.now(); return render(); }
   // the line-up sheet: pick a spot, put a player in it (a player is in one spot only), who serves first
   if (t.dataset.luspot != null && S.lu){ S.lu.spot = +t.dataset.luspot; return render(); }
@@ -3393,6 +3689,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.metric){ S.chartMetric = t.dataset.metric; return render(); }
   if (t.dataset.auid){ S.adm.user = t.dataset.auid; S.adm.match = null; window.scrollTo(0,0); return render(); }
   if (t.dataset.amatch){ S.adm.match = t.dataset.amatch; window.scrollTo(0,0); return render(); }
+  if (t.dataset.arecent){ const [u, id] = t.dataset.arecent.split('|'); S.adm.user = u; S.adm.match = id; window.scrollTo(0,0); return render(); }
   // the language, kept on this phone; the page is drawn again in it, and what is typed on it stays
   if (t.dataset.lang){
     const keep = [...document.querySelectorAll('#app input[id], #app select[id]')].map(i => [i.id, i.type === 'checkbox' ? i.checked : i.value]), late = $('#f-late')?.open;
@@ -3410,7 +3707,8 @@ document.addEventListener('click', async e => {
     case 'b-endset': return endSet();
     case 'b-setend': case 'b-endyes': return endSet(true);
     case 'b-setgo': return pickSet(+t.dataset.go);
-    case 'b-servey': return tap(t.dataset.k);
+    // "yes, we served": before the set's first point that makes us its first server too
+    case 'b-servey': { const m = S.matches[S.activeId], sc = m && analyze(m).score[S.set]; if (m && !(sc && (sc.us || sc.them))) m.serve = Object.assign({}, m.serve, {[S.set]: 'us'}); return tap(t.dataset.k); }
     case 'b-serveskip': { const m = S.matches[S.activeId]; if (m) S.serveSkip = m.id + ':' + S.set; S.barClosedAt = Date.now(); return render(); }
     // the match ends from a set that has not started (two sets played in a friendly)
     case 'b-endmatch': { const m = S.matches[S.activeId]; if (!m) return; const {w, l} = setsDone(m), sv = savedResult(m, w, l); return finishMatch(sv.result, sv.score); }
@@ -3428,6 +3726,8 @@ document.addEventListener('click', async e => {
     case 'b-undo': case 'b-whoundo': return undo();
     // between rallies: name the stats left without a number, one after another
     case 'b-name': { const m = S.matches[S.activeId], i = m ? firstUnnamed(m) : -1; if (i >= 0){ S.who = {mid:m.id, i, fix:1, chain:1}; S.barAt = Date.now(); } return render(); }
+    // during a time-out: this set's stats without a number, the newest first
+    case 'b-toname': { const m = S.matches[S.activeId], i = m ? lastUnnamed(m, S.set) : -1; if (i >= 0){ S.who = {mid:m.id, i, fix:1, chain:1, set:S.set}; S.barAt = Date.now(); } return render(); }
     // the freeze closes under the finger; a tap synced in from another phone since is not taken back
     case 'b-toundo': { const m = S.matches[S.activeId], l = m?.log?.[m.log.length-1]; S.barClosedAt = Date.now(); return l?.k === 'to' ? undo() : resumePlay(); }
     case 'b-resumeplay': return resumePlay();
@@ -3440,7 +3740,7 @@ document.addEventListener('click', async e => {
     case 'b-lucancel': S.lu = null; S.barClosedAt = Date.now(); return render();
     case 'b-lusave': return saveLineup();
     case 'b-nfback': keepNf(); S.nfStep = Math.max(1, (S.nfStep || 1) - 1); render(); window.scrollTo(0,0); return;
-    case 'b-signin': return window.SS_auth ? window.SS_auth.signIn() : toast(L("Can't reach Google. Check the internet."));
+    case 'b-signin': return window.SS_auth && navigator.onLine !== false ? window.SS_auth.signIn() : toast(L("Can't reach Google. Check the internet."));
     case 'b-signout':
       if (!window.SS_auth) return;
       // signing out takes the matches off this phone: the account must have them all first
@@ -3458,7 +3758,15 @@ document.addEventListener('click', async e => {
       return finishMatch(res, x ? x[1] + '-' + x[2] : sc); }
     case 'b-resume': return resume(t.dataset.id);
     case 'b-closenew': S.choose = false; return closeAndNew();
-    case 'b-continue': S.choose = false; render(); window.scrollTo(0,0); return;
+    case 'b-continue': S.choose = false; markSeen(); render(); window.scrollTo(0,0); return;
+    case 'b-toastact': { const f = S.toastAct; $('#toast').hidden = true; S.toastAct = null; clearTimeout(S.toastT); return f && f(); }
+    case 'b-practice': keepNf(); return startPractice();
+    case 'b-endpractice': dropPractice(); render(); window.scrollTo(0,0); return toast(L('Practice over. Nothing was saved.'));
+    case 'b-level': { const m = S.matches[S.activeId]; if (!m) return; m.basic = !m.basic; LS.set('ss.basic', !!m.basic); save(m); render(); return toast(m.basic ? L('Basic: 6 stat buttons') : L('Full: every stat button')); }
+    case 'b-howok': LS.set('ss.howto', 1); S.barClosedAt = Date.now(); return render();
+    case 'b-sharetext': return shareLine(scoreText(S.matches[t.dataset.id]));
+    case 'b-live': return liveShare(S.matches[S.activeId]);
+    case 'b-livestop': return liveStop(S.matches[S.activeId]);
     case 'b-editlist': S.editList = !S.editList; return render();
     case 'b-del':
       if (S.armed === 'del-'+t.dataset.id) { if (Date.now() - (S.armAt||0) < 400) return; S.armed = null; return removeMatch(t.dataset.id); }
@@ -3495,7 +3803,7 @@ document.addEventListener('submit', e => {
     if (!now || now.length > 1) return toast(L('Score now: type it like 10-12'));
     if (sets.length >= 5) return toast(L('At most 4 sets already played'));
     if ([0, 1].some(i => sets.filter(s => s[i] > s[1-i]).length >= 3)) return toast(L('Those sets already finish the match'));
-    startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:!!$('#f-starter')?.checked, mode:trackMode(), away:!!S.nfAway, sets, now:now[0]});
+    startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:!!$('#f-starter')?.checked, mode:trackMode(), away:!!S.nfAway, basic:nfBasic(), sets, now:now[0]});
   }
   if (e.target.id === 'pform'){
     S.player = Object.assign({}, S.player, {name:$('#p-name').value.trim(), num:$('#p-num').value.trim(), pos:$('#p-pos').value});
@@ -3503,18 +3811,27 @@ document.addEventListener('submit', e => {
   }
 });
 document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#teamform')) keepDraft(readTeamRaw()); });
-window.addEventListener('pagehide', () => { backup(); flush(); });
+// "For coaches" stays open while the page is drawn again (a play-by-play fix, a sync)
+document.addEventListener('toggle', e => { if (e.target.matches && e.target.matches('details.coach')) S.coachOpen = e.target.open; }, true);
+window.addEventListener('pagehide', () => { backup(); flush(); markSeen(); keepOpen(); });
 // back from the browser's page cache: another copy of the app may have changed things meanwhile
 window.addEventListener('pageshow', e => { if (e.persisted){ restore(); if (!isTyping()) render(); } });
 // Android Back (and Escape on a computer): first close the open bar, then go back to Live; only Back on
 // Live with nothing open leaves the app. The time-out screen stays until Resume play.
 function goBack(){
   const m = S.activeId && S.matches[S.activeId];
-  if (S.view === 'live' && m && m.toOn) return true;
+  if (S.view === 'live' && m && m.toOn){ if (S.who){ whoLeft(); S.who = null; S.whoOther = false; S.barClosedAt = Date.now(); render(); } return true; }
   if (S.lu || S.sub){ S.lu = null; S.sub = null; S.barClosedAt = Date.now(); render(); return true; }
   // the new-match steps: Back goes one step back
   if (S.view === 'live' && !m && (S.nfStep || 1) > 1){ keepNf(); S.nfStep--; render(); window.scrollTo(0,0); return true; }
   if (S.who || S.tag || S.toAsk || S.fixAsk || S.endAsk || S.setAsk || S.serveAsk){ whoLeft(); S.who = null; S.whoOther = false; S.tag = null; S.toAsk = false; S.fixAsk = false; S.endAsk = false; S.setAsk = null; S.serveAsk = null; clearTimeout(S.tagT); S.barClosedAt = Date.now(); render(); return true; }
+  // the libero and first-server questions: Back is "Later"
+  if (S.view === 'live' && m && isTeam(m)){
+    const st = court(m, S.set);
+    if (libBar(m)){ S.libSkip = m.id + ':' + S.set + ':' + st.pos.join(','); S.barClosedAt = Date.now(); render(); return true; }
+    if (libInBar(m)){ S.libInSkip = m.id + ':' + S.set; S.barClosedAt = Date.now(); render(); return true; }
+    if (serveBar(m, analyze(m))){ S.serveSkip = m.id + ':' + S.set; S.barClosedAt = Date.now(); render(); return true; }
+  }
   if (S.view !== 'live'){
     // the team page: saved like leaving it by a tab; refused, the typing waits there
     if (S.view === 'team'){ if (teamDirty() && !saveTeamForm()) toast(L('Team not saved yet: finish it on the Team page')); else dropDraft(); }
@@ -3553,9 +3870,14 @@ window.addEventListener('storage', e => {
 });
 
 restore();
+// what was half done when the app closed, under 2 hours ago: the line-up being filled, the new-match steps
+{ const o = LS.get('ss.open'); if (o && Date.now() - o.t < 2*3600e3){
+  if (o.lu && o.lu.mid === S.activeId && o.lu.set === S.set) S.lu = o.lu;
+  if (o.nf && !S.activeId){ S.nfDraft = o.nf.d; S.nfStep = o.nf.step; S.nfAway = o.nf.away; S.nfBasic = o.nf.basic ?? null; } } }
 S.lang = LS.get('ss.lang') || (/^el\b/i.test(navigator.language || '') ? 'el' : 'en');
 // asks the browser not to clear this site's data when the phone runs low (Chrome on Android grants it)
 try{ navigator.storage?.persist?.(); }catch(e){}
+{ const c = (location.hash.match(/^#live=([a-z0-9]{8,32})$/) || [])[1]; if (c) S.watch = {code:c, t0:Date.now()}; }
 S.choose = idleLong();
 render();
 if (S.activeId) keepAwake();
@@ -3587,14 +3909,21 @@ catch(e){ fs = F.getFirestore(app); }
 
 // Same small interface the app already uses: doc(path).set/delete/onSnapshot, collection(path).onSnapshot.
 // Writes return at once: Firestore keeps them queued on the phone until there is signal.
+// This phone on the admin page: a random id kept on the phone, so two phones of one kind stay apart.
+let pid = 'x'; try{ pid = localStorage.getItem('ss.pid') || Math.random().toString(36).slice(2, 10); localStorage.setItem('ss.pid', pid); }catch(e){}
+// waiting: writes the cloud has not confirmed yet (without signal they wait on the phone). reported: the count the
+// admin page last got; once the cloud has every save it is told 0, so an old count never stays red.
+let waiting = 0, reported = 0;
 function database(uid){
   const base = 'users/' + uid + '/';
-  const fail = (e, p) => window.SS_writeFailed(e, p);
+  const ok = r => { waiting--; window.SS_writeOk(r);
+    if (!waiting && reported){ reported = 0; F.setDoc(F.doc(fs, 'users', uid), {phones:{[pid]:{wait:0, up:Date.now()}}}, {merge:true}).catch(() => {}); } };
+  const fail = (e, p) => { waiting--; window.SS_writeFailed(e, p); };
   const meta = {includeMetadataChanges: true};
   return {
     doc: p => ({
-      set: body => { F.setDoc(F.doc(fs, base + p), body).then(window.SS_writeOk, e => fail(e, p)); return Promise.resolve(); },
-      delete: () => { F.deleteDoc(F.doc(fs, base + p)).then(window.SS_writeOk, e => fail(e, p)); return Promise.resolve(); },
+      set: body => { waiting++; F.setDoc(F.doc(fs, base + p), body).then(ok, e => fail(e, p)); return Promise.resolve(); },
+      delete: () => { waiting++; F.deleteDoc(F.doc(fs, base + p)).then(ok, e => fail(e, p)); return Promise.resolve(); },
       onSnapshot: (cb, err) => F.onSnapshot(F.doc(fs, base + p), meta,
         s => cb({exists: s.exists(), data: () => s.data(), metadata: s.metadata}), err),
     }),
@@ -3633,7 +3962,13 @@ async function ping(u){
     const ref = F.doc(fs, 'users', u.uid), had = (await F.getDoc(ref)).data(), now = Date.now(), d = new Date();
     const day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), ua = navigator.userAgent;
     const kind = (/iPhone|iPad/.test(ua) ? 'iPhone' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'Mac' : 'Other') + ((matchMedia('(display-mode: standalone)').matches || navigator.standalone) ? ' app' : ' browser');
-    await F.setDoc(ref, Object.assign({email:u.email || '', name:u.displayName || '', last:now, opens:F.increment(1), days:{[day]:F.increment(1)}, devices:{[kind]:now}, lang:document.documentElement.lang || ''},
+    // the version this phone runs (the saved copy's number), and its recent problems (a phone that is full is one too)
+    const ver = (('caches' in window ? await caches.keys() : []).find(k => /^spike-sheet-v\d+$/.test(k)) || '').replace('spike-sheet-', '');
+    const issues = JSON.parse(localStorage.getItem('ss.issues') || '[]').concat(S.lsFail ? [{t:now, m:'phone storage full'}] : []);
+    // per phone: its kind and version, its last confirmed upload and the saves still waiting
+    const phone = {kind, ver, at:now, up:+localStorage.getItem('ss.upAt') || 0, wait:waiting + Object.keys(S.pending).length};
+    reported = phone.wait;
+    await F.setDoc(ref, Object.assign({email:u.email || '', name:u.displayName || '', last:now, opens:F.increment(1), days:{[day]:F.increment(1)}, devices:{[kind]:now}, phones:{[pid]:phone}, lang:document.documentElement.lang || '', ver, kind, issues},
       had && had.first ? {} : {first:now}), {merge:true});
   }catch(e){}
 }
@@ -3648,6 +3983,15 @@ window.SS_admin = {
     }));
   },
 };
+// The live score link (liveSend): the scorer writes live/<code>, anyone with the code reads it (no sign-in)
+window.SS_live = {
+  put: (code, body) => auth.currentUser ? F.setDoc(F.doc(fs, 'live', code), Object.assign({}, body, {uid:auth.currentUser.uid, at:F.serverTimestamp(), until:F.Timestamp.fromMillis(Date.now() + (body.done ? 3 : 12) * 3600e3)}))
+    : Promise.reject({code:'not signed in'}),
+  stop: code => F.deleteDoc(F.doc(fs, 'live', code)),
+};
+// (nothing in this phone's copy is not an answer: it waits for the server, or says it cannot reach it)
+if (S.watch) F.onSnapshot(F.doc(fs, 'live', S.watch.code), s => { if (!s.exists() && s.metadata.fromCache) return;
+  const d = s.exists() ? s.data() : null; if (d) d.at = d.at && d.at.toMillis ? d.at.toMillis() : Date.now(); window.SS_liveSeen(d); }, () => window.SS_liveSeen(null));
 A.onAuthStateChanged(auth, u => { window.SS_onUser(u ? {uid: u.uid, email: u.email} : null, u ? database(u.uid) : null); if (u) ping(u); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && auth.currentUser) ping(auth.currentUser); });
 </script>

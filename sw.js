@@ -1,9 +1,11 @@
-const CACHE = 'spike-sheet-v30';
+const CACHE = 'spike-sheet-v31';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 // The sign-in and sync code (same version as V in index.html). Saved at install, so the first open
 // after an update also works without signal. Best effort: a miss here must not stop the install.
 const FB = 'https://www.gstatic.com/firebasejs/10.14.1/';
-const LIBS = ['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].map(f => FB + f);
+const LIBS = ['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].map(f => FB + f)
+  // the font stylesheet too: the page waits for it, so after an update on a weak signal it must not come from the network
+  .concat('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Roboto+Condensed:wght@600..800&display=swap');
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE)
     .then(c => c.addAll(SHELL).then(() => Promise.all(LIBS.map(u => c.add(u).catch(() => {})))))
@@ -32,6 +34,7 @@ self.addEventListener('fetch', e => {
     e.waitUntil(net.catch(() => {}));
   } else if (staticLib){
     // only a good copy is kept: a failed download would otherwise be served from here until the next version
-    e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => { if (r.ok || r.type === 'opaque'){ const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); } return r; })));
+    // (ignoreVary: the copy saved at install was asked for by the worker, not by the page's <link>)
+    e.respondWith(caches.match(req, {ignoreVary: true}).then(hit => hit || fetch(req).then(r => { if (r.ok || r.type === 'opaque'){ const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); } return r; })));
   }
 });
