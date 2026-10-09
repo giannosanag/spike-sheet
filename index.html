@@ -65,6 +65,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;pa
 .tabs button{font-size:15px;font-weight:500;padding:6px 0;color:var(--muted);border-bottom:2px solid transparent}
 .tabs button{position:relative}.tabs button::before{content:'';position:absolute;inset:-8px -4px}
 .tabs button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+/* the language, from any page */
+.tabs .langb,body.playing .tabs .langb{align-self:center;padding:2px 7px;border:1.5px solid var(--line);border-radius:999px;font-size:12px;font-weight:700;color:var(--ink)}
 
 .note{font-size:13px;color:var(--muted)}
 .kicker{font-size:13px;font-weight:500;color:var(--muted)}
@@ -94,9 +96,15 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 .team{display:flex;flex-direction:column;gap:4px;min-width:0}
 .team.away{text-align:right;align-items:flex-end}
 .team .nm{font-size:22px;line-height:1;overflow-wrap:normal;word-break:normal;hyphens:none}.team .nm.long{font-size:16px}.team .nm.xl{font-size:14px}@media (max-width:360px){.team .nm.long{font-size:13px}.team .nm.xl{font-size:11px}}
+/* a name never runs into the score: smaller on small phones, and a word still too long breaks inside its own half */
+.team .nm{max-width:100%;overflow-wrap:anywhere}
+@media (max-width:360px){.team .nm{font-size:17px}}
+@media (max-width:340px){.team .nm{font-size:15px}}
 .team .sw{font-size:12px;color:var(--muted)}
 .big{display:flex;align-items:center;gap:8px;font-size:84px;line-height:.85}
 .big i{font-style:normal;color:var(--muted);font-size:50px}
+/* a live score keeps room for two digits: the names do not re-wrap (and every button jump) at 10 */
+.big.live span{min-width:2ch;text-align:center}
 .big span{color:var(--muted)} .big .hi{color:var(--ink)}
 .pips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:0 18px 14px}
 .pip{font-size:12px;font-weight:500;padding:4px 10px;border-radius:999px;background:var(--bg);color:var(--muted)}
@@ -243,6 +251,12 @@ body.playing .big{font-size:56px}body.playing .big i{font-size:34px}
 body.playing .pips{padding-bottom:8px}
 body.playing .plus{padding-bottom:10px}
 body.playing .plus button{padding:13px 10px}
+/* a long team name never makes the score taller: it pushed Undo / Time-out / End set off a small phone
+   (sideways the score has its own column, so the whole name stays) */
+@media (orientation:portrait), (min-height:541px){
+  body.playing .team .nm{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  body.playing .plus button{white-space:nowrap}
+}
 body.playing .sec{gap:5px}
 body.playing .sec h3{font-size:12px;font-weight:600;color:var(--muted)}
 body.playing .stat{min-height:60px;padding:7px 2px 6px;border-radius:14px}
@@ -284,24 +298,31 @@ body.playing .stat .n{font-size:24px}
 .flow .zero{stroke:var(--line)}.flow .to{stroke:var(--muted);stroke-dasharray:3 3}.flow .ln{stroke:var(--ink);stroke-width:1.5;stroke-linejoin:round}
 .flow-k{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
 .flow-k i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;background:var(--volt)}.flow-k i.dn{background:var(--muted);opacity:.5}
-/* the court: net on top, front row IV III II, back row V VI I */
+/* the court: net on top, front row IV III II, the attack line, back row V VI I */
 .field{background:var(--soft);border-radius:20px;padding:12px;display:flex;flex-direction:column;gap:8px}
 .field .net{height:4px;border-radius:2px;background:var(--ink);margin:0 6px}
-.field .six{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.field .six{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 6px}
+.field .six::after{content:'';position:absolute;left:0;right:0;top:50%;border-top:1.5px solid var(--faint);pointer-events:none}
+.field .six button .rn{position:absolute;top:5px;right:9px;font-size:11px;font-weight:600;color:var(--faint)}
+/* the libero wears another colour; who serves next (they serve now) has an empty dot */
+.field .six .lib{background:var(--ink);color:var(--bg)}.field .six .lib small,.field .six .lib .rn{color:var(--faint)}
+.field .six button .srv.nx{background:transparent}
 .field .six button{position:relative;background:var(--bg);border-radius:14px;min-height:52px;font-weight:800;font-size:19px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;font-variant-numeric:tabular-nums}
 .field .six button small{font-size:12px;font-weight:500;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px}
 .field .six button .srv{position:absolute;top:7px;left:8px;margin:0}
-.field .six .srv-on{box-shadow:inset 0 0 0 3px var(--volt)}
+.field .six .srv-on{background:var(--volt);color:var(--volt-ink);box-shadow:none}.field .six .srv-on small,.field .six .srv-on .rn{color:var(--volt-ink);opacity:.7}
 .field .six .empty{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1.5px var(--line)}
 .field .six .sel{box-shadow:inset 0 0 0 3px var(--ink)}
 .field .cap{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
-.field .cap .lnk{padding:6px 2px;position:relative}.field .cap .lnk::before{content:'';position:absolute;inset:-6px -4px}
+.field .cap .lnk{padding:6px 2px;position:relative;flex:none;white-space:nowrap}.field .cap .lnk::before{content:'';position:absolute;inset:-6px -4px}
 /* the line-up sheet: the court on top, the roster below */
 .freeze.lus{justify-content:flex-start;text-align:left;gap:12px;padding-top:calc(16px + env(safe-area-inset-top,0px))}
 .lunums{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
 .lunums button{height:54px;border-radius:12px;background:var(--soft);font-weight:700;font-size:17px;line-height:1.05;font-variant-numeric:tabular-nums}
 .lunums button small{display:block;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 3px;color:var(--muted)}
 .lunums .used{opacity:.55}
+/* Cancel / Save stay in sight at the bottom of a long sheet */
+.freeze.lus .lu-save{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));background:var(--bg);padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -1px 0 var(--line)}
 /* the number bar with a line-up: the six on court first, as they stand */
 .tagbar .nums .court6{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding-bottom:6px;margin-bottom:2px;border-bottom:1px solid var(--faint)}
 /* a phone on its side: the time-out screen scrolls and shrinks instead of cutting off its buttons */
@@ -357,6 +378,8 @@ html{scrollbar-gutter:stable}
 /* a message must never sit on, or take the tap of, a number in an open bar */
 .toast{pointer-events:none}
 body:has(.tagbar) .toast{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}
+/* during a team match messages show at the top, never over the error row or Undo */
+body.playing .toast{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}
 textarea{width:100%;height:150px;background:var(--soft);color:var(--ink);border:0;border-radius:12px;font:14px var(--font);padding:12px}
 /* phone fit: nested wraps must fill, never grow to their content */
 .wrap .wrap{margin:0;width:100%;max-width:none;min-width:0}
@@ -382,11 +405,15 @@ input::-webkit-date-and-time-value{text-align:left}
 .rrow{display:grid;grid-template-columns:58px minmax(0,1fr) 98px auto;gap:6px}
 .rrow .t-pos{font-size:14px;padding:13px 6px;color:var(--ink)}
 .rrow .rm{padding:0 15px;border-radius:12px;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+.rrow .rm.armed{background:var(--neg);color:#fff;border-color:var(--neg)}
 @media (max-width:440px){.tabs{gap:14px}.brand{font-size:24px}}
 @media (max-width:360px){.rrow{grid-template-columns:58px minmax(0,1fr) 44px}.rrow .t-pos{grid-column:1/-1}.rrow .rm{grid-row:1;grid-column:3}}
 .tagbar .two{display:flex;gap:6px}.tagbar .two button{flex:1;font-size:15px}
 .tagbar .two button small{display:block;font-size:12px;font-weight:500;opacity:.75}
 .tagbar button.skip{padding:0 18px;background:transparent;color:var(--bg);box-shadow:inset 0 0 0 1.5px var(--faint);font-size:15px}
+/* a long team name: the button grows, the name keeps to two lines and "2 left" stays in sight */
+.tagbar .two button{height:auto;min-height:44px;padding-block:6px;line-height:1.2}
+.tagbar .two button .tn{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .mates{display:flex;flex-direction:column}
 .mate{display:grid;grid-template-columns:1fr auto auto auto;gap:16px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center}
 .mates button.mate{width:100%;text-align:left;font:inherit;font-size:14px}
@@ -402,8 +429,8 @@ input::-webkit-date-and-time-value{text-align:left}
 /* Greek words are wider: on the smallest phones ("Σερβίς μέσα") a little smaller, so a button stays one line */
 @media (max-width:340px){:root[lang="el"] .stat .l{font-size:11px}}
 /* and the Greek tabs stay beside the name in court mode on a 360 phone (a second header line pushes the buttons down) */
-/* court mode: the header stays one line on the smallest phone, and goes when the phone is sideways (the action row fits) */
-@media (max-width:340px){body.playing .brand>span:last-child{display:none}}
+/* court mode: the header stays one line (the ball without the name, so the language button fits), and goes when the phone is sideways (the action row fits) */
+@media (max-width:419px){body.playing .brand>span:last-child{display:none}}
 @media (orientation:landscape) and (max-height:500px){body.playing header{display:none}}
 @media (max-width:380px){:root[lang="el"] body.playing .tabs{gap:8px}:root[lang="el"] .act.undo .fab-i{display:none}}
 /* the team page: "Πασαδόρος" fits the position box */
@@ -432,6 +459,7 @@ input::-webkit-date-and-time-value{text-align:left}
       <button data-view="history">Season</button>
       <button data-view="player">Player</button>
       <button data-view="team">Team</button>
+      <button class="langb" data-lang="el" lang="el" aria-label="Ελληνικά">ΕΛ</button>
     </nav>
   </header>
   <div id="syncnote" class="note" hidden></div>
@@ -488,12 +516,12 @@ const EL = {
   'Block': 'Μπλοκ', 'point': 'πόντος', 'spike': 'καρφί', 'Defence': 'Άμυνα', 'good dig': 'καλή άμυνα', 'Reception': 'Υποδοχή', 'good pass': 'καλή υποδοχή',
   'Pass 3': 'Υποδοχή 3', 'perfect': 'τέλεια', 'Pass 2': 'Υποδοχή 2', 'good': 'καλή', 'Pass 1': 'Υποδοχή 1', 'poor': 'κακή', 'Pass 0': 'Υποδοχή 0',
   'Serve in': 'Σερβίς μέσα', 'no point': 'χωρίς πόντο', 'Set': 'Πάσα', 'good set': 'καλή πάσα', 'Attack in': 'Επίθεση μέσα',
-  'Serve': 'Σερβίς', 'error': 'λάθος', 'Attack': 'Επίθεση', 'Block out': 'Άουτ από μπλοκ μας', 'their point': 'πόντος τους', 'Net / fault': 'Δίχτυ / φάουλ',
+  'Serve': 'Σερβίς', 'error': 'λάθος', 'Attack': 'Επίθεση', 'Block out': 'Άουτ από μπλοκ μας', 'their point': 'πόντος τους', 'Net / fault': 'Φιλέ / φάουλ',
   'Handling': 'Κράτημα', 'double / lift': 'ή διπλή', 'Position': 'Θέση', 'fault': 'λάθος',
-  'Serve error': 'Λάθος σερβίς', 'Attack error': 'Λάθος επίθεσης', 'Reception error': 'Λάθος υποδοχής', 'Net / fault error': 'Δίχτυ / φάουλ',
+  'Serve error': 'Λάθος σερβίς', 'Attack error': 'Λάθος επίθεσης', 'Reception error': 'Λάθος υποδοχής', 'Net / fault error': 'Φιλέ / φάουλ',
   'Ball handling error': 'Κράτημα ή διπλή', 'Position fault': 'Λάθος θέσης',
   'Points won': 'Πόντοι', 'Good plays': 'Καλές φάσεις', 'Errors': 'Λάθη', 'Our points': 'Δικοί μας πόντοι', 'Our errors · their point': 'Δικά μας λάθη · πόντος τους', 'so far': 'μέχρι τώρα',
-  'Attack in|pad': 'Επίθεση μέσα', 'Block out|pad': 'Μπλοκ μας', 'their point|pad|berr': 'άουτ',
+  'Attack in|pad': 'Επίθ. μέσα', 'Block out|pad': 'Μπλοκ άουτ',
   // playing positions
   'Setter': 'Πάσα', 'Outside': 'Ακραίος/α', 'Opposite': 'Διαγώνιος', 'Middle': 'Κέντρο', 'Libero': 'Λίμπερο',
   'Outside hitter': 'Ακραίος/α', 'Middle blocker': 'Κέντρο', 'Defensive specialist': 'Ειδικός άμυνας',
@@ -501,7 +529,7 @@ const EL = {
   'Player': 'Όνομα', 'Player|name': 'Ατομικά', 'Players': 'Ανά αριθμό', 'Players|count': 'Μέλη', 'Player {n}': 'Αριθμός {n}',
   'the player': 'ο/η παίκτης/τρια', "the player's": 'του/της παίκτη/τριας', "{name}'s": '{name}', 'Us': 'Εμείς', 'them': 'αντίπαλοι',
   'No player': 'Χωρίς αριθμό', 'no player': 'χωρίς αριθμό', 'Team 1': 'Ομάδα 1', 'Team 2': 'Ομάδα 2', '{team} (old)': '{team} (παλιά)',
-  'W': 'Ν', 'L': 'Η', '{w}W {l}L': 'νίκες {w}, ήττες {l}', 'LIVE': 'ΤΩΡΑ', 'vs': '–', 'vs {opp}': '– {opp}', 'Opponent': 'Αντίπαλος',
+  'W': 'Ν', 'L': 'Η', '{w}W {l}L': 'νίκες {w}, ήττες {l}', 'LIVE': 'ΤΩΡΑ', 'vs': '–', 'vs {opp}': '{opp}', 'Opponent': 'Αντίπαλος',
   'S{n}': 'Σ{n}', 'SET {n}': 'ΣΕΤ {n}', 'Set {n}': 'Σετ {n}', 'set {n}': 'σετ {n}', 'Sets': 'Σετ', 'Sets {n}': '{n} σετ',
   'Pts': 'Πόν.', 'Rtg': 'Αξ.', 'Err': 'Λάθ.', 'PTS': 'πόντοι', 'RTG': 'αξιολόγηση', 'ERR': 'λάθη', 'pts': 'πόν.',
   'K': 'Καρφ.', 'E': 'Λάθ.', 'TA': 'Προσπ.', 'Eff': 'Απόδ.', 'Aces': 'Άσοι', 'In %': 'Μέσα %', 'A:E': 'Άσοι:λάθη', 'Avg': 'Μ.Ο.', 'To': 'Προς', 'No': 'Νο',
@@ -572,41 +600,41 @@ const EL = {
   'serving': 'σερβίρει', 'End set {n}': 'Τέλος σετ {n}', 'Serves first?': 'Πρώτο σερβίς;', 'First server in set {n}': 'Πρώτο σερβίς στο σετ {n}',
   "Tap what happened, then the player's number. Not sure? Tap +1 for the team that won the point.": 'Πάτα τι έγινε και μετά τον αριθμό. Αν δεν ξέρεις, πάτα +1 στην ομάδα που πήρε τον πόντο.',
   'Who?': 'Αριθμός;', '{n} to name': 'λείπει {n}', '{n} to name|many': 'λείπουν {n}', 'all named': 'όλα έτοιμα', 'Whole team · tap a stat, then the number': 'Όλη η ομάδα · πάτα τη φάση και μετά τον αριθμό',
-  'Points': 'Πόντοι', 'Rating': 'Αξιολόγηση', 'Play by play': 'Φάση-φάση', 'tap a line to change the player': 'πάτα μια γραμμή για να αλλάξεις αριθμό',
+  'Points': 'Πόντοι', 'Rating': 'Αξιολόγηση', 'Play by play': 'Φάση‑φάση', 'tap a line to change the player': 'πάτα μια γραμμή για να αλλάξεις αριθμό',
   'Final whistle': 'Τελικό σφύριγμα', 'Switch to {name} only': 'Πέρασε σε ατομικά ({name})', 'Tap again to delete this match': 'Πάτα ξανά για διαγραφή του αγώνα', 'Delete this match': 'Διαγραφή αγώνα',
   'On at {score}, set {n}': 'Μπήκε στο {score}, σετ {n}', 'Off at {score}, set {n}': 'Βγήκε στο {score}, σετ {n}', 'Not on court yet': 'Όχι ακόμα στο γήπεδο',
-  'On court': 'Στο γήπεδο', 'On bench': 'Στον πάγκο', 'Playing now': 'Παίζει τώρα', 'Set break, clock stopped': 'Διάλειμμα σετ, το ρολόι σταμάτησε', 'Not playing': 'Δεν παίζει',
+  'On court': 'Στο γήπεδο', 'On bench': 'Στον πάγκο', 'Playing now': 'Παίζει τώρα', 'Set break, clock stopped': 'Διάλειμμα σετ, το ρολόι σταμάτησε', 'Clock starts at the first point': 'Το ρολόι ξεκινά με τον πρώτο πόντο', 'Not playing': 'Δεν παίζει',
   '{time} played': '{time} στο γήπεδο', 'Take off court': 'Βγαίνει', 'Put on court': 'Μπαίνει', 'Switch to the whole team': 'Πέρασε σε όλη την ομάδα',
   'back to set {n}': 'στο σετ {n}', 'Undo': 'Αναίρεση', 'nothing yet': 'τίποτα ακόμα',
   'Who passed to {who}': 'Πάσες ανά αριθμό', 'who passed to {who}?': 'πάσα από ποιον αριθμό;', 'Other number': 'Άλλος αριθμός', 'Add': 'Προσθήκη', 'None': 'Κανένας',
-  "Don't know": 'Δεν ξέρω', 'Other': 'Άλλος', 'number': 'αριθμός', 'Later': 'Αργότερα', 'Who set it': 'Ποιος έδωσε την πάσα', 'Which player': 'Ποιος αριθμός',
+  "Don't know": 'Δεν ξέρω', 'Other': 'Άλλος', 'number': 'αριθμός', 'Later': 'Αργότερα', 'Who set it': 'Ποιος αριθμός έδωσε την πάσα', 'Which player': 'Ποιος αριθμός',
   'set by?': 'πάσα από;', 'who?': 'αριθμός;', 'Wrong tap, undo': 'Λάθος πάτημα',
   'Set over': 'Τέλος σετ', 'Is set {n} over? ({score})': 'Τελείωσε το σετ {n}; ({score})', 'Yes, end set {n}': 'Ναι, τέλος σετ {n}', 'No, keep playing': 'Όχι, συνεχίζουμε',
   'Answer first: is set {n} over?': 'Απάντησε πρώτα: τελείωσε το σετ {n};', 'Answer first: is the match over?': 'Απάντησε πρώτα: τελείωσε ο αγώνας;', 'Match over': 'Τέλος αγώνα',
   'Is the match over? {team} won {sets} in sets.': 'Τελείωσε ο αγώνας; {team}: νίκη {sets} στα σετ.', 'Is the match over? {team} lost {sets} in sets.': 'Τελείωσε ο αγώνας; {team}: ήττα {sets} στα σετ.',
   'Yes, save the match': 'Ναι, αποθήκευση', 'Keep tracking': 'Συνέχεια καταγραφής',
   'Set {n} has not started. End the match here?': 'Το σετ {n} δεν ξεκίνησε. Να λήξει ο αγώνας εδώ;', 'Yes, end the match': 'Ναι, λήξη αγώνα', 'End the match': 'Λήξη αγώνα',
-  'Set {n}: who serves first?': 'Σετ {n}: ποια ομάδα σερβίρει πρώτη;', 'First serve: {team}': 'Πρώτο σερβίς: {team}', 'Who serves now?': 'Ποιος σερβίρει τώρα;', 'Pick who serves, then Save.': 'Διάλεξε ποιος σερβίρει και πάτα «Αποθήκευση εξάδας».',
-  'The score says {team} serves. Did your team serve? (a rally was missed)': 'Σύμφωνα με το σκορ σερβίρει {team}. Σέρβιρε η ομάδα σου; (κάποια φάση δεν καταγράφηκε)', 'Yes: {stat}': 'Ναι: {stat}',
-  'Time-out: tap Resume play first': 'Τάιμ άουτ: πάτα πρώτα «Συνέχεια παιχνιδιού»', 'Libero #{n} {name} is in the front row: who comes in?': 'Λίμπερο #{n} {name} στην μπροστινή ζώνη: ποιος αριθμός μπαίνει;',
+  'Set {n}: who serves first?': 'Σετ {n}: ποια ομάδα σερβίρει πρώτη;', 'First serve: {team}': 'Πρώτο σερβίς: {team}', 'Who serves now?': 'Ποια ομάδα σερβίρει;', 'Pick who serves, then Save.': 'Διάλεξε ποια ομάδα σερβίρει και πάτα «Αποθήκευση εξάδας».',
+  'The score says {team} serves. Did your team serve? (a rally was missed)': 'Σύμφωνα με το σκορ σερβίρουν οι αντίπαλοι ({team}). Σέρβιρε η ομάδα σου; (κάποια φάση δεν καταγράφηκε)', 'Yes: {stat}': 'Ναι: {stat}',
+  'Time-out: tap Resume play first': 'Τάιμ άουτ: πάτα πρώτα «Συνέχεια παιχνιδιού»', 'Libero #{n} {name} is in the front row: who comes in?': 'Λίμπερο #{n} {name} στην μπροστινή γραμμή: ποιος αριθμός μπαίνει;',
   'Result': 'Αποτέλεσμα', 'Won': 'Νίκη', 'Lost': 'Ήττα', 'Not sure': 'Δεν ξέρω', 'e.g. 3-1': 'π.χ. 3-1',
   // line-up, court, subs
-  'Line-up (optional): the six on court and the server, so aces and serve errors need no number.': 'Εξάδα (προαιρετικά): οι έξι στο γήπεδο και ποιος σερβίρει, ώστε οι άσοι και τα λάθη σερβίς να μη θέλουν αριθμό.',
+  'Line-up (optional): the six on court and the server, so aces and serve errors need no number.': 'Εξάδα (προαιρετικά): οι έξι στο γήπεδο και ο αριθμός που σερβίρει, ώστε οι άσοι και τα λάθη σερβίς να μη θέλουν αριθμό.',
   'Add the line-up': 'Βάλε την εξάδα', 'Court': 'Γήπεδο', 'Position {r}': 'Θέση {r}', 'Points were typed in: check the line-up': 'Γράφτηκαν πόντοι με το χέρι: έλεγξε την εξάδα',
   '#{n} serves · tap a player to sub': 'Σερβίρει το #{n} · πάτα έναν αριθμό για αλλαγή', '#{n} serves': 'σερβίρει το #{n}', 'Next to serve: #{n} · tap a player to sub': 'Επόμενο σερβίς: #{n} · πάτα έναν αριθμό για αλλαγή', 'Tap a player to sub': 'Πάτα έναν αριθμό για αλλαγή',
-  'Line-up · set {n}': 'Εξάδα · σετ {n}', "Tap a spot, then the player standing there. The net is at the top, spot I is the server's.": 'Πάτα μια θέση και μετά τον αριθμό που στέκεται εκεί. Το δίχτυ είναι πάνω, η θέση I είναι του σερβίς.',
-  'Same as set {n}': 'Ίδια με το σετ {n}', 'Clear': 'Καθαρισμός', 'Save line-up': 'Αποθήκευση εξάδας', 'Substitution': 'Αλλαγή',
+  'Line-up · set {n}': 'Εξάδα · σετ {n}', "Tap a spot, then the player standing there. The net is at the top, spot I is the server's.": 'Πάτα μια θέση και μετά τον αριθμό που στέκεται εκεί. Το φιλέ είναι πάνω, η θέση I είναι του σερβίς.',
+  'Same as set {n}': 'Ίδια με το σετ {n}', 'Clear': 'Καθαρισμός', 'Rotate': 'Περιστροφή', 'Rotate back': 'Μία θέση πίσω', 'Save line-up': 'Αποθήκευση εξάδας', 'Substitution': 'Αλλαγή',
   'Sub for #{n} {name}: who comes in?': 'Αλλαγή για το #{n} {name}: ποιος αριθμός μπαίνει;',
   'Time on court': 'Χρόνος στο γήπεδο', 'Rallies': 'Φάσεις', 'from the line-up and subs': 'από την εξάδα και τις αλλαγές', 'sets with a line-up only': 'μόνο τα σετ με εξάδα',
   '{n} set': '{n} σετ', '{n} sets': '{n} σετ', '{n} rally': '{n} φάση', '{n} rallies': '{n} φάσεις',
   'Subs {n} of {max}': 'Αλλαγές {n} από {max}', 'Time-outs {n} of {max}': 'Τάιμ άουτ {n} από {max}', '{n} left|one': 'μένει {n}', '{n} left': 'μένουν {n}',
   '{n} sub left': 'μένει {n} αλλαγή', 'Serve card': 'Σερβίς ανά αριθμό', 'Points: won while serving': 'Πόντοι: όσο σέρβιρε', '{n} subs left': 'μένουν {n} αλλαγές', 'Score flow, set {n}': 'Πορεία σκορ, σετ {n}',
-  'Rotations': 'Περιστροφές', 'Rotation': 'Περιστροφή', 'Setter in {r}': 'Πάσα στο {r}', 'by where the setter stands': 'ανά θέση της πάσας', 'by the player at I (the server)': 'ανά αριθμό στη θέση I (σερβίς)', 'At I': 'Στο I', 'Side-out': 'Σάιντ άουτ', 'Break pts': 'Μπρέικ',
+  'Rotations': 'Περιστροφές', 'Rotation': 'Περιστροφή', 'Setter in {r}': 'Πάσα στο {r}', 'Setters in {r}': 'Πάσες στο {r}', 'No setter on court': 'Χωρίς πάσα στο γήπεδο', 'by where the setter stands': 'ανά θέση της πάσας', 'by the player at I (the server)': 'ανά αριθμό στη θέση I (σερβίς)', 'At I': 'Στο I', 'Side-out': 'Σάιντ άουτ', 'Break pts': 'Μπρέικ',
   'Sets that became points': 'Πάσες που έγιναν πόντοι', 'from "set by"': 'από το «πάσα από»', 'graded 3 / 2 / 1 / 0': 'βαθμός 3 / 2 / 1 / 0',
   // reports
   'Back to team season': 'Πίσω στη σεζόν της ομάδας', 'No team matches yet.': 'Δεν υπάρχουν αγώνες ομάδας ακόμα.', '{n} team match': '{n} αγώνας ομάδας', '{n} team matches': '{n} αγώνες ομάδας',
-  'Pts / match': 'Πόντοι / αγώνα', 'Rtg / match': 'Αξ. / αγώνα', 'Err / match': 'Λάθη / αγώνα', 'best {v} vs {opp}': 'καλύτερο {v} ({opp})', '{v} a match': '{v} ανά αγώνα',
-  'Spike + plasé': 'Καρφί + πλασέ', '{p} of attacks': '{p} των επιθέσεων', '{p} serves in': '{p} σερβίς μέσα', 'Blocks': 'Μπλοκ', '{n} defence': '{n} άμυνα', '{n} defences': '{n} άμυνες',
+  'Pts / match': 'Πόντοι / αγώνα', 'Rtg / match': 'Αξ. / αγώνα', 'Err / match': 'Λάθη / αγώνα', 'best {v} vs {opp}': 'ρεκόρ {v} ({opp})', '{v} a match': '{v} ανά αγώνα',
+  'Spike + plasé': 'Καρφιά + πλασέ', '{p} of attacks': '{p} των επιθέσεων', '{p} serves in': '{p} σερβίς μέσα', 'Blocks': 'Μπλοκ', '{n} defence': '{n} άμυνα', '{n} defences': '{n} άμυνες',
   '{p} clean receptions': '{p} καλές υποδοχές', 'Game log': 'Αγώνες', 'tap for the team report': 'πάτα για την αναφορά της ομάδας', '{n} error': '{n} λάθος', '{n} errors': '{n} λάθη',
   'Box score': 'Πίνακας', 'Match': 'Αγώνας',
   'Only what was tapped with number {n} in team matches.': 'Μόνο ό,τι πατήθηκε με τον αριθμό {n} σε αγώνες ομάδας.',
@@ -622,27 +650,27 @@ const EL = {
   'then {score}': 'επόμενες φάσεις: {score}', '{team} at {score}': '{team} στο {score}',
   'Team flow': 'Ροή ομάδας', 'from the rally score': 'από το σκορ των φάσεων', '{a} of {b}': '{a} από {b}', 'not known yet': 'άγνωστο ακόμα',
   'Break points': 'Μπρέικ πόιντ', 'points won on their serve': 'πόντοι με δικό τους σερβίς', 'points won on our serve': 'πόντοι με δικό μας σερβίς', 'Serves in': 'Σερβίς μέσα',
-  'every rally we served': 'κάθε φάση με δικό μας σερβίς', 'Tap who serves first at the start of each set to see these.': 'Πάτα ποιος σερβίρει πρώτος στην αρχή κάθε σετ για να τα δεις.',
+  'every rally we served': 'κάθε φάση με δικό μας σερβίς', 'Tap who serves first at the start of each set to see these.': 'Πάτα ποια ομάδα σερβίρει πρώτη στην αρχή κάθε σετ για να τα δεις.',
   'Earned': 'Κερδισμένοι', 'our spikes, aces, blocks': 'καρφιά, άσοι, μπλοκ μας', 'their errors, or no stat tapped': 'λάθη τους ή χωρίς στατιστικό',
   'Our errors': 'Δικά μας λάθη', '+1 the opponents': '+1 στους αντιπάλους', 'their spikes, aces and blocks, or no stat tapped': 'καρφιά, άσοι και μπλοκ τους ή χωρίς στατιστικό',
-  'Hitting': 'Επιθέσεις', 'efficiency = (kills − errors) / attempts': 'απόδοση = (καρφιά − λάθη) / προσπάθειες', 'tap "Attack in" too, for attempts and efficiency': 'πάτα και «Επίθεση μέσα» για προσπάθειες και απόδοση', 'Serving': 'Σερβίς', 'in % only when "serve in" is tapped': 'Μέσα % μόνο όταν πατιέται «Σερβίς μέσα»',
+  'Hitting': 'Επιθέσεις', 'Hitting|lead': 'Απόδοση επίθεσης', 'efficiency = (kills − errors) / attempts': 'απόδοση = (καρφιά − λάθη) / προσπάθειες', 'tap "Attack in" too, for attempts and efficiency': 'πάτα και «Επίθεση μέσα» για προσπάθειες και απόδοση', 'Serving': 'Σερβίς', 'in % only when "serve in" is tapped': 'Μέσα % μόνο όταν πατιέται «Σερβίς μέσα»',
   'efficiency {e}': 'απόδοση {e}', 'serves in': 'σερβίς μέσα', 'pass rating {r}': 'βαθμός υποδοχής {r}', 'good receptions': 'καλές υποδοχές', 'none tapped': 'δεν καταγράφηκε',
   'On court the whole set': 'Στο γήπεδο όλο το σετ', 'On court for {a} of {b} rallies': 'Στο γήπεδο για {a} από {b} φάσεις', 'On the bench this set': 'Στον πάγκο σε αυτό το σετ',
   'Leaders': 'Πρώτες θέσεις', 'Spikes': 'Καρφιά', 'Defences': 'Άμυνες', 'Receptions': 'Υποδοχές',
   'Progress': 'Πορεία', 'Chart shows': 'Το γράφημα δείχνει', '{what} per match, last {n} matches': '{what} ανά αγώνα, τελευταίοι {n} αγώνες', '{n} pt': '{n} πόντος', '{n} pts': '{n} πόντοι',
   'rating {r}': 'αξιολόγηση {r}', 'Points from passes by: {list}': 'Πάσες που έγιναν πόντοι: {list}', 'points after their pass': 'πόντοι μετά την πάσα',
-  'Season of': 'Σεζόν για', 'No matches yet.': 'Δεν υπάρχουν αγώνες ακόμα.', 'Season +/-': '+/- σεζόν', 'best {v}': 'καλύτερο {v}', '{n} min': '{n} λεπ.',
+  'Season of': 'Σεζόν για', 'No matches yet.': 'Δεν υπάρχουν αγώνες ακόμα.', 'Season +/-': '+/- σεζόν', 'best {v}': 'ρεκόρ {v}', '{n} min': '{n} λεπ.',
   '+/- on court': '+/- στο γήπεδο', 'Minutes': 'Λεπτά', '{a} won, {b} lost': 'κερδισμένοι {a}, χαμένοι {b}', '{v} per set': '{v} ανά σετ',
   '{n} spell': '{n} είσοδος', '{n} spells': '{n} είσοδοι', 'On at {score} (set {n})': 'Μπήκε στο {score} (σετ {n})', 'off at {score} (set {n})': 'βγήκε στο {score} (σετ {n})',
   'to the end': 'μέχρι το τέλος', '{n} events': '{n} καταγραφές',
   // the picture
   '{v} points per set': '{v} πόντοι ανά σετ', 'score typed in, no stats': 'σκορ με το χέρι, χωρίς στατιστικά',
-  'Whole team · {n} player with stats': 'Όλη η ομάδα · {n} με στατιστικά', 'Whole team · {n} players with stats': 'Όλη η ομάδα · {n} με στατιστικά',
+  'Whole team · {n} player with stats': 'Όλη η ομάδα · {n} μέλος με στατιστικά', 'Whole team · {n} players with stats': 'Όλη η ομάδα · {n} μέλη με στατιστικά',
   // legends
   "R3 / R2 / R1 reception graded 3 (perfect), 2 (good), 1 (poor); RE is the 0 · BH ball handling (double, lift, carry) · PF position fault (the team's, no player).":
     'Υ3 / Υ2 / Υ1 υποδοχή με βαθμό 3 (τέλεια), 2 (καλή), 1 (κακή), το ΛΥ είναι το 0 · ΚΔ κράτημα ή διπλή · ΛΘ λάθος θέσης (της ομάδας, χωρίς αριθμό).',
   "SPK spike · PLA plasé · BLK block · DEF defence · REC good reception · SRV serve in · SET good set · ATT attack kept in play, no point · SE / AE / RE serve, attack, reception error · BO block out (the ball goes out off the player's block, their point) · NF net or fault. Rating: +1 for every point, block or defence, +0.5 for a good reception or set, −1 for every error, −0.5 for a block out.":
-    'ΑΣ άσος · ΚΡ καρφί · ΠΛ πλασέ · ΜΠ μπλοκ · ΑΜ άμυνα · ΥΠ καλή υποδοχή · ΣΡ σερβίς μέσα · ΠΣ καλή πάσα · ΕΠ επίθεση που συνεχίστηκε, χωρίς πόντο · ΛΣ / ΛΕ / ΛΥ λάθος σερβίς, επίθεσης, υποδοχής · ΜΑ άουτ από μπλοκ μας (πόντος τους) · ΔΦ δίχτυ ή φάουλ. Αξιολόγηση: +1 για κάθε πόντο, μπλοκ ή άμυνα, +0,5 για καλή υποδοχή ή πάσα, −1 για κάθε λάθος, −0,5 για άουτ από μπλοκ μας.',
+    'ΑΣ άσος · ΚΡ καρφί · ΠΛ πλασέ · ΜΠ μπλοκ · ΑΜ άμυνα · ΥΠ καλή υποδοχή · ΣΡ σερβίς μέσα · ΠΣ καλή πάσα · ΕΠ επίθεση που συνεχίστηκε, χωρίς πόντο · ΛΣ / ΛΕ / ΛΥ λάθος σερβίς, επίθεσης, υποδοχής · ΜΑ άουτ από μπλοκ μας (πόντος τους) · ΦΦ φιλέ ή φάουλ. Αξιολόγηση: +1 για κάθε πόντο, μπλοκ ή άμυνα, +0,5 για καλή υποδοχή ή πάσα, −1 για κάθε λάθος, −0,5 για άουτ από μπλοκ μας.',
   // more stats
   'More stats': 'Περισσότερα στατιστικά', 'tap a title to open it': 'πάτα έναν τίτλο για να ανοίξει',
   'Points': 'Πόντοι', 'Rally points': 'Σύνολο πόντων', '{a} : {b} per set': '{a} : {b} ανά σετ', 'Point difference': 'Διαφορά πόντων',
@@ -875,10 +903,12 @@ function disconnect(){
   S.unsubs.forEach(u => { try{ u(); }catch(e){} });
   S.unsubs = []; S.db = null; S.pending = {}; S.saveFailed = false; clearTimeout(S.flushT);
 }
-// keepUnsaved: on sign-out, a match the account never took stays on the phone (it is the only copy)
-function clearLocal(keepUnsaved, keepCards){
+// keepUnsaved: on sign-out, a match the account may not hold stays on the phone (it is the only copy): one it
+// never took, one still waiting to be saved (unsent), or every match when it was refusing saves (keepCards)
+// or never sent its list
+function clearLocal(keepUnsaved, keepCards, unsent){
   const had = keepUnsaved && LS.get('ss.cloud'), keep = {};
-  if (Array.isArray(had)) Object.values(S.matches).forEach(m => { if (!had.includes(m.id)) keep[m.id] = m; });
+  if (keepUnsaved) Object.values(S.matches).forEach(m => { if (keepCards || !Array.isArray(had) || !had.includes(m.id) || (unsent && unsent.has(m.id))) keep[m.id] = m; });
   S.matches = keep; S.activeId = null; dropDraft();
   try{ localStorage.removeItem('ss.matches'); }catch(e){} S.oldLeft = false;
   // keepCards: a save was being refused, so the player card and roster may exist only here
@@ -888,7 +918,7 @@ function clearLocal(keepUnsaved, keepCards){
 }
 // Called by the Firebase module whenever the signed-in account changes.
 window.SS_onUser = (u, db) => {
-  const prev = LS.get('ss.uid'), refused = S.saveFailed;
+  const prev = LS.get('ss.uid'), refused = S.saveFailed, unsent = new Set(Object.keys(S.pending).filter(p => p.startsWith('matches/')).map(p => p.slice(8)));
   disconnect();
   if (u){
     // another account used this phone before: never mix their matches in
@@ -899,9 +929,10 @@ window.SS_onUser = (u, db) => {
   } else {
     S.user = null;
     // signed out: take this account's matches off the phone (they stay in the cloud)
-    if (prev){ clearLocal(true, refused); try{ localStorage.removeItem('ss.uid'); }catch(e){} }
+    if (prev){ clearLocal(true, refused, unsent); try{ localStorage.removeItem('ss.uid'); }catch(e){} }
   }
-  syncNote(); render();
+  // (sign-in finishing while someone types: the typing stays, the next tap draws the page)
+  syncNote(); if (!isTyping()) render();
 };
 // The cloud refused a write: keep the match on the phone, say so once, and try again every 20 s.
 window.SS_writeFailed = (e, path) => {
@@ -1085,8 +1116,8 @@ function startMatch(f){
   S.set = (f.sets||[]).length + 1; m.curSet = m.maxSet = S.set;
   if (f.now) pushLate(m, S.set, f.now[0], f.now[1]);
   S.activeId = id; S.choose = false; S.nfAway = false; S.nfDraft = null; S.nfStep = 1;
-  save(m);
   if (f.starter && !isTeam(m)) courtOn(m);
+  save(m);
   keepAwake(); render(); window.scrollTo(0,0);
 }
 function push(m, e){ m.log = (m.log||[]).concat(Object.assign({set:S.set, t:Date.now()}, e)); }
@@ -1146,7 +1177,7 @@ function whoLeft(){
 function setWho(n){
   const m = S.who && S.matches[S.who.mid], e = m && m.log[S.who.i], chain = S.who && S.who.chain;
   // "Don't know": no number, and not asked again (nk); the next one comes up
-  if (n === '?'){ if (e){ e.nk = 1; save(m); } S.whoOther = false; return nextWho(m, chain); }
+  if (n === '?'){ if (e){ e.nk = 1; delete e.p; save(m); } S.whoOther = false; return nextWho(m, chain); }
   n = jnum(n);
   if (e && n){
     e.p = n; delete e.nk;
@@ -1206,6 +1237,9 @@ function timeOut(side){
   if (m.onCourt && m.courtSince){ const before = m.playMs||0; e.onAt = m.courtSince; pauseClock(m); e.seg = m.playMs - before; }
   push(m, e); m.toOn = true; save(m); buzz(); render();
 }
+// A time-out lasts 30 seconds (FIVB): the time-out page counts down in whole seconds and stops at 0:00
+const TO_MS = 30000;
+const toLeft = e => Math.ceil(Math.max(0, TO_MS - (Date.now() - (e.t || Date.now()))) / 1000) * 1000;
 // The clock starts again only if the time-out stopped it (not one called during a set break).
 function resumePlay(){
   const m = S.matches[S.activeId]; if (!m || !m.toOn) return;
@@ -1222,7 +1256,7 @@ function freezeView(m){
     <div class="kicker">${L('Set {n}', {n:e.set})} · ${m.away ? sc.them + '–' + sc.us : sc.us + '–' + sc.them}</div>
     <h2>${L('Time-out')}</h2>
     <div class="fz-team">${esc(e.side === 'us' ? homeName(m) : m.opp)} · ${L('{ord} in this set', {ord})}</div>
-    <div class="fz-clock" id="toclock">${fmtTime(Date.now() - (e.t||Date.now()))}</div>
+    <div class="fz-clock" id="toclock">${fmtTime(toLeft(e))}</div>
     <button class="btn btn-or" id="b-resumeplay">${L('Resume play')}</button>
     <button class="btn btn-dk" id="b-toundo">${L('Wrong tap, undo time-out')}</button>
   </div>`;
@@ -1239,7 +1273,7 @@ function fixScore(us, them){
 }
 function timeoutBar(m){
   // each team's button says how many time-outs it has left in this set
-  const toBtn = side => { const n = Math.max(0, TOS - tosUsed(m, S.set, side)); return `<button data-to="${side}">${esc(side === 'us' ? homeName(m) : m.opp)}<small>${nL(n, '{n} left|one', '{n} left')}</small></button>`; };
+  const toBtn = side => { const n = Math.max(0, TOS - tosUsed(m, S.set, side)); return `<button data-to="${side}"><span class="tn">${esc(side === 'us' ? homeName(m) : m.opp)}</span><small>${nL(n, '{n} left|one', '{n} left')}</small></button>`; };
   if (S.toAsk) return `<div class="tagbar" role="group" aria-label="${L('Time-out')}">
     <div class="q">${L('Time-out: which team?')}</div>
     <div class="two">${m.away ? toBtn('them') + toBtn('us') : toBtn('us') + toBtn('them')}</div>
@@ -1264,7 +1298,8 @@ function pauseClock(m){
 }
 // true when this tap is the one that restarted the clock after a set break (the event is marked rs, so Undo can stop it again)
 function resumeClock(m){ if (m.onCourt && !m.courtSince){ m.courtSince = Date.now(); return true; } return false; }
-function courtOn(m, auto){ m.onCourt = true; m.courtSince = Date.now(); m.stintMs = 0; push(m, auto ? {k:'on', byStat:1} : {k:'on'}); }
+// in a set in play the clock runs from now; before a set's first point (the warm-up, a set break) it waits for that tap
+function courtOn(m, auto){ const sc = analyze(m).score[S.set] || {}; m.onCourt = true; m.courtSince = auto || sc.us || sc.them ? Date.now() : null; m.stintMs = 0; push(m, auto ? {k:'on', byStat:1} : {k:'on'}); }
 function toggleCourt(){
   const m = S.matches[S.activeId]; if (!m) return;
   if (m.onCourt){
@@ -1278,13 +1313,16 @@ function toggleCourt(){
 // (straight after "End set", or after looking at an earlier set). null = the last tap is in this set.
 function undoBack(m){
   const log = m.log||[], last = log[log.length-1];
-  // in the last set "End set" stays on that set: Undo first opens it again
-  if (last) return last.set !== S.set || (S.set >= lastSet(m) && (m.ended||[]).includes(S.set)) ? last.set : null;
+  // in the last set "End set" stays on that set: Undo first opens it again (the set ended on a point: a time-out
+  // or a stat tapped after it is taken back first)
+  if (last) return last.set !== S.set || (S.set >= lastSet(m) && (m.ended||[]).includes(S.set) && (last.k === 'us' || last.k === 'them')) ? last.set : null;
   return S.set > 1 ? S.set - 1 : null;
 }
 function undo(){
   const m = S.matches[S.activeId]; if (!m) return;
   S.keepSet = null; S.who = null;
+  // the first server picked for a set with nothing in it yet: Undo takes the choice back, the question comes again
+  if (m.serve && m.serve[S.set] && !(m.log||[]).some(e => e.set === S.set)){ delete m.serve[S.set]; S.serveSkip = null; save(m); return render(); }
   const back = undoBack(m);
   if (back != null){
     // takes back "End set": that set is open again, and nothing is removed from it yet
@@ -1328,6 +1366,8 @@ function pickSet(n){
 function endSet(force){
   const m = S.matches[S.activeId]; if (!m) return;
   const s = S.set, sc = analyze(m).score[s];
+  // a set already over (looked back at with the set buttons): back to the set in play, nothing to ask
+  if ((m.ended||[]).includes(s)) return pickSet(Math.max(s, m.maxSet||1));
   // a stray tap before the first point must not move the match into the next set
   if (!sc || !(sc.us || sc.them)){ if (scoredSets(analyze(m).score).length){ S.endAsk = 'match'; S.barAt = Date.now(); return render(); } return toast(L('Set {n} has no points yet', {n:s})); }
   if (!force && !setOver(m, analyze(m))){ S.endAsk = true; S.barAt = Date.now(); return render(); }
@@ -1418,8 +1458,8 @@ function resume(id){
   // a match that was over: carry on in the last set played, never in an empty extra set
   const {w, l} = setsWon(m), log = m.log||[];
   if ((w >= winSets(m) || l >= winSets(m)) && log.length && !log.some(e => e.set === (m.curSet||1))) m.curSet = log[log.length-1].set;
-  m.done = false; S.choose = false; m.keepOver = overKey(m); save(m);
-  S.activeId = id; S.set = m.curSet || 1; S.view = 'live'; render(); window.scrollTo(0,0);
+  m.done = false; S.choose = false; m.keepOver = overKey(m); S.activeId = id; save(m);
+  S.set = m.curSet || 1; S.view = 'live'; render(); window.scrollTo(0,0);
 }
 function removeMatch(id){
   delete S.matches[id];
@@ -1444,13 +1484,16 @@ function capsFix(root){
 function applyLang(){
   document.documentElement.lang = S.lang === 'el' ? 'el' : 'en';
   const tabs = {live:'Live', history:'Season', player:'Player|tab', team:'Team'};
-  document.querySelectorAll('.tabs button').forEach(b => { b.textContent = L(tabs[b.dataset.view]); });
+  document.querySelectorAll('.tabs button[data-view]').forEach(b => { b.textContent = L(tabs[b.dataset.view]); });
+  // the language button names the other language, in that language
+  const lb = $('.langb'), to = S.lang === 'el' ? 'en' : 'el';
+  if (lb){ lb.dataset.lang = to; lb.lang = to; lb.textContent = to === 'el' ? 'ΕΛ' : 'EN'; lb.setAttribute('aria-label', to === 'el' ? 'Ελληνικά' : 'English'); }
   const brand = $('.brand'); if (brand) brand.setAttribute('aria-label', L('Spike Sheet, home'));
   $('.tabs')?.setAttribute('aria-label', L('Views'));
 }
 function render(){
   applyLang();
-  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history') || (S.view==='admin' && b.dataset.view==='player'))));
+  document.querySelectorAll('.tabs button[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history') || (S.view==='admin' && b.dataset.view==='player'))));
   const app = $('#app');
   if (S.view === 'live') app.innerHTML = S.activeId && S.matches[S.activeId] ? (S.choose ? chooseView(S.matches[S.activeId]) : liveView(S.matches[S.activeId])) : newView();
   else if (S.view === 'player') app.innerHTML = playerView();
@@ -1468,7 +1511,7 @@ function render(){
   clearInterval(S.timer);
   const m = S.activeId && S.matches[S.activeId];
   if (S.view === 'live' && m && (m.onCourt || m.toOn)) S.timer = setInterval(()=>{ const c = $('#clock'); if (c) c.textContent = fmtTime(playMs(m));
-    const tc = $('#toclock'), e = m.toOn && [...(m.log||[])].reverse().find(x => x.k === 'to'); if (tc && e) tc.textContent = fmtTime(Date.now() - e.t); }, 1000);
+    const tc = $('#toclock'), e = m.toOn && [...(m.log||[])].reverse().find(x => x.k === 'to'); if (tc && e) tc.textContent = fmtTime(toLeft(e)); }, 1000);
 }
 
 // Opening the app on an open match: carry on with it, or save it and start another.
@@ -1507,7 +1550,6 @@ function newView(){
         <div class="pick" role="group" aria-label="${L('Track')}" style="margin-top:14px">
           <button type="button" data-track="team" aria-pressed="${chosen === 'team'}">${L('Whole team')}<small>${L('every player, by number')}</small></button>
           <button type="button" data-track="player" aria-pressed="${chosen === 'player'}">${L('One player')}<small>${esc(S.player.name || L("one player's stats"))}</small></button></div>
-        <button type="button" class="lnk" data-lang="${S.lang === 'el' ? 'en' : 'el'}" lang="${S.lang === 'el' ? 'en' : 'el'}" style="margin-top:14px">${S.lang === 'el' ? 'English' : 'Ελληνικά'}</button>
       </div>
       <div class="step" ${st(2)}>
         ${team ? `<h2>${L('Which team?')}</h2>
@@ -1573,6 +1615,9 @@ const nmLong = n => { const w = Math.max(...String(n).split(/\s+/).map(x => x.le
 const teamCell = (t, side) => `<div class="team${side}"><span class="nm${nmLong(t.name)}"><i class="srv${t.srv ? '' : ' off'}" ${t.srv ? `role="img" aria-label="${L('serving')}"` : 'aria-hidden="true"'}></i>${esc(t.name)}</span><span class="sw">${L('Sets {n}', {n:t.sets})}</span></div>`;
 // sets won: the "3-1" typed at the final whistle wins over the sets tracked (tracking may have stopped early)
 function finalSets(m){ const x = /^(\d+)-(\d+)$/.exec(m.score||''); return x ? {w:+x[1], l:+x[2]} : setsWon(m); }
+// the sets already over as chips ("S1 25–20"), in the hall's order
+const pipsHTML = (m, a) => Object.keys(a.score).map(Number).sort((x,y)=>x-y).filter(n => (m.ended||[]).includes(n))
+  .map(n => { const x = a.score[n]; return `<span class="pip ${x.us>x.them?'w':x.them>x.us?'l':''}">${L('S{n}', {n})} ${m.away ? x.them+'–'+x.us : x.us+'–'+x.them}</span>`; }).join('');
 function scoreBug(m, a, opts){
   const {w, l} = opts.live ? setsWon(m) : finalSets(m);
   // live: the current set's rally score; finished: sets won
@@ -1581,14 +1626,14 @@ function scoreBug(m, a, opts){
   const ord = (a2, b2) => m.away ? b2 + a2 : a2 + b2;
   const us = {name:homeName(m), sets:w, pts:sc.us, srv:opts.serving === 'us'}, them = {name:m.opp, sets:l, pts:sc.them, srv:opts.serving === 'them'};
   const lt = m.away ? them : us, R = m.away ? us : them;
-  const pips = Object.keys(a.score).map(Number).sort((x,y)=>x-y).filter(n => (m.ended||[]).includes(n))
-    .map(n => { const x = a.score[n]; return `<span class="pip ${x.us>x.them?'w':x.them>x.us?'l':''}">${L('S{n}', {n})} ${m.away ? x.them+'–'+x.us : x.us+'–'+x.them}</span>`; }).join('');
+  // court mode: the sets played go under the action row, so a new set never moves the buttons
+  const pips = opts.court ? '' : pipsHTML(m, a);
   return `
   <section class="bug">
     <div class="bug-top"><span class="comp">${esc(fmtDate(m.date))}${m.team?' · '+esc(m.team):''}</span><span class="setflag">${opts.live ? L('Set {n}', {n:s}) : L('Sets')}</span></div>
     <div class="score">
       ${teamCell(lt, '')}
-      <div class="big"><span class="${lt.pts>=R.pts?'hi':''}">${lt.pts}</span><i>:</i><span class="${R.pts>=lt.pts?'hi':''}">${R.pts}</span></div>
+      <div class="big${opts.live ? ' live' : ''}"><span class="${lt.pts>=R.pts?'hi':''}">${lt.pts}</span><i>:</i><span class="${R.pts>=lt.pts?'hi':''}">${R.pts}</span></div>
       ${teamCell(R, ' away')}
     </div>
     ${pips ? `<div class="pips">${pips}</div>` : ''}
@@ -1724,7 +1769,7 @@ function teamLive(m){
   </div>
   </div>
   ${fieldHTML(m)}
-  <section class="bug"><div class="bug-foot">${setSel(m)}<button class="lnk" id="b-fix">${L('Fix score')}</button></div></section>
+  <section class="bug">${(p => p ? `<div class="pips" style="padding-top:14px">${p}</div>` : '')(pipsHTML(m, a))}<div class="bug-foot">${setSel(m)}<button class="lnk" id="b-fix">${L('Fix score')}</button></div></section>
   <section class="player">
     <div class="jersey">${esc((homeName(m)[0]||'T').toUpperCase())}</div>
     <div class="pinfo">
@@ -1881,13 +1926,13 @@ function teamView(){
         <input class="t-num" inputmode="numeric" maxlength="3" autocomplete="off" enterkeyhint="next" value="${esc(p.num)}" placeholder="${L('No')}" aria-label="${L('Number')}">
         <input class="t-pn" autocomplete="off" enterkeyhint="next" value="${esc(p.name)}" placeholder="${L('Name')}" aria-label="${L('Name')}">
         <select class="t-pos" aria-label="${L('Position')}"><option value="">${L('Position')}</option>${POS.map(o => `<option value="${o.k}" ${o.k === p.pos ? 'selected' : ''}>${L(o.l)}</option>`).join('')}</select>
-        <button type="button" class="rm" data-rm="${i}" aria-label="${L('Remove this player')}">✕</button></div>`).join('')}</div>
+        <button type="button" class="rm${S.armed === 'rm-' + i ? ' armed' : ''}" data-rm="${i}" aria-label="${S.armed === 'rm-' + i ? L('Tap again to delete') : L('Remove this player')}">✕</button></div>`).join('')}</div>
       <p id="t-err" class="note" style="color:var(--neg);font-weight:600" role="alert" hidden></p>
       <button type="button" class="btn btn-dk" id="b-addrow">+ ${L('Add player')}</button>
       <label class="check"><input id="t-setby" type="checkbox" ${t.setBy ? 'checked' : ''}> ${L('Ask who set each spike and plasé')}</label>
       <p class="note" style="margin:-6px 0 0">${L('After the number of a spike or plasé, the app asks who passed the ball (for "Sets that became points").')}</p>
       <button class="btn btn-or" type="submit">${L('Save team')}</button>
-      ${S.team.name || S.team.players.length ? `<button type="button" class="btn btn-del ${S.armed === 'delteam' ? 'armed' : ''}" id="b-delteam">${S.armed === 'delteam' ? L('Tap again to delete {team}', {team:teamLabel(S.slot)}) : L('Delete this team')}</button>` : ''}
+      ${S.team.name || S.team.players.length ? `<button type="button" class="btn btn-del ${S.armed === 'delteam' ? 'armed' : ''}" id="b-delteam">${S.armed === 'delteam' ? L('Tap again to delete {team}', {team:esc(teamLabel(S.slot))}) : L('Delete this team')}</button>` : ''}
     </form>
     <p class="note">${L('You can keep two teams. Every player needs a number and a name. A new match asks what to track: {name} only, or a whole team. In a team match you tap the stat, then the number of the player.', {name:esc(pName())})}</p>
   </section>`;
@@ -1944,7 +1989,7 @@ function liveView(m){
   const a = analyze(m), all = counts(m);
   const lastE = m.log?.[m.log.length-1];
   const lastStint = a.stints[a.stints.length-1];
-  const since = m.onCourt && lastStint ? L('On at {score}, set {n}', {score:lastStint.inUs + '–' + lastStint.inThem, n:lastStint.inSet}) : (lastStint ? L('Off at {score}, set {n}', {score:lastStint.outUs + '–' + lastStint.outThem, n:lastStint.outSet}) : L('Not on court yet'));
+  const since = m.onCourt && lastStint ? L('On at {score}, set {n}', {score:ordS(m, lastStint.inUs, lastStint.inThem), n:lastStint.inSet}) : (lastStint ? L('Off at {score}, set {n}', {score:ordS(m, lastStint.outUs, lastStint.outThem), n:lastStint.outSet}) : L('Not on court yet'));
   return `
   ${scoreBug(m, a, {live:true})}
   <section class="player">
@@ -1959,7 +2004,7 @@ function liveView(m){
       </div>
     </div>
     <div class="court ${m.onCourt?'is-on':''}">
-      <div class="cst"><b>${m.onCourt?L('On court'):L('On bench')}</b><span>${m.onCourt?(m.courtSince?L('Playing now'):L('Set break, clock stopped')):L('Not playing')} · ${L('{time} played', {time:`<span id="clock">${fmtTime(playMs(m))}</span>`})}</span></div>
+      <div class="cst"><b>${m.onCourt?L('On court'):L('On bench')}</b><span>${m.onCourt?(m.courtSince?L('Playing now'):scoredSets(a.score).length?L('Set break, clock stopped'):L('Clock starts at the first point')):L('Not playing')} ·${L('{time} played', {time:`<span id="clock">${fmtTime(playMs(m))}</span>`})}</span></div>
       <button id="b-court">${m.onCourt?L('Take off court'):L('Put on court')}</button>
     </div>
   </section>
@@ -2058,7 +2103,8 @@ function setsDone(m){
 }
 function finishForm(m){
   const {w, l} = setsDone(m);
-  const sv = savedResult(m, w, l), guess = sv.result;
+  // Won / Lost is guessed only once a team has the sets to win (a match stopped at 1-0 is "Not sure")
+  const sv = savedResult(m, w, l), guess = m.result || w >= winSets(m) || l >= winSets(m) ? sv.result : '';
   return `<div class="row">
       <label>${L('Result')}<select id="fin-res"><option value="W" ${guess==='W'?'selected':''}>${L('Won')}</option><option value="L" ${guess==='L'?'selected':''}>${L('Lost')}</option><option value="" ${guess===''?'selected':''}>${L('Not sure')}</option></select></label>
       <label>${L('Sets')}<input id="fin-score" placeholder="${L('e.g. 3-1')}" autocomplete="off" value="${esc(sv.score)}"></label>
@@ -2082,7 +2128,7 @@ function boxTable(rows, head, team){
 
 // a stat's short name in the tables (Greek letters in Greek)
 const AB_EL = {ace:'ΑΣ', kill:'ΚΡ', plase:'ΠΛ', block:'ΜΠ', dig:'ΑΜ', pass:'ΥΠ', p3:'Υ3', p2:'Υ2', p1:'Υ1', serve:'ΣΡ', assist:'ΠΣ', att:'ΕΠ',
-  serr:'ΛΣ', aerr:'ΛΕ', rerr:'ΛΥ', berr:'ΜΑ', ferr:'ΔΦ', bhe:'ΚΔ', pos:'ΛΘ'};
+  serr:'ΛΣ', aerr:'ΛΕ', rerr:'ΛΥ', berr:'ΜΑ', ferr:'ΦΦ', bhe:'ΚΔ', pos:'ΛΘ'};
 const abbr = s => S.lang === 'el' && AB_EL[s.k] || s.a;
 const legendTeam = () => `<p class="note">${L("R3 / R2 / R1 reception graded 3 (perfect), 2 (good), 1 (poor); RE is the 0 · BH ball handling (double, lift, carry) · PF position fault (the team's, no player).")}</p>`;
 const legend = () => `<p class="note">${L("SPK spike · PLA plasé · BLK block · DEF defence · REC good reception · SRV serve in · SET good set · ATT attack kept in play, no point · SE / AE / RE serve, attack, reception error · BO block out (the ball goes out off the player's block, their point) · NF net or fault. Rating: +1 for every point, block or defence, +0.5 for a good reception or set, −1 for every error, −0.5 for a block out.")}</p>`;
@@ -2108,8 +2154,8 @@ const WORDS = {ace:['ace','aces'], kill:['spike','spikes'], plase:['plasé','pla
   p3:['perfect pass','perfect passes'], p2:['good pass','good passes'], p1:['poor pass','poor passes'], bhe:['ball handling','ball handling'], pos:['position fault','position faults']};
 const WORDS_EL = {ace:['άσος','άσοι'], kill:['καρφί','καρφιά'], plase:['πλασέ','πλασέ'], block:['μπλοκ','μπλοκ'],
   dig:['άμυνα','άμυνες'], pass:['καλή υποδοχή','καλές υποδοχές'], serve:['σερβίς μέσα','σερβίς μέσα'], assist:['καλή πάσα','καλές πάσες'], att:['επίθεση μέσα','επιθέσεις μέσα'],
-  serr:['σερβίς','σερβίς'], aerr:['επίθεση','επιθέσεις'], rerr:['υποδοχή','υποδοχές'], berr:['άουτ από μπλοκ μας','άουτ από μπλοκ μας'], ferr:['δίχτυ / φάουλ','δίχτυ / φάουλ'],
-  p3:['τέλεια υποδοχή','τέλειες υποδοχές'], p2:['καλή υποδοχή','καλές υποδοχές'], p1:['κακή υποδοχή','κακές υποδοχές'], bhe:['κράτημα / διπλή','κράτημα / διπλή'], pos:['λάθος θέσης','λάθη θέσης']};
+  serr:['σερβίς','σερβίς'], aerr:['επίθεση','επιθέσεις'], rerr:['υποδοχή','υποδοχές'], berr:['άουτ από μπλοκ μας','άουτ από μπλοκ μας'], ferr:['φιλέ / φάουλ','φιλέ / φάουλ'],
+  p3:['τέλεια υποδοχή','τέλειες υποδοχές'], p2:['καλή υποδοχή','καλές υποδοχές'], p1:['κακή υποδοχή','κακές υποδοχές'], bhe:['κράτημα ή διπλή','κράτημα ή διπλή'], pos:['λάθος θέσης','λάθη θέσης']};
 const nWord = (n, k) => n + ' ' + (S.lang === 'el' ? WORDS_EL : WORDS)[k][n === 1 ? 0 : 1];
 const listOf = (c, keys) => keys.filter(k => c[k]).map(k => nWord(c[k], k)).join(', ');
 // Attack / serve / reception as "x of y" and a percentage. Only what was tapped counts.
@@ -2390,14 +2436,25 @@ const court = (m, s, upto) => courtWalk(m, upto)[s] || null;
 const lineupOf = (m, s) => { const e = (m.log||[]).find(x => x.k === 'lineup' && x.set === s); return e ? e.pos : null; };
 const rosterP = (m, n) => (m.roster||[]).find(p => p.num === n) || {num:n, name:''};
 const first = name => String(name||'').split(/\s+/)[0];
+// This match's side-out (rallies won on their serve) with the one setter at spot si
+function rotNow(m, si){
+  const r = {so:0, of:0};
+  courtWalk(m, null, (e, st) => { if (st.unsure || st.serving !== 'them') return;
+    const s = st.pos.filter(n => rosterP(m, n).pos === 'S'); if (s.length !== 1 || st.pos.indexOf(s[0]) !== si) return;
+    r.of++; if (e.k === 'us') r.so++; });
+  return r;
+}
 // The court under the action row: the six with the server marked; a tap on a player subs them
 function fieldHTML(m){
   const st = court(m, S.set);
   if (!st) return `<section class="field"><p class="note" style="margin:0">${L('Line-up (optional): the six on court and the server, so aces and serve errors need no number.')}</p><button class="btn btn-dk" id="b-lineup">${L('Add the line-up')} ›</button></section>`;
+  // the rotation: where the one setter stands, and this match's side-out in that rotation (not known after typed-in points)
+  const setters = st.pos.filter(n => rosterP(m, n).pos === 'S'), si = !st.unsure && setters.length === 1 ? st.pos.indexOf(setters[0]) : -1, ro = si >= 0 ? rotNow(m, si) : null;
   return `<section class="field" aria-label="${L('Court')}">
+    ${ro ? `<div class="cap"><span>${L('Setter in {r}', {r:ROMAN[si]})}${ro.of ? ' · ' + L('Side-out') + ' ' + ro.so + '/' + ro.of : ''}</span></div>` : ''}
     <div class="net" aria-hidden="true"></div>
-    <div class="six">${COURT_ORDER.map(i => { const p = rosterP(m, st.pos[i]), srv = i === 0 && st.serving === 'us';
-      return `<button type="button" data-subspot="${i}" class="${srv ? 'srv-on' : ''}" aria-label="${L('Position {r}', {r:ROMAN[i]})}: #${esc(p.num)} ${esc(p.name)}">${srv ? '<i class="srv"></i>' : ''}${esc(p.num)}<small>${p.pos ? esc(posAb(p.pos)) + ' · ' : ''}${esc(first(p.name))}</small></button>`; }).join('')}</div>
+    <div class="six">${COURT_ORDER.map(i => { const p = rosterP(m, st.pos[i]), srv = i === 0 && st.serving === 'us' && !st.unsure, nx = i === 1 && st.serving === 'them' && !st.unsure;
+      return `<button type="button" data-subspot="${i}" class="${srv ? 'srv-on' : ''}${p.pos === 'L' ? ' lib' : ''}" aria-label="${L('Position {r}', {r:ROMAN[i]})}: #${esc(p.num)} ${esc(p.name)}">${srv ? '<i class="srv"></i>' : nx ? '<i class="srv nx"></i>' : ''}<span class="rn" aria-hidden="true">${ROMAN[i]}</span>${esc(p.num)}<small>${p.pos ? esc(posAb(p.pos)) + ' · ' : ''}${esc(first(p.name))}</small></button>`; }).join('')}</div>
     <div class="cap"><span>${st.unsure ? L('Points were typed in: check the line-up') : st.serving === 'us' ? L('#{n} serves · tap a player to sub', {n:st.pos[0]}) : st.serving === 'them' ? L('Next to serve: #{n} · tap a player to sub', {n:st.pos[1]}) : L('Tap a player to sub')}</span><button class="lnk" id="b-lineup">${L('Line-up')} ›</button></div>
     <div class="cap">${(su => `<span class="${su >= SUBS ? 'neg' : ''}">${L('Subs {n} of {max}', {n:su, max:SUBS})}</span>`)(subsUsed(m, S.set))}${(tu => `<span class="${tu >= TOS ? 'neg' : ''}">${L('Time-outs {n} of {max}', {n:tu, max:TOS})}</span>`)(tosUsed(m, S.set, 'us'))}</div>
   </section>`;
@@ -2415,13 +2472,14 @@ function lineupSheet(m){
   return `<div class="freeze lus" role="dialog" aria-label="${L('Line-up')}">
     <div class="kicker">${L('Line-up · set {n}', {n:lu.set})}</div>
     <div class="field"><div class="net" aria-hidden="true"></div><div class="six">${COURT_ORDER.map(i => { const n = lu.pos[i], p = rosterP(m, n);
-      return `<button type="button" data-luspot="${i}" class="${n ? '' : 'empty'}${lu.spot === i ? ' sel' : ''}">${n ? esc(n) + `<small>${esc(first(p.name))}</small>` : ROMAN[i] + `<small>${i === 0 ? L('serves') : '&nbsp;'}</small>`}</button>`; }).join('')}</div></div>
+      return `<button type="button" data-luspot="${i}" class="${n ? '' : 'empty'}${lu.spot === i ? ' sel' : ''}${n && p.pos === 'L' ? ' lib' : ''}">${n ? `<span class="rn" aria-hidden="true">${ROMAN[i]}</span>` + esc(n) + `<small>${esc(first(p.name))}</small>` : ROMAN[i] + `<small>${i === 0 && lu.serve !== 'them' ? L('serves') : '&nbsp;'}</small>`}</button>`; }).join('')}</div>
+      ${full ? `<div class="cap"><button type="button" class="lnk" id="b-lurotb">↺ ${L('Rotate back')}</button><button type="button" class="lnk" id="b-lurot">${L('Rotate')} ↻</button></div>` : ''}</div>
     <p class="note" style="margin:0">${L('Tap a spot, then the player standing there. The net is at the top, spot I is the server\'s.')}</p>
     <div class="lunums">${(m.roster||[]).map(p => `<button type="button" data-luput="${esc(p.num)}" class="${lu.pos.includes(p.num) ? 'used' : ''}">${esc(p.num)}<small>${p.pos ? esc(posAb(p.pos)) + ' · ' : ''}${esc(first(p.name))}</small></button>`).join('')}</div>
     ${lu.serveKnown ? '' : `<div class="serveq"><span>${lu.started ? L('Who serves now?') : L('Serves first?')}</span><div class="seg" role="group" aria-label="${lu.started ? L('Who serves now?') : L('Serves first?')}">${(m.away ? ['them','us'] : ['us','them']).map(k => `<button type="button" data-luserve="${k}" aria-pressed="${lu.serve === k}">${esc(k === 'us' ? homeName(m) : m.opp)}</button>`).join('')}</div></div>`}
     <div class="row">${prev ? `<button type="button" class="btn btn-dk" id="b-lusame">${L('Same as set {n}', {n:lu.set - 1})}</button>` : ''}<button type="button" class="btn btn-dk" id="b-luclear">${L('Clear')}</button></div>
     ${full && !ok ? `<p class="note" style="margin:0;font-weight:600">${L('Pick who serves, then Save.')}</p>` : ''}
-    <div class="row"><button type="button" class="btn btn-dk" id="b-lucancel">${L('Cancel')}</button><button type="button" class="btn btn-or" id="b-lusave" ${ok ? '' : 'disabled'}>${L('Save line-up')}</button></div>
+    <div class="row lu-save"><button type="button" class="btn btn-dk" id="b-lucancel">${L('Cancel')}</button><button type="button" class="btn btn-or" id="b-lusave" ${ok ? '' : 'disabled'}>${L('Save line-up')}</button></div>
   </div>`;
 }
 function saveLineup(){
@@ -2439,20 +2497,24 @@ function subBar(m){
   // each bench player's minutes so far, to keep playing time fair
   const out = rosterP(m, st.pos[S.sub.i]), bench = (m.roster||[]).filter(p => !st.pos.includes(p.num)), pt = playTime([m]);
   return `<div class="tagbar who" role="group" aria-label="${L('Substitution')}">
-    <div class="q">${L('Sub for #{n} {name}: who comes in?', {n:out.num, name:first(out.name)})} <small style="font-weight:400;opacity:.7">(${(n => nL(n, '{n} sub left', '{n} subs left'))(Math.max(0, SUBS - subsUsed(m, S.set)))})</small></div>
+    <div class="q">${L('Sub for #{n} {name}: who comes in?', {n:esc(out.num), name:esc(first(out.name))})} <small style="font-weight:400;opacity:.7">(${(n => nL(n, '{n} sub left', '{n} subs left'))(Math.max(0, SUBS - subsUsed(m, S.set)))})</small></div>
     <div class="nums">${bench.map(p => `<button data-subin="${esc(p.num)}">${esc(p.num)}<small>${p.pos === 'L' ? posAb('L') + ' · ' : ''}${esc(first(p.name))}</small><small>${minutes((pt[p.num] || {ms:0}).ms)}′</small></button>`).join('')}<button type="button" class="skip" data-subin="">${L('Cancel')}</button></div>
   </div>`;
 }
 // Side-out and break points by rotation (who stood at I), over the given matches
 function rotationHTML(ms){
-  const by = {}, names = {}; let setter = false;
+  const by = {}, names = {}, zero = () => ({so:0, soOf:0, bp:0, bpOf:0}); let setter = false;
   ms.forEach(m => { (m.roster||[]).forEach(p => { if (p.name) names[p.num] = p.name; });
-    courtWalk(m, null, (e, st) => { const si = st.pos.findIndex(n => rosterP(m, n).pos === 'S'); if (si >= 0) setter = true;
-      const k = si >= 0 ? 'z' + si : 'p' + st.pos[0], r = by[k] || (by[k] = {so:0, soOf:0, bp:0, bpOf:0});
+    courtWalk(m, null, (e, st) => { if (st.unsure) return;
+      // by where the setter stands (two setters: both spots), else by the player at I
+      const si = st.pos.map((n, i) => rosterP(m, n).pos === 'S' ? i : -1).filter(i => i >= 0); if (si.length) setter = true;
+      const k = si.length ? 'z' + si.join('') : 'p' + st.pos[0], r = by[k] || (by[k] = zero());
       if (st.serving === 'them'){ r.soOf++; if (e.k === 'us') r.so++; } else { r.bpOf++; if (e.k === 'us') r.bp++; } }); });
-  const rows = Object.entries(by).sort((a, b) => a[0].localeCompare(b[0])); if (!rows.length) return '';
-  const pc = (a, b) => b ? pct100(a, b) + '%' : '–';
-  const label = k => k[0] === 'z' ? L('Setter in {r}', {r:ROMAN[+k.slice(1)]}) : pLabel({num:k.slice(1), name:names[k.slice(1)]||''});
+  // with setters on court, the rallies without one make a single row (not one row per server)
+  if (setter) Object.keys(by).filter(k => k[0] === 'p').forEach(k => { const o = by.n || (by.n = zero()); Object.keys(o).forEach(x => o[x] += by[k][x]); delete by[k]; });
+  const rows = Object.entries(by).sort((a, b) => (a[0] === 'n') - (b[0] === 'n') || a[0].length - b[0].length || a[0].localeCompare(b[0])); if (!rows.length) return '';
+  const pc = (a, b) => b ? pct100(a, b) + '%' : '–', spots = k => [...k.slice(1)].map(i => ROMAN[+i]).join(' + ');
+  const label = k => k === 'n' ? L('No setter on court') : k[0] === 'z' ? L(k.length > 2 ? 'Setters in {r}' : 'Setter in {r}', {r:spots(k)}) : pLabel({num:k.slice(1), name:names[k.slice(1)]||''});
   return `<section class="sec"><div class="sec-h"><h3>${L('Rotations')}</h3><span class="note">${setter ? L('by where the setter stands') : L('by the player at I (the server)')}</span></div>
     <div class="tbl"><table><thead><tr><th>${setter ? L('Rotation') : L('At I')}</th><th>${L('Side-out')}</th><th>${L('Break pts')}</th><th>+/-</th></tr></thead>
     <tbody>${rows.map(([n, r]) => { const pm = (r.so + r.bp) - (r.soOf - r.so) - (r.bpOf - r.bp);
@@ -2482,7 +2544,7 @@ function receptionHTML(rows, total){
 function leadersHTML(rows){
   const named = rows.filter(r => r.num), anyAtt = named.some(r => r.c.att);
   const cats = [[L('Points'), r => pts(r.c), v => v], [L('Spikes'), r => r.c.kill + r.c.plase, v => v], [L('Aces'), r => r.c.ace, v => v], [L('Blocks'), r => r.c.block, v => v],
-    [L('Defences'), r => r.c.dig, v => v], [L('Receptions'), r => r.c.pass + r.c.p3 + r.c.p2, v => v], [L('Hitting'), r => anyAtt && attempts(r.c) >= 10 ? effNum(r.c) : null, (v, r) => fmtEff(r.c)]];
+    [L('Defences'), r => r.c.dig, v => v], [L('Receptions'), r => r.c.pass + r.c.p3 + r.c.p2, v => v], [L('Hitting|lead'), r => anyAtt && attempts(r.c) >= 10 ? effNum(r.c) : null, (v, r) => fmtEff(r.c)]];
   const lines = cats.map(([l, f, show]) => {
     const top = named.map(r => ({r, v:f(r)})).filter(x => x.v != null && x.v > 0).sort((a,b) => b.v - a.v).slice(0, 3);
     return top.length ? `<div class="lead"><span class="lt">${l}</span><span class="lp">${top.map(x => `<button data-tp="${esc(x.r.num)}">#${esc(x.r.num)} ${esc((x.r.name||'').split(/\s+/)[0])} <b>${show(x.v, x.r)}</b></button>`).join('')}</span></div>` : '';
@@ -2986,7 +3048,7 @@ function xlsx(sheets){
 // The match as an Excel file: the match, the box score (every player, or every set for one player),
 // the sets and the play by play. Scores in the hall's order, like the scoreboard.
 function matchSheets(m){
-  const a = analyze(m), team = isTeam(m), cols = STATS.filter(s => team || !s.team), sets = scoredSets(a.score).sort((p, q) => p - q);
+  const a = analyze(m), team = isTeam(m), cols = STATS.filter(s => team || m.soloNum || !s.team), sets = scoredSets(a.score).sort((p, q) => p - q);
   const {w, l} = finalSets(m), r1 = v => Math.round(v * 10) / 10, sv = serveStats(m).sets;
   const info = [[L('Match'), vsText(m)],
     [L('Date'), m.date || ''], [L('Competition'), m.team || ''], [L('Home or away'), L(m.away ? 'Away' : 'Home')],
@@ -3055,10 +3117,10 @@ function matchView(m){
   ${pctRows(c)}
   ${setCards(m, a)}
   ${a.stints.length ? `<section class="sec"><div class="sec-h"><h3>${L('Time on court')}</h3><span class="note">${nL(a.stints.length, '{n} spell', '{n} spells')}</span></div><div class="stints">${a.stints.map(st=>`
-    <div class="stint"><span>${L('On at {score} (set {n})', {score:`<b>${st.inUs}–${st.inThem}</b>`, n:st.inSet})} · ${st.outSet!=null?L('off at {score} (set {n})', {score:`<b>${st.outUs}–${st.outThem}</b>`, n:st.outSet}):L('to the end')}${st.dur?' · '+L('{n} min', {n:mins(st.dur)}):''}</span><b class="${pmClass(st.plus-st.minus)}">${fmtPM(st.plus-st.minus)}</b></div>`).join('')}</div></section>` : ''}
+    <div class="stint"><span>${L('On at {score} (set {n})', {score:`<b>${ordS(m, st.inUs, st.inThem)}</b>`, n:st.inSet})} · ${st.outSet!=null?L('off at {score} (set {n})', {score:`<b>${ordS(m, st.outUs, st.outThem)}</b>`, n:st.outSet}):L('to the end')}${st.dur?' · '+L('{n} min', {n:mins(st.dur)}):''}</span><b class="${pmClass(st.plus-st.minus)}">${fmtPM(st.plus-st.minus)}</b></div>`).join('')}</div></section>` : ''}
   ${passTable([m])}
   ${playerMore([m])}
-  <details class="more sec"><summary>${L('Full table')}</summary><span class="note">${esc(pName())}${S.player.num?' #'+esc(S.player.num):''}</span>${boxTable(rows,L('Sets'))}${legend()}</details>
+  <details class="more sec"><summary>${L('Full table')}</summary><span class="note">${esc(pName())}${S.player.num?' #'+esc(S.player.num):''}</span>${boxTable(rows,L('Sets'),!!m.soloNum)}${legend()}</details>
   ${a.feed.length ? `<section class="sec"><div class="sec-h"><h3>${L('Play by play')}</h3><span class="note">${L('{n} events', {n:a.feed.length})}</span></div><div class="pbpbox">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
   <div class="row">
     <button class="btn btn-dk" id="b-resume" data-id="${m.id}">${L('Keep tracking')}</button>
@@ -3121,7 +3183,7 @@ function historyView(){
   ${S.editList ? `<p class="note">${L('Tap Delete, then tap again to remove the match from every phone.')}</p>` : ''}</section>
   ${passTable(list)}
   ${playerMore(list, true)}
-  <section class="sec"><div class="sec-h"><h3>${L('Season box score')}</h3></div>${boxTable(rows,L('Match'))}${legend()}</section>`;
+  <section class="sec"><div class="sec-h"><h3>${L('Season box score')}</h3></div>${boxTable(rows,L('Match'),list.some(m => m.soloNum))}${legend()}</section>`;
 }
 
 function playerView(){
@@ -3186,14 +3248,14 @@ function adminView(){
     return `${head(vsLine(m))}<p class="note" style="margin:0">${esc(fmtDate(m.date))}${m.team ? ' · ' + esc(m.team) : ''} · ${esc((u.profile||{}).email || u.uid)}</p>
       <p style="margin:0"><b>${L(m.result === 'W' ? 'Won' : m.result === 'L' ? 'Lost' : 'Not sure')} ${esc(m.score || '')}</b> · ${sets.map(n => ordS(m, a.score[n].us, a.score[n].them)).join(', ')}</p></section>
       ${pctRows(c, isTeam(m) ? rallyServes([m]) : null)}
-      <section class="sec"><div class="sec-h"><h3>${L('Box score')}</h3></div>${boxTable(rows, isTeam(m) ? L('Player') : L('Sets'), isTeam(m))}</section>
+      <section class="sec"><div class="sec-h"><h3>${L('Box score')}</h3></div>${boxTable(rows, isTeam(m) ? L('Player') : L('Sets'), isTeam(m) || !!m.soloNum)}</section>
       ${isTeam(m) ? teamMore([m]) : ''}
       <div class="row"><button class="btn btn-dk" id="b-adback">‹ ${L('Back')}</button><button class="btn btn-dk" id="b-pdf">PDF</button></div>`; } }
   // one account
   if (u){ const p = u.profile || {}, ms = u.matches.slice().sort((a, b) => (b.date||'').localeCompare(a.date||'') || (b.createdAt||0) - (a.createdAt||0));
     const days = Object.keys(p.days || {}).sort().reverse().slice(0, 14);
     return `${head(esc(p.email || u.uid))}${p.name ? `<p class="note" style="margin:0">${esc(p.name)}</p>` : ''}
-      <div class="kpis">${[[L('Last seen'), ago(p.last)], [L('First seen'), ago(p.first)], [L('Opens'), p.opens || 0], [L('Days used, last 30'), activeDays(p)],
+      <div class="kpis">${[[L('Last seen'), ago(p.last)], [L('First seen'), ago(p.first)], [L('Opens'), +p.opens || 0], [L('Days used, last 30'), activeDays(p)],
         [L('Devices'), Object.entries(p.devices || {}).sort((a, b) => b[1] - a[1]).map(([k, t]) => esc(k) + ' (' + ago(t) + ')').join('<br>') || '–'],
         [L('Language'), esc(p.lang || '–')], [L('Last days'), days.map(d => esc(shortDate(d)) + (p.days[d] > 1 ? ' ×' + p.days[d] : '')).join(' · ') || '–']]
         .map(([l, v]) => `<div class="kr"><span>${l}</span><b style="white-space:normal">${v}</b></div>`).join('')}</div></section>
@@ -3201,7 +3263,7 @@ function adminView(){
       ${u.teams.filter(t => t && (t.name || (t.players||[]).length)).map(t => `<section class="sec"><div class="sec-h"><h3>${esc(t.name || L('Team'))}</h3><span class="note">${nL((t.players||[]).length, '{n} player', '{n} players')}</span></div>
         <p class="note" style="margin:0">${(t.players||[]).map(x => '#' + esc(x.num) + ' ' + esc(x.name) + (x.pos ? ' (' + esc(posAb(x.pos)) + ')' : '')).join(' · ')}</p></section>`).join('')}
       <section class="sec"><div class="sec-h"><h3>${L('Matches')}</h3><span class="note">${ms.length}</span></div>
-      <div class="mlist">${ms.map(m => `<button class="mitem" data-amatch="${esc(m.id)}"><span class="res ${m.done ? (m.result||'') : 'live'}">${m.done ? resLetter(m.result) : L('LIVE')}</span>
+      <div class="mlist">${ms.map(m => `<button class="mitem" data-amatch="${esc(m.id)}"><span class="res ${m.done ? esc(m.result||'') : 'live'}">${m.done ? resLetter(m.result) : L('LIVE')}</span>
         <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${isTeam(m) ? L('whole team') : L('One player')}</div></span>
         <span class="p">${pts(counts(m))}<small>${L('PTS')}</small></span></button>`).join('') || `<p class="empty">${L('No matches yet.')}</p>`}</div></section>
       <button class="btn btn-dk" id="b-adback">‹ ${L('Back')}</button>`; }
@@ -3213,7 +3275,7 @@ function adminView(){
     <button class="btn btn-dk" id="b-adload">${L('Read again')}</button></section>
     <div class="mlist">${users.map(x => { const p = x.profile || {}, team = x.matches.filter(isTeam).length;
       return `<button class="mitem adu" data-auid="${esc(x.uid)}"><span><div class="t">${esc(p.email || x.uid)}</div>
-        <div class="d">${L('Last seen')} ${ago(p.last)} · ${nL(p.opens || 0, '{n} open', '{n} opens')} · ${nL(activeDays(p), '{n} day in 30', '{n} days in 30')}</div>
+        <div class="d">${L('Last seen')} ${ago(p.last)} · ${nL(+p.opens || 0, '{n} open', '{n} opens')} · ${nL(activeDays(p), '{n} day in 30', '{n} days in 30')}</div>
         <div class="d">${nL(x.matches.length, '{n} match', '{n} matches')} (${L('{t} team, {p} one player', {t:team, p:x.matches.length - team})})${x.teams.filter(t => t && t.name).map(t => ' · ' + esc(t.name)).join('')}</div></span></button>`; }).join('')}</div>`;
 }
 
@@ -3241,7 +3303,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.subin == null) S.sub = null;
   if (t.dataset.to == null && t.form?.id !== 'fixform'){ S.toAsk = false; S.fixAsk = false; }
   S.endAsk = false; S.setAsk = null; S.serveAsk = null;
-  if (t.dataset.to != null){ if (t.dataset.to) return timeOut(t.dataset.to); S.barClosedAt = Date.now(); return render(); }
+  if (t.dataset.to != null){ if (t.dataset.to) return timeOut(t.dataset.to); S.toAsk = false; S.barClosedAt = Date.now(); return render(); }
   // new-match form: these switch in place, so what is typed stays
   if (t.dataset.ha){ S.nfAway = t.dataset.ha === 'away'; document.querySelectorAll('[data-ha]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ha === t.dataset.ha))); return; }
   if (t.dataset.slot){
@@ -3299,7 +3361,11 @@ document.addEventListener('click', async e => {
     if (S.team.players.length){ S.nfStep = 3; render(); window.scrollTo(0,0); return; }
     S.teamFrom = true; S.view = 'team'; render(); window.scrollTo(0,0); return;
   }
-  if (t.dataset.rm != null){ const d = readTeamRaw(); d.players.splice(+t.dataset.rm, 1); keepDraft(d); return render(); }
+  // a player row goes on a second tap (the ✕ sits next to the position box)
+  if (t.dataset.rm != null){
+    if (wasArmed !== 'rm-' + t.dataset.rm) return arm('rm-' + t.dataset.rm);
+    if (Date.now() - (S.armAt||0) < 400){ S.armed = wasArmed; return; }
+    const d = readTeamRaw(); d.players.splice(+t.dataset.rm, 1); keepDraft(d); return render(); }
   if (t.id === 'b-addrow') return addRow();
   // our serve stat while the score says they serve: asked (a missed rally), not refused without a word
   if (t.dataset.stat){ if (t.dataset.off){ S.serveAsk = t.dataset.stat; S.barAt = Date.now(); return render(); } return tap(t.dataset.stat); }
@@ -3327,8 +3393,13 @@ document.addEventListener('click', async e => {
   if (t.dataset.metric){ S.chartMetric = t.dataset.metric; return render(); }
   if (t.dataset.auid){ S.adm.user = t.dataset.auid; S.adm.match = null; window.scrollTo(0,0); return render(); }
   if (t.dataset.amatch){ S.adm.match = t.dataset.amatch; window.scrollTo(0,0); return render(); }
-  // the language, kept on this phone
-  if (t.dataset.lang){ S.lang = t.dataset.lang; LS.set('ss.lang', S.lang); syncNote(); return render(); }
+  // the language, kept on this phone; the page is drawn again in it, and what is typed on it stays
+  if (t.dataset.lang){
+    const keep = [...document.querySelectorAll('#app input[id], #app select[id]')].map(i => [i.id, i.type === 'checkbox' ? i.checked : i.value]), late = $('#f-late')?.open;
+    S.lang = t.dataset.lang; LS.set('ss.lang', S.lang); syncNote(); render();
+    keep.forEach(([id, v]) => { const i = document.getElementById(id); if (i){ if (i.type === 'checkbox') i.checked = v; else i.value = v; } });
+    if (late) $('#f-late').open = true;
+    return; }
   if (t.dataset.open){
     if (t.dataset.open === S.activeId){ S.view = 'live'; } else { S.view = 'match'; S.openId = t.dataset.open; }
     render(); window.scrollTo(0,0); return;
@@ -3363,6 +3434,9 @@ document.addEventListener('click', async e => {
     case 'b-lineup': { const m = S.matches[S.activeId]; return m && openLineup(m); }
     case 'b-lusame': { const m = S.matches[S.activeId], prev = m && S.lu && lineupOf(m, S.lu.set - 1); if (prev){ S.lu.pos = prev.slice(); S.lu.spot = 0; } return render(); }
     case 'b-luclear': if (S.lu){ S.lu.pos = Array(6).fill(''); S.lu.spot = 0; } return render();
+    // a missed rally left the rotation behind (or ahead): move all six one place, as at a side-out (or back)
+    case 'b-lurot': if (S.lu) S.lu.pos = S.lu.pos.slice(1).concat(S.lu.pos[0]); return render();
+    case 'b-lurotb': if (S.lu) S.lu.pos = S.lu.pos.slice(-1).concat(S.lu.pos.slice(0, -1)); return render();
     case 'b-lucancel': S.lu = null; S.barClosedAt = Date.now(); return render();
     case 'b-lusave': return saveLineup();
     case 'b-nfback': keepNf(); S.nfStep = Math.max(1, (S.nfStep || 1) - 1); render(); window.scrollTo(0,0); return;
@@ -3377,9 +3451,10 @@ document.addEventListener('click', async e => {
       toast(L('Signing out…'));
       return window.SS_auth.signOut();
     case 'b-finish': {
-      // "3-1" sets the result; Won with "1-3" is asked about, not saved
+      // "3-1" sets the result (a score that finishes the match: "1-0" of a match stopped early does not);
+      // Won with "1-3" is asked about, not saved
       let res = $('#fin-res').value; const sc = $('#fin-score').value.trim(), x = /^(\d+)\s*[-–:.\/]\s*(\d+)$/.exec(sc);
-      if (x && +x[1] !== +x[2]){ const r = +x[1] > +x[2] ? 'W' : 'L'; if (res && res !== r) return toast(L(res === 'W' ? 'Won with sets {s}? Check the result' : 'Lost with sets {s}? Check the result', {s:x[1] + '-' + x[2]})); res = r; }
+      if (x && +x[1] !== +x[2] && Math.max(+x[1], +x[2]) >= winSets(S.matches[S.activeId])){ const r = +x[1] > +x[2] ? 'W' : 'L'; if (res && res !== r) return toast(L(res === 'W' ? 'Won with sets {s}? Check the result' : 'Lost with sets {s}? Check the result', {s:x[1] + '-' + x[2]})); res = r; }
       return finishMatch(res, x ? x[1] + '-' + x[2] : sc); }
     case 'b-resume': return resume(t.dataset.id);
     case 'b-closenew': S.choose = false; return closeAndNew();
@@ -3439,7 +3514,7 @@ function goBack(){
   if (S.lu || S.sub){ S.lu = null; S.sub = null; S.barClosedAt = Date.now(); render(); return true; }
   // the new-match steps: Back goes one step back
   if (S.view === 'live' && !m && (S.nfStep || 1) > 1){ keepNf(); S.nfStep--; render(); window.scrollTo(0,0); return true; }
-  if (S.who || S.tag || S.toAsk || S.fixAsk || S.endAsk || S.setAsk){ whoLeft(); S.who = null; S.whoOther = false; S.tag = null; S.toAsk = false; S.fixAsk = false; S.endAsk = false; S.setAsk = null; clearTimeout(S.tagT); S.barClosedAt = Date.now(); render(); return true; }
+  if (S.who || S.tag || S.toAsk || S.fixAsk || S.endAsk || S.setAsk || S.serveAsk){ whoLeft(); S.who = null; S.whoOther = false; S.tag = null; S.toAsk = false; S.fixAsk = false; S.endAsk = false; S.setAsk = null; S.serveAsk = null; clearTimeout(S.tagT); S.barClosedAt = Date.now(); render(); return true; }
   if (S.view !== 'live'){
     // the team page: saved like leaving it by a tab; refused, the typing waits there
     if (S.view === 'team'){ if (teamDirty() && !saveTeamForm()) toast(L('Team not saved yet: finish it on the Team page')); else dropDraft(); }

@@ -1,4 +1,4 @@
-const CACHE = 'spike-sheet-v29';
+const CACHE = 'spike-sheet-v30';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 // The sign-in and sync code (same version as V in index.html). Saved at install, so the first open
 // after an update also works without signal. Best effort: a miss here must not stop the install.
@@ -31,6 +31,7 @@ self.addEventListener('fetch', e => {
     e.respondWith(Promise.race([net.then(r => r.ok ? r : saved().then(c => c || r)).catch(saved), slow]));
     e.waitUntil(net.catch(() => {}));
   } else if (staticLib){
-    e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return r; })));
+    // only a good copy is kept: a failed download would otherwise be served from here until the next version
+    e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => { if (r.ok || r.type === 'opaque'){ const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); } return r; })));
   }
 });
