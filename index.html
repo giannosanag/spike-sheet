@@ -1641,6 +1641,7 @@ function render(){
   if (S.watch){ document.body.classList.add('watch'); document.body.classList.remove('playing'); $('#app').innerHTML = watchView(); capsFix($('#app')); clearInterval(S.timer);
     S.timer = setInterval(() => { if (S.watch.data === undefined) return render(); const x = $('#wago'); if (x && S.watch.data) x.textContent = ago(S.watch.data.at); }, 15000); return; }
   document.body.classList.toggle('gate', !S.user && !LS.get('ss.uid'));
+  if (document.body.classList.contains('gate') && location.hostname === OLD_HOST) return location.replace(NEW_HOME + location.hash);
   if (document.body.classList.contains('gate')){ document.body.classList.remove('playing'); clearInterval(S.timer); $('#app').innerHTML = gateView(); capsFix($('#app')); return; }
   document.querySelectorAll('.tabs button[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history') || (S.view==='admin' && b.dataset.view==='player'))));
   const app = $('#app');
@@ -2935,7 +2936,7 @@ function picBars(ctx, c, W, P, y, rs, noErr){
 function picHead(ctx, m, a, sets, W, H, P){
   const {w, l} = finalSets(m);
   ctx.fillStyle = PIC.bg; ctx.fillRect(0, 0, W, H);
-  picText(ctx, 'giannosanag.github.io/spike-sheet', W/2, H-40, {size:24, color:PIC.muted, align:'center'});
+  picText(ctx, 'spike-sheet-theo.firebaseapp.com', W/2, H-40, {size:24, color:PIC.muted, align:'center'});
   // brand + date
   ctx.fillStyle = PIC.volt; ctx.beginPath(); ctx.arc(P+12, 92, 12, 0, 7); ctx.fill();
   picText(ctx, 'SPIKE SHEET', P+36, 108, {w:800, size:46, head:true});
@@ -3052,6 +3053,8 @@ window.SS_liveSeen = d => { if (!S.watch) return;
   S.watch.data = d && typeof d === 'object' ? {home:String(d.home || ''), opp:String(d.opp || ''), away:d.away === true, done:d.done === true, cur:liveInt(d.cur) || 1, at:+d.at > 0 ? +d.at : Date.now(),
     won:[0, 1].map(i => liveInt((d.won || [])[i])), sets:(Array.isArray(d.sets) ? d.sets : []).slice(0, 9).map(s => ({n:liveInt(s && s.n), u:liveInt(s && s.u), t:liveInt(s && s.t)}))} : null;
   render(); };
+// Spike Sheet moved from GitHub Pages to Firebase Hosting (2026-10-09): Google's sign-in helper is on the page's own address there
+const OLD_HOST = 'giannosanag.github.io', NEW_HOME = 'https://spike-sheet-theo.firebaseapp.com/';
 // Signed out: only this page, until Google sign-in
 const gateView = () => `<section class="panel">
     ${S.signErr ? `<p style="margin:0;color:var(--neg)"><b>${L(S.signErr === 'none' ? 'Sign-in did not finish. Try again.' : 'Sign-in failed ({code})', {code:esc(S.signErr)})}</b></p>`
@@ -3900,9 +3903,10 @@ syncNote();
 const V = '10.14.1';
 const CONFIG = {
   apiKey: "AIzaSyApQHL_W_ZD5QDBQIOqApBrRQ75OvgXYgA",
-  // Sign-in helper is self-hosted on this domain (repo giannosanag.github.io, /__/auth/),
-  // so Safari and home-screen apps don't lose the sign-in state between sites.
-  authDomain: "giannosanag.github.io",
+  // The page's own address, so the sign-in never depends on another site's storage (Safari, home-screen apps).
+  // Firebase Hosting serves Google's sign-in helper (/__/auth/) there. The old address keeps its self-hosted copy
+  // only for phones still signed in on it.
+  authDomain: location.hostname === 'giannosanag.github.io' ? 'giannosanag.github.io' : 'spike-sheet-theo.firebaseapp.com',
   projectId: "spike-sheet-theo",
   storageBucket: "spike-sheet-theo.firebasestorage.app",
   messagingSenderId: "617616185148",
@@ -3946,11 +3950,24 @@ function database(uid){
   };
 }
 const provider = new A.GoogleAuthProvider();
+// a wrong account can be swapped
+provider.setCustomParameters({prompt: 'select_account'});
 window.SS_auth = {
-  // Full-page sign-in: works in Safari, Chrome and home-screen apps, where popups don't.
+  // A phone or home-screen app goes to Google in the page itself: a pop-up there opens where it cannot report back.
+  // A computer gets a pop-up, and the page way only when the browser blocks it.
   async signIn(){
-    try{ sessionStorage.setItem('ss.signing', '1'); await A.signInWithRedirect(auth, provider); }
-    catch(e){ sessionStorage.removeItem('ss.signing'); window.SS_toast(window.SS_L('Sign-in failed ({code})', {code:e.code})); }
+    const redirect = async () => {
+      try{ sessionStorage.setItem('ss.signing', '1'); await A.signInWithRedirect(auth, provider); }
+      catch(e){ sessionStorage.removeItem('ss.signing'); window.SS_signErr(e.code || 'unknown'); }
+    };
+    const phone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches
+      || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+    if (phone) return redirect();
+    try{ await A.signInWithPopup(auth, provider); }
+    catch(e){
+      if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') return redirect();
+      if (e.code !== 'auth/cancelled-popup-request' && e.code !== 'auth/popup-closed-by-user') window.SS_signErr(e.code || 'unknown');
+    }
   },
   // Signing out takes the matches off this phone, so first wait until the account has every tap (at most 6 s).
   async signOut(){
@@ -3961,8 +3978,9 @@ window.SS_auth = {
     return A.signOut(auth);
   },
 };
-A.getRedirectResult(auth).then(r => { if (!r && sessionStorage.getItem('ss.signing') && !auth.currentUser) window.SS_signErr('none'); },
-  e => window.SS_signErr(e.code || String(e))).finally(() => sessionStorage.removeItem('ss.signing'));
+Promise.race([A.getRedirectResult(auth), new Promise(r => setTimeout(() => r(null), 15000))])
+  .then(r => { if (!r && sessionStorage.getItem('ss.signing') && !auth.currentUser) window.SS_signErr('none'); },
+    e => window.SS_signErr(e.code || String(e))).finally(() => sessionStorage.removeItem('ss.signing'));
 // Who uses the app and when, for the owner's admin page: the account's profile (users/<uid>), written at most
 // once every 30 minutes per phone. Best effort: a refused write never shows as "not saved".
 async function ping(u){

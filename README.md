@@ -3,7 +3,8 @@
 Tap-to-count volleyball stats for one player: points, errors, time on court, +/-, who passed,
 per set and per season. Works on any phone browser; add it to the home screen to use it like an app.
 
-- App: a single `index.html` (no build step), hosted on GitHub Pages.
+- App: a single `index.html` (no build step), at https://spike-sheet-theo.firebaseapp.com (Firebase Hosting,
+  published with `firebase deploy --only hosting`). The old GitHub Pages address sends signed-out phones there.
 - Data: Firebase Firestore under `users/<uid>/`, behind Google sign-in. Rules in `firestore.rules`
   allow each account to read and write only its own data; the app's owner may read every account
   (the admin page, Player tab). A live score link (`live/<code>`) holds two team names and the score,
