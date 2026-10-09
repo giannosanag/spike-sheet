@@ -394,7 +394,7 @@ html{scrollbar-gutter:stable}
 /* a live score link: the score only (no tabs, no sync line) */
 body.watch nav.tabs,body.watch #syncnote{display:none!important}
 /* the sign-in page: nothing of the app until Google says who this is */
-body.gate nav.tabs,body.gate #syncnote{display:none!important}
+body.gate nav.tabs button[data-view],body.gate #syncnote{display:none!important}
 /* Basic: three big buttons to a row */
 .pad-n3{grid-template-columns:repeat(3,1fr)}body.playing .pad-n3 .stat{min-height:84px}body.playing .pad-n3 .stat .n{font-size:30px}body.playing .pad-n3 .stat .l{font-size:15px}
 /* a practice match: marked above the stats, ended from the bar under the action row */
@@ -601,6 +601,7 @@ const EL = {
   'No internet. Sign out when it is back, so nothing is lost.': 'Δεν υπάρχει ίντερνετ. Αποσυνδέσου όταν επανέλθει, για να μη χαθεί τίποτα.',
   'Still saving to your account. Try again in a moment.': 'Ακόμα αποθηκεύεται στον λογαριασμό σου. Δοκίμασε ξανά σε λίγο.',
   'Signing out…': 'Αποσύνδεση…', 'Sign-in failed ({code})': 'Η σύνδεση απέτυχε ({code})',
+  'Signing in…': 'Σύνδεση…', 'Sign-in did not finish. Try again.': 'Η σύνδεση δεν ολοκληρώθηκε. Δοκίμασε ξανά.',
   'Won with sets {s}? Check the result': 'Νίκη με σετ {s}; Έλεγξε το αποτέλεσμα', 'Lost with sets {s}? Check the result': 'Ήττα με σετ {s}; Έλεγξε το αποτέλεσμα',
   'Sets already played: type them like 25-20, 22-25': 'Γράψε τα σετ έτσι: 25-20, 22-25', 'Score now: type it like 10-12': 'Γράψε το σκορ έτσι: 10-12',
   'At most 4 sets already played': 'Το πολύ 4 σετ που έχουν ήδη παιχτεί', 'Those sets already finish the match': 'Με αυτά τα σετ ο αγώνας έχει ήδη τελειώσει',
@@ -1018,6 +1019,8 @@ window.SS_writeFailed = (e, path) => {
 };
 window.SS_writeOk = () => { LS.set('ss.upAt', Date.now()); if (S.saveFailed){ S.saveFailed = false; syncNote(); } };
 window.SS_toast = t => toast(t);
+// back from Google without an account: the sign-in page says why
+window.SS_signErr = code => { S.signErr = code; if (!S.user) render(); };
 window.SS_L = (t, v) => L(t, v);
 function syncNote(){
   const n = document.getElementById('syncnote');
@@ -3051,6 +3054,8 @@ window.SS_liveSeen = d => { if (!S.watch) return;
   render(); };
 // Signed out: only this page, until Google sign-in
 const gateView = () => `<section class="panel">
+    ${S.signErr ? `<p style="margin:0;color:var(--neg)"><b>${L(S.signErr === 'none' ? 'Sign-in did not finish. Try again.' : 'Sign-in failed ({code})', {code:esc(S.signErr)})}</b></p>`
+      : sessionStorage.getItem('ss.signing') ? `<p style="margin:0"><b>${L('Signing in…')}</b></p>` : ''}
     <p style="margin:0">${L('Sign in with Google to start. Your matches are saved in your account and sync to every phone you sign in on.')}</p>
     <button class="btn btn-or" id="b-signin">${L('Sign in with Google')}</button>
     <p class="note" style="margin:0">${L("With Google sign-in, your matches, teams, player card and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.")}</p>
@@ -3944,8 +3949,8 @@ const provider = new A.GoogleAuthProvider();
 window.SS_auth = {
   // Full-page sign-in: works in Safari, Chrome and home-screen apps, where popups don't.
   async signIn(){
-    try{ await A.signInWithRedirect(auth, provider); }
-    catch(e){ window.SS_toast(window.SS_L('Sign-in failed ({code})', {code:e.code})); }
+    try{ sessionStorage.setItem('ss.signing', '1'); await A.signInWithRedirect(auth, provider); }
+    catch(e){ sessionStorage.removeItem('ss.signing'); window.SS_toast(window.SS_L('Sign-in failed ({code})', {code:e.code})); }
   },
   // Signing out takes the matches off this phone, so first wait until the account has every tap (at most 6 s).
   async signOut(){
@@ -3956,7 +3961,8 @@ window.SS_auth = {
     return A.signOut(auth);
   },
 };
-A.getRedirectResult(auth).catch(e => window.SS_toast(window.SS_L('Sign-in failed ({code})', {code:e.code})));
+A.getRedirectResult(auth).then(r => { if (!r && sessionStorage.getItem('ss.signing') && !auth.currentUser) window.SS_signErr('none'); },
+  e => window.SS_signErr(e.code || String(e))).finally(() => sessionStorage.removeItem('ss.signing'));
 // Who uses the app and when, for the owner's admin page: the account's profile (users/<uid>), written at most
 // once every 30 minutes per phone. Best effort: a refused write never shows as "not saved".
 async function ping(u){

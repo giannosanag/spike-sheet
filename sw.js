@@ -1,4 +1,4 @@
-const CACHE = 'spike-sheet-v32';
+const CACHE = 'spike-sheet-v33';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 // The sign-in and sync code (same version as V in index.html). Saved at install, so the first open
 // after an update also works without signal. Best effort: a miss here must not stop the install.
