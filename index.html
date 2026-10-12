@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <script>
 // Light or dark before anything is drawn, so the page never flashes the other colours: the phone's own setting,
-// or the choice kept on this phone (Player page). The browser bar and the status bar follow it.
+// or the choice kept on this phone (Profile page). The browser bar and the status bar follow it.
 window.SS_theme = function(t){
   if (t !== undefined){ try{ t ? localStorage.setItem('ss.theme', JSON.stringify(t)) : localStorage.removeItem('ss.theme'); }catch(e){} }
   else { try{ t = JSON.parse(localStorage.getItem('ss.theme')); }catch(e){ t = null; } }
@@ -34,7 +34,7 @@ SS_theme();
 /* Sportswear-app look: black on white, heavy condensed caps, pills, one volt highlight. */
 :root{
   --bg:#FFFFFF; --soft:#F5F5F5; --soft2:#EDEDED; --ink:#111111; --muted:#707072; --faint:#9E9EA0; --line:#E5E5E5;
-  --btn:#111111; --btn-ink:#FFFFFF; --volt:#D7FF3A; --volt-ink:#111111; --hi:#111111;
+  --btn:#111111; --btn-ink:#FFFFFF; --volt:#D7FF3A; --volt-ink:#111111; --hi:#111111; --neg-ink:#FFFFFF; --chart:#8DB000;
   --pos:#0E7A3A; --neg:#D30005;
   --head:"Archivo","Roboto Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
   --font:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -42,13 +42,13 @@ SS_theme();
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   color-scheme:dark;
   --bg:#000000; --soft:#161616; --soft2:#222222; --ink:#FFFFFF; --muted:#9E9EA0; --faint:#6B6B6D; --line:#2A2A2A;
-  --btn:#FFFFFF; --btn-ink:#111111; --volt:#D7FF3A; --volt-ink:#111111; --hi:#D7FF3A;
+  --btn:#FFFFFF; --btn-ink:#111111; --volt:#D7FF3A; --volt-ink:#111111; --hi:#D7FF3A; --neg-ink:#111111; --chart:#D7FF3A;
   --pos:#3DDC84; --neg:#FF5A5F;
 }}
 :root[data-theme="dark"]{
   color-scheme:dark;
   --bg:#000000; --soft:#161616; --soft2:#222222; --ink:#FFFFFF; --muted:#9E9EA0; --faint:#6B6B6D; --line:#2A2A2A;
-  --btn:#FFFFFF; --btn-ink:#111111; --volt:#D7FF3A; --volt-ink:#111111; --hi:#D7FF3A;
+  --btn:#FFFFFF; --btn-ink:#111111; --volt:#D7FF3A; --volt-ink:#111111; --hi:#D7FF3A; --neg-ink:#111111; --chart:#D7FF3A;
   --pos:#3DDC84; --neg:#FF5A5F;
 }
 *{box-sizing:border-box}
@@ -416,6 +416,7 @@ html{scrollbar-gutter:stable}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:999px;font-size:14px;font-weight:500;z-index:10;max-width:calc(100% - 32px);width:max-content;text-align:center;border-radius:16px}
 /* a message must never sit on, or take the tap of, a number in an open bar */
 .toast{pointer-events:none}
+.toast.tq{opacity:0}
 /* every tappable card has an outline, and the numbers in a row line up (labels that wrap pushed theirs up) */
 .stat,.act,.setsel button{border:1.5px solid var(--line)}
 .stat{justify-content:flex-start}
@@ -429,6 +430,21 @@ html{scrollbar-gutter:stable}
 @media (prefers-reduced-motion:reduce){.tagbar.nudge{animation:none}}
 /* the test copy's mark beside the name */
 .testb{font-size:12px;font-weight:800;font-stretch:100%;letter-spacing:0;background:var(--neg);color:#fff;border-radius:999px;padding:3px 8px;margin-left:4px}
+/* audit 10-12: the notch and rounded corners in landscape; the chosen segment, the setter hint and the chosen team
+   card visible in both themes; 16px in the position box (no iPhone zoom); a 44 px Undo in a message; values wrap
+   instead of pushing the page sideways; readable armed buttons, court numerals and the score-flow area; the message
+   moves to the top while the keyboard is up */
+body{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.seg button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink)}
+.tagbar.who .nums button.hint{background:var(--volt);color:var(--volt-ink);box-shadow:none}
+.pickteam[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.rrow .t-pos,:root[lang="el"] .rrow .t-pos{font-size:16px}
+.toast button{min-height:44px}
+.kr b{white-space:normal;overflow-wrap:anywhere}
+.btn-del.armed,.rrow .rm.armed{color:var(--neg-ink)}
+.field .six button .rn{color:var(--muted)}
+.flow .up{fill:var(--chart)}.flow-k i{background:var(--chart)}
+body:has(input:focus,select:focus,textarea:focus) .toast{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}
 /* the sign-in button with the Google mark */
 .gbtn{display:flex;align-items:center;justify-content:center;gap:10px}.gbtn svg{width:20px;height:20px;flex:none}
 /* a live score link: the score only (no tabs, no sync line) */
@@ -531,13 +547,13 @@ input::-webkit-date-and-time-value{text-align:left}
       <button data-view="live">Live</button>
       <button data-view="history">Season</button>
       <button data-view="team">Team</button>
-      <button data-view="player">Player</button>
+      <button data-view="player">Profile</button>
     </nav>
   </header>
   <div id="syncnote" class="note" hidden></div>
   <main id="app" class="wrap" style="max-width:none"></main>
 </div>
-<div id="toast" class="toast" role="status" hidden></div>
+<div id="toast" class="toast tq" role="status" aria-live="polite"></div>
 
 <script>
 const STATS = [
@@ -583,10 +599,10 @@ const S = {matches:{}, player:{name:'', num:'', pos:''}, teams:{team:{name:'', p
 // "Player|tab": one English word with two Greek ones (the part after | is not shown in English;
 // without its own Greek it takes the plain word's).
 // The app's version, on the Player page and on the owner's page: bump it together with CACHE in sw.js on every release
-const APP_VERSION = 'v42';
+const APP_VERSION = 'v43';
 const EL = {
   // header and tabs
-  'Live': 'Αγώνας', 'Season': 'Σεζόν', 'Player|tab': 'Προφίλ', 'Team': 'Ομάδα', 'Spike Sheet, home': 'Spike Sheet, αρχική', 'Views': 'Σελίδες',
+  'Live': 'Αγώνας', 'Season': 'Σεζόν', 'Profile|tab': 'Προφίλ', 'Team': 'Ομάδα', 'Spike Sheet, home': 'Spike Sheet, αρχική', 'Views': 'Σελίδες',
   // the stats (pad label, small line, full name)
   'Ace': 'Άσος', 'serve point': 'πόντος σερβίς', 'Spike': 'Καρφί', 'kill': 'πόντος', 'Plasé': 'Πλασέ', 'placed over': 'πόντος',
   'Block': 'Μπλοκ', 'point': 'πόντος', 'spike': 'καρφί', 'Defence': 'Άμυνα', 'good dig': 'καλή άμυνα', 'Reception': 'Υποδοχή', 'good pass': 'καλή υποδοχή',
@@ -608,7 +624,7 @@ const EL = {
   'W': 'Ν', 'L': 'Η', '{w}W {l}L': 'νίκες {w}, ήττες {l}', 'LIVE': 'ΤΩΡΑ', 'vs': '–', 'vs {opp}': '{opp}', 'Opponent': 'Αντίπαλος',
   'S{n}': 'Σ{n}', 'SET {n}': 'ΣΕΤ {n}', 'Set {n}': 'Σετ {n}', 'set {n}': 'σετ {n}', 'Sets': 'Σετ', 'Sets {n}': '{n} σετ',
   'Pts': 'Πόν.', 'Rtg': 'Αξ.', 'Err': 'Λάθ.', 'PTS': 'πόντοι', 'PTS|one': 'πόντος', 'RTG': 'αξιολόγηση', 'ERR': 'λάθη', 'ERR|one': 'λάθος', 'On bench|act': 'πάγκος', 'pts': 'πόν.',
-  'K': 'Καρφ.', 'E': 'Λάθ.', 'TA': 'Προσπ.', 'Eff': 'Απόδ.', 'Aces': 'Άσοι', 'In %': 'Μέσα %', 'A:E': 'Άσοι:λάθη', 'Avg': 'Μ.Ο.', 'To': 'Προς', 'No': 'Νο',
+  'K': 'Καρφ.', 'E': 'Λάθ.', 'TA': 'Προσπ.', 'Eff': 'Απόδ.', 'Aces': 'Άσοι', 'In %': 'Μέσα %', 'A:E': 'Άσοι:λάθη', 'Avg': 'Μ.Ο.', 'To': 'Προς', 'No': 'Αρ.',
   'points': 'πόντοι', 'errors': 'λάθη', 'rating': 'αξιολόγηση', 'spikes': 'καρφιά', 'plasé': 'πλασέ', 'bench': 'στον πάγκο', 'serves': 'σερβίρει', 'serving': 'σερβίρει',
   // play by play
   'Score typed in': 'Σκορ με το χέρι', 'Time-out {team}': 'Τάιμ άουτ ({team})', 'pass from {n}': 'πάσα από {n}', 'set by #{n}': 'πάσα από #{n}',
@@ -620,7 +636,7 @@ const EL = {
   'Not saved to your account yet. Trying again.': 'Δεν αποθηκεύτηκε ακόμα στον λογαριασμό σου. Νέα προσπάθεια.',
   'your account': 'τον λογαριασμό σου',
   'Saved on this phone. Not in your account yet ({acct}). Trying again.': 'Αποθηκεύτηκε σε αυτό το κινητό. Όχι ακόμα στον λογαριασμό σου ({acct}). Νέα προσπάθεια.',
-  'Synced to {acct}': 'Συγχρονισμός με {acct}',
+  'Synced to {acct}': 'Συγχρονίστηκε με {acct}',
   'Sign in with Google': 'Σύνδεση με Google',
   'This phone is full: new taps are not saved. Free some space.': 'Το κινητό είναι γεμάτο: τα νέα πατήματα δεν αποθηκεύονται. Ελευθέρωσε λίγο χώρο.',
   '{name} put on court': '{name}: μπήκε στο γήπεδο', '{stat}: point to {team}': '{stat}: πόντος — {team}', 'Pass from #{n}': 'Πάσα από το #{n}',
@@ -629,7 +645,7 @@ const EL = {
   'Set {n} now {score}': 'Σετ {n}: τώρα {score}', 'Back in set {n}': 'Πίσω στο σετ {n}', 'Undone: score typed in': 'Αναιρέθηκε: σκορ με το χέρι',
   'Undone: {what}': 'Αναιρέθηκε: {what}', 'Set {n} has no points yet': 'Το σετ {n} δεν έχει πόντους ακόμα', 'Set {n}: {score}': 'Σετ {n}: {score}',
   'Saved. It is in Season.': 'Ο αγώνας αποθηκεύτηκε. Θα τον βρεις στη Σεζόν.',
-  "Add the player's number first (Player tab)": 'Βάλε πρώτα τον αριθμό στο Προφίλ', 'Add the team first (Team tab)': 'Φτιάξε πρώτα την ομάδα (σελίδα Ομάδα)',
+  "Add the player's number first (Profile tab)": 'Βάλε πρώτα τον αριθμό στο Προφίλ', 'Add the team first (Team tab)': 'Φτιάξε πρώτα την ομάδα (σελίδα Ομάδα)',
   "Now {team} · {name}'s taps are #{n}": 'Τώρα {team} · τα στατιστικά μέχρι εδώ πάνε στο #{n} {name}', 'Now {name} only (#{n})': 'Τώρα ατομικά: {name} (#{n})',
   'Finish the live match first': 'Τελείωσε πρώτα τον αγώνα που τρέχει', 'Match deleted': 'Ο αγώνας διαγράφηκε',
   'Finish the live match of this team first': 'Η ομάδα έχει αγώνα σε εξέλιξη: τελείωσέ τον πρώτα',
@@ -650,22 +666,39 @@ const EL = {
   'First answer: who passed the ball?': 'Απάντησε πρώτα: ποιος έδωσε την πάσα;',
   'Matches of {email} that were not saved are kept on this phone: sign in as {email} to save them.': 'Αγώνες του {email} που δεν αποθηκεύτηκαν έχουν κρατηθεί σε αυτό το κινητό: συνδέσου ως {email} για να αποθηκευτούν.',
   'another account': 'άλλου λογαριασμού',
+  'Matches of another account that were not saved are kept on this phone: sign in with that account to save them.': 'Αγώνες άλλου λογαριασμού που δεν αποθηκεύτηκαν έχουν κρατηθεί σε αυτό το κινητό: συνδέσου με εκείνον τον λογαριασμό για να αποθηκευτούν.',
   'Privacy': 'Απόρρητο',
   'Spike Sheet keeps only what it needs to count your matches.': 'Το Spike Sheet κρατά μόνο ό,τι χρειάζεται για να καταγράφει τους αγώνες σου.',
   'What is kept': 'Τι κρατάμε',
-  "The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player card, and the email and name of your Google account. To help and fix problems: when you use the app, the kind of phone, the app version and its error messages.": 'Τους αγώνες που καταγράφεις (σκορ, στατιστικά, φάση-φάση), τις ομάδες σου (ονόματα και αριθμούς παικτών), το προφίλ, και το email και το όνομα του λογαριασμού σου Google. Για να σε βοηθάμε και να διορθώνουμε προβλήματα: πότε χρησιμοποιείς την εφαρμογή, τον τύπο του κινητού, την έκδοση της εφαρμογής και τα μηνύματα σφάλματός της.',
+  "The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player card, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages.": 'Τους αγώνες που καταγράφεις (σκορ, στατιστικά, φάση-φάση), τις ομάδες σου (ονόματα και αριθμούς των μελών), το προφίλ, και το email και το όνομα του λογαριασμού σου Google. Για να σε βοηθάμε και να διορθώνουμε προβλήματα: πότε και ποιες μέρες χρησιμοποιείς την εφαρμογή (κάθε λίγα λεπτά όσο είναι ανοιχτή), τον τύπο του κινητού και έναν κωδικό του, τη γλώσσα, την έκδοση της εφαρμογής και τα μηνύματα σφάλματός της.',
   'Where': 'Πού',
-  "In your account on Google Firebase, Google's cloud. A copy stays on this phone, so the app works without signal.": 'Στον λογαριασμό σου στο Google Firebase, το cloud της Google. Ένα αντίγραφο μένει σε αυτό το κινητό, ώστε η εφαρμογή να δουλεύει και χωρίς σήμα.',
+  "In your account on Google Firebase, Google's cloud: Google provides the servers and the sign-in. A copy stays on this phone while you are signed in, so the app works without signal.": 'Στον λογαριασμό σου στο Google Firebase, το cloud της Google: η Google παρέχει τους διακομιστές και τη σύνδεση. Ένα αντίγραφο μένει σε αυτό το κινητό όσο έχεις συνδεθεί, ώστε η εφαρμογή να δουλεύει και χωρίς σήμα.',
   'Who sees it': 'Ποιος τα βλέπει',
   "You, on every phone you sign in on. The app's owner, to help you and fix problems. Nothing is sold or given to anyone else. No ads, no tracking.": 'Εσύ, σε κάθε κινητό όπου συνδέεσαι. Ο διαχειριστής της εφαρμογής, για να σε βοηθά και να διορθώνει προβλήματα. Τίποτα δεν πουλιέται ούτε δίνεται σε άλλους. Χωρίς διαφημίσεις, χωρίς παρακολούθηση.',
   'Only the two team names and the score, to anyone with the link, for 12 hours at most.': 'Μόνο τα ονόματα των δύο ομάδων και το σκορ, σε όποιον έχει τον σύνδεσμο, για 12 ώρες το πολύ.',
-  "Add players with their agreement, and for children with a parent's. First names are enough.": 'Πρόσθεσε παίκτες με τη συμφωνία τους, και για παιδιά με τη συμφωνία ενός γονιού. Αρκούν τα μικρά ονόματα.',
-  'Players|privacy': 'Παίκτες',
+  "Add players with their agreement, and for children with a parent's. First names are enough. Under 15, a parent or the coach should keep the account.": 'Πρόσθεσε μέλη με τη συμφωνία τους, και για παιδιά με τη συμφωνία ενός γονιού. Αρκούν τα μικρά ονόματα. Κάτω από 15 ετών, τον λογαριασμό καλό είναι να τον έχει ένας γονιός ή ο προπονητής.',
+  'Players|privacy': 'Μέλη της ομάδας',
   'Pictures and files': 'Εικόνες και αρχεία',
   'The share picture, Excel and PDF are made on your phone. The app does not keep them.': 'Η εικόνα, το Excel και το PDF φτιάχνονται στο κινητό σου. Η εφαρμογή δεν τα κρατά.',
   'Deleting': 'Διαγραφή',
-  'Delete a match or a team in the app at any time. To delete everything in your account, write to {email}.': 'Σβήσε έναν αγώνα ή μια ομάδα στην εφαρμογή όποτε θέλεις. Για να σβηστούν όλα από τον λογαριασμό σου, γράψε στο {email}.',
+  'Delete a match or a team in the app at any time. A deleted team stays in the matches it played: delete those too. To delete everything in your account, write to {email}.': 'Σβήσε έναν αγώνα ή μια ομάδα στην εφαρμογή όποτε θέλεις. Μια ομάδα που σβήνεις μένει στους αγώνες που έπαιξε: σβήσε κι αυτούς. Για να σβηστούν όλα από τον λογαριασμό σου, γράψε στο {email}.',
   'Download all data': 'Λήψη όλων των δεδομένων',
+  'Tap again to sign out': 'Πάτα ξανά για αποσύνδεση',
+  'The browser blocked the Google window. Allow pop-ups for this site, then try again.': 'Ο browser μπλόκαρε το παράθυρο της Google. Επίτρεψε τα αναδυόμενα παράθυρα για αυτή τη σελίδα και δοκίμασε ξανά.',
+  'This browser blocks what the sign-in needs (private mode?). Open the page in Safari or Chrome.': 'Ο browser μπλοκάρει ό,τι χρειάζεται η σύνδεση (ιδιωτική περιήγηση;). Άνοιξε τη σελίδα στο Safari ή στο Chrome.',
+  'Sign-in is not open on this address. Use spikesheet.web.app.': 'Η σύνδεση δεν είναι ανοιχτή σε αυτή τη διεύθυνση. Χρησιμοποίησε το spikesheet.web.app.',
+  'Sign-in failed ({code}). Try again.': 'Η σύνδεση απέτυχε ({code}). Δοκίμασε ξανά.',
+  'The page could not be drawn ({code}).': 'Η σελίδα δεν μπόρεσε να εμφανιστεί ({code}).',
+  'Your rights': 'Τα δικαιώματά σου',
+  'You can ask for a copy of your data, a correction or its deletion: write to {email}. You can also complain to the Hellenic Data Protection Authority (dpa.gr).': 'Μπορείς να ζητήσεις αντίγραφο των δεδομένων σου, διόρθωση ή διαγραφή τους: γράψε στο {email}. Μπορείς επίσης να απευθυνθείς στην Αρχή Προστασίας Δεδομένων Προσωπικού Χαρακτήρα (dpa.gr).',
+  'copy': 'αντίγραφο',
+  "The app's storage on this phone is full. Connect to the internet so your matches reach your account.": 'Ο χώρος της εφαρμογής σε αυτό το κινητό γέμισε. Συνδέσου στο ίντερνετ για να φτάσουν οι αγώνες σου στον λογαριασμό σου.',
+  "The app's storage on this phone is full: new taps may not be kept. Connect to the internet so they reach your account.": 'Ο χώρος της εφαρμογής σε αυτό το κινητό γέμισε: τα νέα πατήματα μπορεί να μην κρατηθούν. Συνδέσου στο ίντερνετ για να φτάσουν στον λογαριασμό σου.',
+  'This phone still holds unsaved matches of {email}: sign in as {email} first.': 'Αυτό το κινητό έχει ακόμα αγώνες του {email} που δεν αποθηκεύτηκαν: συνδέσου πρώτα ως {email}.',
+  'Saving to {acct}…': 'Αποθήκευση στο {acct}…',
+  'Offline: matches are kept on this phone until there is signal.': 'Εκτός σύνδεσης: οι αγώνες μένουν σε αυτό το κινητό μέχρι να υπάρξει σήμα.',
+  'Connecting to {acct}…': 'Σύνδεση με {acct}…',
+  'Still connecting to your account. Try again in a moment.': 'Γίνεται ακόμα σύνδεση με τον λογαριασμό σου. Δοκίμασε ξανά σε λίγο.',
   'Online now': 'Συνδεδεμένοι τώρα', 'app open, last 5 min': 'εφαρμογή ανοιχτή, τελευταία 5 λεπτά', 'App open now': 'Η εφαρμογή είναι ανοιχτή τώρα',
   'No access': 'Χωρίς πρόσβαση', 'Access': 'Πρόσβαση', 'Remove access': 'Αφαίρεση πρόσβασης', 'Tap again to remove access': 'Πάτα ξανά για αφαίρεση πρόσβασης',
   'Give access back': 'Επαναφορά πρόσβασης', 'Download their data': 'Λήψη δεδομένων χρήστη', 'Delete all their data': 'Διαγραφή όλων των δεδομένων χρήστη',
@@ -673,7 +706,7 @@ const EL = {
   'Removing access stops this person using the app, on every phone. Their data stays until you delete it.': 'Η αφαίρεση πρόσβασης σταματά αυτό το άτομο να χρησιμοποιεί την εφαρμογή, σε κάθε κινητό. Τα δεδομένα του μένουν μέχρι να τα διαγράψεις.',
   'Access removed {when}.': 'Η πρόσβαση αφαιρέθηκε {when}.', 'Access removed': 'Η πρόσβαση αφαιρέθηκε', 'Access given back': 'Η πρόσβαση επανήλθε',
   'All their data deleted': 'Όλα τα δεδομένα διαγράφηκαν', 'Not done ({code})': 'Δεν έγινε ({code})',
-  "The app's owner removed your access to Spike Sheet. Your matches stay on this phone.": 'Ο διαχειριστής αφαίρεσε την πρόσβασή σου στο Spike Sheet. Οι αγώνες σου μένουν σε αυτό το κινητό.',
+  "The app's owner removed your access to Spike Sheet.": 'Ο διαχειριστής αφαίρεσε την πρόσβασή σου στο Spike Sheet.',
   'If you think this is a mistake, write to {email}.': 'Αν νομίζεις ότι είναι λάθος, γράψε στο {email}.',
   'Spike Sheet backup': 'Αντίγραφο Spike Sheet',
   'Connecting to your account…': 'Σύνδεση με τον λογαριασμό σου…',
@@ -885,7 +918,7 @@ const posAb = k => S.lang === 'el' && POS_EL[k] || k;
 const LS = {
   get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } },
   // true when it was written
-  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); if (S.lsFail && k.startsWith('ss.m.')){ S.lsFail = false; syncNote(); } return true; }catch(e){ if (!S.lsFail){ S.lsFail = true; setTimeout(()=>{ toast(L('This phone cannot save. Free some space.')); syncNote(); }, 0); } return false; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); if (S.lsFail && k.startsWith('ss.m.')){ S.lsFail = false; syncNote(); } return true; }catch(e){ if (!S.lsFail){ S.lsFail = true; setTimeout(()=>{ if (S.lsFail) toast(L("The app's storage on this phone is full. Connect to the internet so your matches reach your account.")); syncNote(); }, 0); } return false; } },
 };
 // Problems on this phone (a page error, a save the account refused), the last 10, for the owner's admin page
 function noteIssue(msg){ try{ const a = JSON.parse(localStorage.getItem('ss.issues') || '[]'); a.push({t:Date.now(), m:String(msg).slice(0, 140)}); localStorage.setItem('ss.issues', JSON.stringify(a.slice(-10))); }catch(e){} }
@@ -896,9 +929,26 @@ window.addEventListener('unhandledrejection', e => noteIssue('promise: ' + ((e.r
 // written: id -> the updatedAt that is on the phone (only set when the write worked, so a write
 // refused for space is tried again on the next save).
 let written = {};
+// On the phone: every match not finished or not confirmed by the account, and the newest 40; the others live in the
+// account and in the database's own copy on the phone (a site gets only a few MB here - audit 10-12). Storage full:
+// fewer finished ones, until the match being recorded fits. Never written over a newer copy another window stored.
 function backup(){
-  // (a practice match is never kept)
-  Object.values(S.matches).forEach(m => { if (!m.practice && written[m.id] !== (m.updatedAt||0) && LS.set('ss.m.' + m.id, m)) written[m.id] = m.updatedAt||0; });
+  const cloud = S.user ? new Set(LS.get('ss.cloud') || []) : null;
+  for (let pass = 0; pass < 4; pass++){
+    const keepN = S.keepN ?? 40, newest = new Set(Object.values(S.matches).filter(m => !m.practice)
+      .sort((a, b) => (b.updatedAt||b.createdAt||0) - (a.updatedAt||a.createdAt||0)).slice(0, keepN).map(m => m.id));
+    const onPhone = m => !m.practice && (!cloud || !m.done || !cloud.has(m.id) || newest.has(m.id) || m.id === S.activeId);
+    let failed = false;
+    Object.values(S.matches).forEach(m => { if (!onPhone(m) && written[m.id] != null){ try{ localStorage.removeItem('ss.m.' + m.id); }catch(e){} delete written[m.id]; } });
+    Object.values(S.matches).forEach(m => {
+      if (!onPhone(m) || written[m.id] === (m.updatedAt||0)) return;
+      const cur = written[m.id] != null ? LS.get('ss.m.' + m.id) : null;
+      if (cur && cur.id === m.id && (cur.updatedAt||0) > (m.updatedAt||0)){ S.matches[m.id] = cur; written[m.id] = cur.updatedAt||0; return; }
+      if (LS.set('ss.m.' + m.id, m)) written[m.id] = m.updatedAt||0; else failed = true;
+    });
+    if (!failed || !cloud) break;
+    S.keepN = Math.max(0, keepN - 15);
+  }
   Object.keys(written).forEach(id => { if (!S.matches[id]){ try{ localStorage.removeItem('ss.m.' + id); }catch(e){} delete written[id]; } });
   // the old one-key copy still holds matches that did not fit before: drop each one once it has its own
   // key or was deleted, so it can never bring a deleted match back
@@ -911,6 +961,11 @@ function restore(){
   const ms = {};
   try{ for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k && k.startsWith('ss.m.')){ const x = LS.get(k); if (x && x.id) ms[x.id] = x; } } }catch(e){}
   written = {}; Object.values(ms).forEach(x => written[x.id] = x.updatedAt||0);
+  // what this window holds newer (another window stored an older copy), and the matches kept only in the account
+  // (not on the phone: see backup), stay - unless deleted
+  const inCloud = new Set(LS.get('ss.cloud') || []), del = new Set(LS.get('ss.deleted') || []);
+  Object.values(S.matches || {}).forEach(x => { if (!x || !x.id || x.practice) return; const st = ms[x.id];
+    if (st ? (x.updatedAt||0) > (st.updatedAt||0) : (S.user && x.done && inCloud.has(x.id) && !del.has(x.id))) ms[x.id] = x; });
   // before 2026-10-07 every match sat in one key: each one moves to its own key (the newer copy wins)
   // and leaves the old key at once; the key goes when it is empty
   const old = LS.get('ss.matches');
@@ -970,8 +1025,18 @@ async function flush(){
   } finally { S.flushing = false; }
   if (S.db && Object.keys(S.pending).length) { clearTimeout(S.flushT); S.flushT = setTimeout(flush, 3000); }
 }
+// a copy's newest tap, and whether another copy holds it (by time, kind and set)
+const lastEv = x => (x.log||[]).reduce((a, e) => !a || (e.t||0) >= (a.t||0) ? e : a, null);
+const hasEv = (x, e) => !e || (x.log||[]).some(f => f.t === e.t && f.k === e.k && f.set === e.set);
+// a copy kept as its own match, to be looked at and deleted by hand if not wanted
+function keepCopy(x){
+  const c = JSON.parse(JSON.stringify(x)); c.id = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  c.opp = (c.opp || '') + ' (' + L('copy') + ')'; c.copyOf = x.id; c.updatedAt = Date.now(); delete c.liveId;
+  S.matches[c.id] = c; queue('matches/' + c.id); noteIssue('two copies of match ' + x.id + ': one kept as ' + c.id);
+  return c;
+}
 function connect(db){
-  S.db = db;
+  S.db = db; S.confirmed = {}; S.serverSeen = false;
   // Upload only what this phone has that is newer than the shared copy, and
   // only after reading the shared copy, so an older phone never overwrites a newer one.
   let first = true;
@@ -991,8 +1056,19 @@ function connect(db){
       seen.add(d.id);
       if (!snap.metadata?.fromCache && !d.pending) known.add(d.id);
       const local = S.matches[d.id];
-      if (!local || (r.updatedAt||0) > (local.updatedAt||0)) { S.matches[d.id] = JSON.parse(JSON.stringify(r)); changed = true; }
-      else if (reconcile && (local.updatedAt||0) > (r.updatedAt||0)) queue('matches/'+d.id);
+      // two copies of one match that each hold taps the other lacks (a phone offline while another device changed
+      // it): the one about to be overwritten is kept as a separate match "(copy)", so no tap is lost. The match being
+      // recorded on this phone stays as it is; the other copy is the one kept aside. (audit 10-12)
+      if (!local || (r.updatedAt||0) > (local.updatedAt||0)){
+        if (local && !hasEv(r, lastEv(local))){
+          if (d.id === S.activeId){ keepCopy(r); local.updatedAt = stamp(r); queue('matches/'+d.id); changed = true; return; }
+          keepCopy(local);
+        }
+        S.matches[d.id] = JSON.parse(JSON.stringify(r)); changed = true;
+      }
+      else if (reconcile && (local.updatedAt||0) > (r.updatedAt||0)){ if (!hasEv(local, lastEv(r))){ keepCopy(r); changed = true; } queue('matches/'+d.id); }
+      // what the account has confirmed holding, and from which save (the old address's "all saved")
+      if (!snap.metadata?.fromCache && !d.pending) S.confirmed[d.id] = r.updatedAt||0;
     });
     if (reconcile){
       // a match only on this phone: upload it if it was made since the last sync,
@@ -1007,6 +1083,7 @@ function connect(db){
       first = false;
     }
     if (!snap.metadata?.fromCache){
+      if (!S.serverSeen){ S.serverSeen = true; setTimeout(syncNote, 0); }
       LS.set('ss.synced', Date.now());
       // a delete is done once the cloud no longer has the match
       const ids = new Set(snap.docs.map(d => d.id));
@@ -1066,7 +1143,7 @@ function clearLocal(keepUnsaved, keepCards, unsent){
 }
 // Called by the Firebase module whenever the signed-in account changes.
 window.SS_onUser = (u, db) => {
-  const was = S.user, prev = LS.get('ss.uid'), refused = S.saveFailed, unsent = new Set(Object.keys(S.pending).filter(p => p.startsWith('matches/')).map(p => p.slice(8)));
+  const was = S.user, prev = LS.get('ss.uid'), refused = S.saveFailed || !!S.removed, unsent = new Set(Object.keys(S.pending).filter(p => p.startsWith('matches/')).map(p => p.slice(8)));
   disconnect();
   if (u){
     S.signErr = null;
@@ -1075,7 +1152,13 @@ window.SS_onUser = (u, db) => {
     // what a signed-out account left unsaved is its own: set aside for another account (never uploaded into it),
     // and back, to be saved, when its owner signs in here again
     const kept = LS.get('ss.keptFor');
-    if (kept && kept.uid !== u.uid && LS.set('ss.aside.' + kept.uid, {email:kept.email, matches:S.matches, player:S.player, teams:S.teams})) clearLocal();
+    if (kept && kept.uid !== u.uid){
+      if (!LS.set('ss.aside.' + kept.uid, {email:kept.email, matches:S.matches, player:S.player, teams:S.teams})){
+        // (they would be uploaded into this account) - signed out again, nothing mixed
+        toast(L('This phone still holds unsaved matches of {email}: sign in as {email} first.', {email:kept.email || L('another account')}));
+        if (window.SS_auth) window.SS_auth.signOut(true); return; }
+      clearLocal();
+    }
     const aside = LS.get('ss.aside.' + u.uid);
     if (aside){
       Object.values(aside.matches || {}).forEach(x => { if (x && x.id && (!S.matches[x.id] || (x.updatedAt||0) > (S.matches[x.id].updatedAt||0))) S.matches[x.id] = x; });
@@ -1133,22 +1216,30 @@ function syncNote(){
   const acct = esc(S.user && S.user.email || L('your account'));
   n.innerHTML = S.user
     ? (S.saveFailed ? L('Saved on this phone. Not in your account yet ({acct}). Trying again.', {acct})
-      : `<span class="dot-ok"></span>` + L('Synced to {acct}', {acct})) + ` · <button class="lnk" id="b-signout">${L('Sign out')}</button>`
+      : waitingNow() ? L('Saving to {acct}…', {acct})
+      // (no answer from the account yet this time: not "Synced" - taps from before may still be on the way)
+      : !S.serverSeen ? (navigator.onLine === false ? L('Offline: matches are kept on this phone until there is signal.') : L('Connecting to {acct}…', {acct}))
+      : `<span class="dot-ok"></span>` + L('Synced to {acct}', {acct})) + ` · <button class="lnk" id="b-signout">${L(S.armed === 'signout' ? 'Tap again to sign out' : 'Sign out')}</button>`
     // (signed out shows the sign-in page; here the phone is signed in and Google has not answered yet - never offer
     // another account now: signing in as someone else clears this account's matches that are only on the phone)
     : L('Connecting to your account…');
   // another account's unsaved matches, set aside on this phone: who must sign in to save them
-  if (S.user){ const o = asideOf(); if (o) n.innerHTML = `<b>${L('Matches of {email} that were not saved are kept on this phone: sign in as {email} to save them.', {email:esc(o)})}</b> ` + n.innerHTML; }
+  if (S.user){ const o = asideOf(); if (o) n.innerHTML = `<b>${o === '?' ? L('Matches of another account that were not saved are kept on this phone: sign in with that account to save them.')
+    : L('Matches of {email} that were not saved are kept on this phone: sign in as {email} to save them.', {email:esc(o)})}</b> ` + n.innerHTML; }
   // the old address: where to go now, once everything on this phone is in the account (kept until the phone moves)
   if (S.user && onOld() && allSaved()) n.innerHTML = `<b>${movedNote()}</b> ` + n.innerHTML;
   // the phone is full: said all the time, not once
-  if (S.lsFail) n.innerHTML = `<b style="color:var(--neg)">${L('This phone is full: new taps are not saved. Free some space.')}</b> ` + n.innerHTML;
+  if (S.lsFail) n.innerHTML = `<b style="color:var(--neg)">${L("The app's storage on this phone is full: new taps may not be kept. Connect to the internet so they reach your account.")}</b> ` + n.innerHTML;
   // a warning stays on screen in court mode too
   n.classList.toggle('warn', !!(S.lsFail || (S.user && S.saveFailed)));
 }
 // the email of an account whose unsaved matches wait on this phone (set aside when someone else signed in)
-const asideOf = () => { try{ for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i);
-  if (k && k.startsWith('ss.aside.') && k !== 'ss.aside.' + (S.user && S.user.uid)){ const a = LS.get(k); return (a && a.email) || L('another account'); } } }catch(e){} return ''; };
+const asideOf = any => { try{ for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i);
+  if (k && k.startsWith('ss.aside.') && (any || k !== 'ss.aside.' + (S.user && S.user.uid))){ const a = LS.get(k); return (a && a.email) || '?'; } } }catch(e){} return ''; };
+// saves the account has not confirmed yet (queued here, or sent and not answered)
+const waitingNow = () => Object.keys(S.pending).length + (window.SS_waiting ? window.SS_waiting() : 0);
+window.SS_waitChanged = () => { clearTimeout(S.wcT); S.wcT = setTimeout(syncNote, 300); };
+window.addEventListener('online', () => syncNote()); window.addEventListener('offline', () => syncNote());
 const isTyping = () => ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName);
 
 /* ---------- analysis ---------- */
@@ -1243,7 +1334,7 @@ const today = () => { const d = new Date(); return d.getFullYear()+'-'+String(d.
 // a message with a button (Undo) stays 10 s and takes the tap
 function toast(t, act){ const el = $('#toast'); el.textContent = t; S.toastAct = act ? act.fn : null;
   if (act){ const b = document.createElement('button'); b.type = 'button'; b.id = 'b-toastact'; b.textContent = act.label; el.append(b); }
-  el.hidden = false; clearTimeout(S.toastT); S.toastT = setTimeout(()=>{ el.hidden = true; S.toastAct = null; }, act ? 10000 : 3500); }
+  el.classList.remove('tq'); clearTimeout(S.toastT); S.toastT = setTimeout(()=>{ el.classList.add('tq'); el.textContent = ''; S.toastAct = null; }, act ? 10000 : 3500); }
 function buzz(){ try{ navigator.vibrate && navigator.vibrate(12); }catch(e){} }
 let wake = null;
 async function keepAwake(){ try{ if (!wake && navigator.wakeLock) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', ()=>wake=null); } }catch(e){} }
@@ -1352,7 +1443,7 @@ function tap(k){
   // a stat means the player is playing: put them on court if the tap was forgotten
   let rs = false;
   if (team){} else if (!m.onCourt){ courtOn(m, true); toast(L('{name} put on court', {name:pName()})); } else rs = resumeClock(m);
-  push(m, Object.assign(rs ? {k, rs:1} : {k}, m.soloNum && !team ? {p:m.soloNum} : {}, server ? {p:server} : {}));
+  push(m, Object.assign(rs ? {k, rs:1} : {k}, m.soloNum && !team ? {p:m.soloNum} : {}, server ? {p:server} : {}, S.svFrom && S.svFrom.mid === m.id ? {svFrom:S.svFrom.was} : {}));
   const idx = m.log.length - 1;
   // the player's point wins the rally for the team; an error gives it to the other team
   if (PT_KEYS.includes(k)) push(m, {k:'us', auto:1});
@@ -1545,6 +1636,8 @@ function pauseClock(m){
   const seg = Date.now() - m.courtSince;
   m.playMs = (m.playMs||0) + seg; m.stintMs = (m.stintMs||0) + seg; m.courtSince = null;
 }
+// a set ends: the clock stops, and what it was is kept so an Undo of that end can run it on as if it never stopped
+function pauseAtSetEnd(m, s){ m.endPause = m.onCourt && m.courtSince ? {set:s, since:m.courtSince, play:m.playMs||0, stint:m.stintMs||0} : null; pauseClock(m); }
 // true when this tap is the one that restarted the clock after a set break (the event is marked rs, so Undo can stop it again)
 function resumeClock(m){ if (m.onCourt && !m.courtSince){ m.courtSince = Date.now(); return true; } return false; }
 // in a set in play the clock runs from now; before a set's first point (the warm-up, a set break) it waits for that tap
@@ -1576,7 +1669,11 @@ function undo(){
   if (back != null){
     // takes back "End set": that set is open again, and nothing is removed from it yet
     m.ended = (m.ended||[]).filter(s => s !== back);
-    S.set = back; m.curSet = back; S.tag = null; resumeClock(m);
+    S.set = back; m.curSet = back; S.tag = null;
+    const ep = m.endPause;
+    if (ep && ep.set === back && m.onCourt && !m.courtSince){ m.playMs = ep.play; m.stintMs = ep.stint; m.courtSince = ep.since; } else resumeClock(m);
+    // the set is open again: "No, keep playing" is asked again when it ends, and the set buttons stop at it
+    delete m.endPause; delete m.keepOver; m.maxSet = back;
     save(m); render(); return toast(L('Back in set {n}', {n:back}));
   }
   if (!m.log?.length) return;
@@ -1601,12 +1698,13 @@ function undo(){
   if (last.k === 'off' && last.fin){ m.onCourt = true; m.courtSince = Date.now(); m.stintMs = last.dur||0; }
   // 'pre' = time already counted before a set break; a spell taken off during the break comes back still stopped
   else if (last.k === 'off'){ m.playMs = Math.max(0,(m.playMs||0) - ((last.dur||0) - (last.pre||0))); m.onCourt = true; m.stintMs = last.pre||0; m.courtSince = 'pre' in last ? last.onAt : (last.onAt || Date.now()); }
+  if ('svFrom' in last){ const sv = Object.assign({}, m.serve); if (last.svFrom) sv[last.set] = last.svFrom; else delete sv[last.set]; m.serve = sv; }
   save(m); render(); toast(L('Undone: {what}', {what:evLabel(last, m).t}));
 }
 function pickSet(n){
   const m = S.matches[S.activeId];
   // going forward with the set buttons instead of "End set": the set that was played is over
-  if (m && n > S.set && !(m.ended||[]).includes(S.set)){ const sc = analyze(m).score[S.set]; if (sc && (sc.us || sc.them)){ m.ended = [...(m.ended||[]), S.set].sort((a,b)=>a-b); pauseClock(m); } }
+  if (m && n > S.set && !(m.ended||[]).includes(S.set)){ const sc = analyze(m).score[S.set]; if (sc && (sc.us || sc.them)){ m.ended = [...(m.ended||[]), S.set].sort((a,b)=>a-b); pauseAtSetEnd(m, S.set); } }
   S.set = n;
   if (m){ m.curSet = n; m.maxSet = Math.max(m.maxSet||1, n); save(m); }
   render();
@@ -1621,7 +1719,7 @@ function endSet(force){
   if (!sc || !(sc.us || sc.them)){ if (scoredSets(analyze(m).score).length){ S.endAsk = 'match'; S.barAt = Date.now(); return render(); } return toast(L('Set {n} has no points yet', {n:s})); }
   if (!force && !setOver(m, analyze(m))){ S.endAsk = true; S.barAt = Date.now(); return render(); }
   m.ended = [...new Set([...(m.ended||[]), s])].sort((a,b)=>a-b);
-  pauseClock(m); S.barAt = Date.now();
+  pauseAtSetEnd(m, s); S.barAt = Date.now();
   toast(L('Set {n}: {score}', {n:s, score:ordS(m, sc.us, sc.them)}));
   pickSet(s >= lastSet(m) ? s : s+1);
 }
@@ -1682,7 +1780,7 @@ function closeAndNew(){
 function switchToTeam(){
   const m = S.matches[S.activeId]; if (!m || isTeam(m)) return;
   const num = jnum(S.player.num || '');
-  if (!num) return toast(L("Add the player's number first (Player tab)"));
+  if (!num) return toast(L("Add the player's number first (Profile tab)"));
   if (!S.team.players.length) return toast(L('Add the team first (Team tab)'));
   // the court clock is for one player only: close the spell now
   if (m.onCourt){ const seg = m.courtSince ? Date.now() - m.courtSince : 0, pre = m.stintMs||0; push(m, {k:'off', dur:pre+seg, onAt:m.courtSince, pre}); m.playMs = (m.playMs||0) + seg; m.onCourt = false; m.courtSince = null; m.stintMs = 0; }
@@ -1698,7 +1796,7 @@ function switchToTeam(){
 function switchToPlayer(){
   const m = S.matches[S.activeId]; if (!m || !isTeam(m)) return;
   const num = jnum(S.player.num || '');
-  if (!num) return toast(L("Add the player's number first (Player tab)"));
+  if (!num) return toast(L("Add the player's number first (Profile tab)"));
   delete m.mode; m.soloNum = num;
   S.who = null; save(m); render(); window.scrollTo(0,0); toast(L('Now {name} only (#{n})', {name:pName(), n:num}));
 }
@@ -1731,7 +1829,7 @@ function removeMatch(id){
 
 /* ---------- views ---------- */
 // "Tap again to delete" lets go after 4 s, so a later stray tap cannot delete
-function arm(key){ S.armed = key; S.armAt = Date.now(); clearTimeout(S.armT); S.armT = setTimeout(()=>{ if (S.armed === key){ S.armed = null; if (!isTyping()) render(); } }, 4000); render(); }
+function arm(key){ S.armed = key; S.armAt = Date.now(); clearTimeout(S.armT); S.armT = setTimeout(()=>{ if (S.armed === key){ S.armed = null; if (!isTyping()) render(); syncNote(); } }, 4000); render(); }
 // Greek in capitals has no stress accent (ΟΛΥΜΠΙΑΚΟΣ, not ΟΛΥΜΠΙΑΚΌΣ) but keeps the diaeresis (ΠΑΝΑΘΗΝΑΪΚΟΣ).
 // Done here, not left to the browser: iPhones do not all drop it for text-transform:uppercase.
 const greekPlain = s => s.normalize('NFD').replace(/([Ͱ-Ͽ]̈?)́/g, '$1').normalize('NFC');
@@ -1742,7 +1840,7 @@ function capsFix(root){
 // The header and page language (outside #app, so not redrawn by render)
 function applyLang(){
   document.documentElement.lang = S.lang === 'el' ? 'el' : 'en';
-  const tabs = {live:'Live', history:'Season', player:'Player|tab', team:'Team'};
+  const tabs = {live:'Live', history:'Season', player:'Profile|tab', team:'Team'};
   document.querySelectorAll('.tabs button[data-view]').forEach(b => { b.textContent = L(tabs[b.dataset.view]); });
   // the language button names the other language, in that language
   const lb = $('.langb'), to = S.lang === 'el' ? 'en' : 'el';
@@ -1760,12 +1858,14 @@ function render(){
   if (document.body.classList.contains('gate') && onOld() && !keptHere() && !homeApp()) return location.replace(NEW_HOME + location.hash);
   if (S.user && S.removed){ document.body.classList.add('gate'); document.body.classList.remove('playing'); clearInterval(S.timer); $('#app').innerHTML = removedView(); capsFix($('#app')); return; }
   if (document.body.classList.contains('gate')){ document.body.classList.remove('playing'); clearInterval(S.timer); $('#app').innerHTML = S.view === 'privacy' ? privacyView() : gateView(); capsFix($('#app')); return; }
+  document.querySelectorAll('.tabs button[data-view]').forEach(b => b.dataset.view === S.view ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   document.querySelectorAll('.tabs button[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history') || ((S.view==='admin' || S.view==='privacy') && b.dataset.view==='player'))));
   const app = $('#app');
   if (S.view === 'live') app.innerHTML = S.activeId && S.matches[S.activeId] ? (S.choose ? chooseView(S.matches[S.activeId]) : liveView(S.matches[S.activeId])) : newView();
   else if (S.view === 'player') app.innerHTML = playerView();
   else if (S.view === 'team') app.innerHTML = teamView();
-  else if (S.view === 'admin') app.innerHTML = adminView();
+  else if (S.view === 'admin'){ try{ app.innerHTML = adminView(); }catch(e){ noteIssue('admin page: ' + (e && e.message));
+    app.innerHTML = `<section class="panel"><button class="lnk" id="b-adtop" style="align-self:flex-start">‹ ${L('Back')}</button><h2>${L('Admin')}</h2><p class="note" style="margin:0">${L('The page could not be drawn ({code}).', {code:esc(e && e.message)})}</p><button class="btn btn-or" id="b-adload">${L('Try again')}</button></section>`; } }
   else if (S.view === 'privacy') app.innerHTML = privacyView();
   else if (S.view === 'tplayer' && S.tpNum) app.innerHTML = teamPlayerView(S.tpNum);
   else if (S.view === 'match' && S.matches[S.openId]){ app.innerHTML = matchView(S.matches[S.openId]); prepPicture(S.matches[S.openId]); }
@@ -1890,7 +1990,7 @@ function nfNext(){
 }
 // a long word (PANATHINAIKOS) would split mid-word on a phone: shrink it instead
 // (Greek capitals come from a wider font: a Greek word counts a quarter longer)
-const nmLong = n => { const w = Math.max(...String(n).split(/\s+/).map(x => x.length * (/[Ͱ-Ͽἀ-῿]/.test(x) ? 1.25 : 1))); return w > 11 ? ' long xl' : w > 9 ? ' long' : ''; };
+const nmLong = n => { const w = Math.max(...String(n).split(/\s+/).map(x => x.length * (/[Ͱ-Ͽἀ-῿]/.test(x) ? 1.25 : 1))); return w > 10 ? ' long xl' : w > 7 ? ' long' : ''; };
 // n time-outs left of TOS as dots (on the score card and on the Time-out button)
 const toDots = n => `<span class="tod" aria-hidden="true">${Array.from({length:TOS}, (_, i) => `<i class="${i < n ? '' : 'used'}"></i>`).join('')}</span>`;
 // to: the time-outs left in this set (live), as dots after the sets won.
@@ -2332,7 +2432,8 @@ function howBar(m){
 function undoFab(m){
   const log = m.log||[]; let e = log[log.length-1];
   if (e && e.auto && log.length > 1) e = log[log.length-2];
-  const back = undoBack(m), what = back != null ? L('back to set {n}', {n:back}) : e ? evLabel(e,m).t : '';
+  const first = m.serve && m.serve[S.set] && !log.some(x => x.set === S.set), back = first ? null : undoBack(m);
+  const what = first ? L('First serve: {team}', {team:m.serve[S.set] === 'us' ? homeName(m) : m.opp}) : back != null ? L('back to set {n}', {n:back}) : e ? evLabel(e,m).t : '';
   return `<button class="act undo" id="b-undo" ${what?'':'disabled'} aria-label="${L('Undo')} ${esc(what)}">
     <span class="fab-i" aria-hidden="true">↶</span><span>${L('Undo')}<small>${what?esc(what):L('nothing yet')}</small></span></button>`;
 }
@@ -2341,7 +2442,7 @@ function tagBar(m){
   const e = m.log[S.tag.i]; if (!e) return '';
   const nums = [...Array.from({length:20},(_,i)=>String(i+1)), ...(S.player.extraNums||[])];
   return `<div class="tagbar${nudgeCls()}" role="group" aria-label="${L('Who passed to {who}', {who:pWho()})}">
-    <div class="q">${esc(evLabel(e,m).t)}: ${L('who passed to {who}?', {who:pWho()})}</div>
+    <div class="q" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>${esc(evLabel(e,m).t)}: ${L('who passed to {who}?', {who:pWho()})}</span><button type="button" class="skip" id="b-whoundo">${L('Wrong tap, undo')}</button></div>
     <div class="nums">${nums.map(n=>`<button data-pass="${esc(n)}">${esc(n)}</button>`).join('')}</div>
     <form class="more" id="passform">
       <input id="pass-other" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="${L('Other number')}" aria-label="${L('Other number')}">
@@ -2399,7 +2500,8 @@ function passLine(m){
 function savedResult(m, w, l){
   const sc = String(m.score||''), old = /^\d+-\d+$/.test(sc) ? sc.split('-').reduce((a,b) => a + +b, 0) : null;
   const stale = old != null && w + l > old;
-  return {result: (!stale && m.result) || (w > l ? 'W' : l > w ? 'L' : ''), score: (!stale && sc) || (w||l ? w+'-'+l : '')};
+  // (Won / Lost only once a team has the sets to win: "Start a new match" at 1-0 saved a Win - audit 10-12)
+  return {result: (!stale && m.result) || (w >= winSets(m) ? 'W' : l >= winSets(m) ? 'L' : ''), score: (!stale && sc) || (w||l ? w+'-'+l : '')};
 }
 // The final-whistle guess: ended sets, plus an open set only when its score already finishes it
 // (a set left at 10-12 in the middle of the match is not a lost set).
@@ -2484,8 +2586,8 @@ function pctParts(c, rs){
     // (pos: the same line without the errors, for the team picture)
     c.att ? {l:L('Attack'), a:kills, b:kills + c.aerr + c.att, n:L('efficiency {e}', {e:fmtEff(c)})}
       : {l:L('Attack'), n:only(kills && nWord(kills, 'kill'), c.aerr && nL(c.aerr, '{n} error', '{n} errors')), pos:kills ? nWord(kills, 'kill') : '–'},
-    c.serve ? {l:L('Serve'), a:c.ace + c.serve, b:c.ace + c.serve + c.serr, n:c.ace ? nWord(c.ace,'ace') : L('serves in')}
-      : rs && rs.of ? {l:L('Serve'), a:rs.of - rs.err, b:rs.of, n:c.ace ? nWord(c.ace,'ace') : L('serves in')}
+    rs && rs.of ? {l:L('Serve'), a:rs.of - rs.err, b:rs.of, n:c.ace ? nWord(c.ace,'ace') : L('serves in')}
+      : c.serve ? {l:L('Serve'), a:c.ace + c.serve, b:c.ace + c.serve + c.serr, n:c.ace ? nWord(c.ace,'ace') : L('serves in')}
       : {l:L('Serve'), n:only(c.ace && nWord(c.ace, 'ace'), c.serr && nL(c.serr, '{n} error', '{n} errors')), pos:c.ace ? nWord(c.ace, 'ace') : '–'},
     good + c.p1 ? {l:L('Reception'), a:good, b:good + c.p1 + c.rerr, n:pr ? L('pass rating {r}', {r:pr}) : L('good receptions')}
       : {l:L('Reception'), n:only(c.rerr && nL(c.rerr, '{n} error', '{n} errors')), pos:'–'},
@@ -2799,9 +2901,10 @@ function lineupSheet(m){
 function saveLineup(){
   const m = S.matches[S.activeId], lu = S.lu; if (!m || !lu) return;
   const sc = analyze(m).score[lu.set] || {us:0, them:0};
-  push(m, {k:'lineup', set:lu.set, pos:lu.pos.slice(), serve:lu.serve || null});
-  // at the start of a set this answers "who serves first" too (side-out %)
-  if (!(sc.us || sc.them) && lu.serve) m.serve = Object.assign({}, m.serve, {[lu.set]:lu.serve});
+  // at the start of a set this answers "who serves first" too (side-out %); Undo puts back the one it replaced
+  const first = !(sc.us || sc.them) && lu.serve;
+  push(m, Object.assign({k:'lineup', set:lu.set, pos:lu.pos.slice(), serve:lu.serve || null}, first ? {svFrom:(m.serve||{})[lu.set] || ''} : {}));
+  if (first) m.serve = Object.assign({}, m.serve, {[lu.set]:lu.serve});
   S.lu = null; S.barClosedAt = Date.now(); save(m); render(); toast(L('Line-up saved'));
 }
 // A player on court is subbed: who comes in (the bench, the libero marked)
@@ -3180,11 +3283,10 @@ const OLD_HOSTS = ['giannosanag.github.io', 'spike-sheet-theo.firebaseapp.com'];
 const onOld = () => OLD_HOSTS.includes(location.hostname);
 const ssGet = k => { try{ return sessionStorage.getItem(k); }catch(e){ return null; } };
 // things only this phone holds (practice matches are never kept): saved by signing in here, before moving
-const keptHere = () => Object.values(S.matches).some(m => !m.practice) || SLOTS.some(k => (S.teams[k].players || []).length) || !!S.player.name;
+const keptHere = () => Object.values(S.matches).some(m => !m.practice) || SLOTS.some(k => (S.teams[k].players || []).length) || !!S.player.name || !!asideOf(true);
 // everything on this phone is in the account: no save waiting or refused, and the cloud has confirmed every match
-const allSaved = () => { const cloud = new Set(LS.get('ss.cloud') || []);
-  return !!S.user && !S.saveFailed && !Object.keys(S.pending).length && (window.SS_waiting ? window.SS_waiting() : 1) === 0
-    && Object.values(S.matches).every(m => m.practice || cloud.has(m.id)); };
+const allSaved = () => !!S.user && S.serverSeen && !S.saveFailed && !Object.keys(S.pending).length && (window.SS_waiting ? window.SS_waiting() : 1) === 0
+  && !asideOf() && Object.values(S.matches).every(m => m.practice || (S.confirmed[m.id] ?? -1) >= (m.updatedAt||0));
 // a Home Screen app: a link to the new address opens in a browser sheet, so it is told the way instead
 const homeApp = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
 const movedNote = () => { const link = `<a href="${NEW_HOME}" style="color:inherit"><b>${NEW_HOST}</b></a>`;
@@ -3193,9 +3295,9 @@ const movedNote = () => { const link = `<a href="${NEW_HOME}" style="color:inher
       + (homeApp() ? ' ' + L('Open it in Safari or Chrome, add it to the Home Screen, then delete this icon.') : ''); };
 // Removed by the owner: only this, and Sign out (the rules refuse the account's folder meanwhile)
 const removedView = () => `<section class="panel"><h2>${L('Access removed')}</h2>
-    <p style="margin:0">${L("The app's owner removed your access to Spike Sheet. Your matches stay on this phone.")}</p>
+    <p style="margin:0">${L("The app's owner removed your access to Spike Sheet.")}</p>
     <p style="margin:0">${L('If you think this is a mistake, write to {email}.', {email:`<a href="mailto:${ADMIN}" style="color:inherit"><b>${ADMIN}</b></a>`})}</p>
-    <button class="btn btn-dk" id="b-signout">${L('Sign out')}</button></section>`;
+    <button class="btn btn-dk ${S.armed === 'signout' ? 'btn-del armed' : ''}" id="b-signout">${L(S.armed === 'signout' ? 'Tap again to sign out' : 'Sign out')}</button></section>`;
 // Signed out: only this page, until Google sign-in
 // The Google "G" (as on VIT Watch)
 const GMARK = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
@@ -3206,7 +3308,12 @@ const gateView = () => {
   const label = !ready ? 'Loading…' : wait ? 'Checking sign-in…' : S.opening ? 'Opening Google…' : 'Sign in with Google';
   const moveOnly = onOld() && homeApp() && !keptHere();
   return `<section class="panel">
-    ${S.signErr ? `<p style="margin:0;color:var(--neg)"><b>${L(S.signErr === 'none' ? 'Sign-in did not finish. Try again.' : 'Sign-in failed ({code})', {code:esc(S.signErr)})}</b></p>` : ''}
+    ${S.signErr ? `<p style="margin:0;color:var(--neg)"><b>${S.signErr === 'none' ? L('Sign-in did not finish. Try again.')
+      : /network-request-failed|timeout/.test(S.signErr) ? L("Can't reach Google. Check the internet.")
+      : /popup-blocked/.test(S.signErr) ? L('The browser blocked the Google window. Allow pop-ups for this site, then try again.')
+      : /web-storage-unsupported|storage/.test(S.signErr) ? L('This browser blocks what the sign-in needs (private mode?). Open the page in Safari or Chrome.')
+      : /unauthorized-domain|operation-not-allowed|requests-from/.test(S.signErr) ? L('Sign-in is not open on this address. Use spikesheet.web.app.')
+      : L('Sign-in failed ({code}). Try again.', {code:esc(S.signErr)})}</b></p>` : ''}
     ${onOld() ? `<p style="margin:0"><b>${movedNote()}</b></p>` : ''}
     ${moveOnly ? '' : `<p style="margin:0">${L('Sign in with Google to start. Your matches are saved in your account and sync to every phone you sign in on.')}</p>
     <button class="btn btn-or gbtn" id="b-signin"${off ? ' disabled aria-busy="true"' : ''}>${GMARK}<span>${L(label)}</span></button>`}
@@ -3220,13 +3327,14 @@ function privacyView(){
   return `<section class="panel">
     <div class="kicker">Spike Sheet</div><h2>${L('Privacy')}</h2>
     <p style="margin:0">${L('Spike Sheet keeps only what it needs to count your matches.')}</p></section>
-    ${part('What is kept', L("The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player card, and the email and name of your Google account. To help and fix problems: when you use the app, the kind of phone, the app version and its error messages."))}
-    ${part('Where', L("In your account on Google Firebase, Google's cloud. A copy stays on this phone, so the app works without signal."))}
+    ${part('What is kept', L("The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player card, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages."))}
+    ${part('Where', L("In your account on Google Firebase, Google's cloud: Google provides the servers and the sign-in. A copy stays on this phone while you are signed in, so the app works without signal."))}
     ${part('Who sees it', L("You, on every phone you sign in on. The app's owner, to help you and fix problems. Nothing is sold or given to anyone else. No ads, no tracking."))}
     ${part('Live score link', L('Only the two team names and the score, to anyone with the link, for 12 hours at most.'))}
-    ${part('Players|privacy', L("Add players with their agreement, and for children with a parent's. First names are enough."))}
+    ${part('Players|privacy', L("Add players with their agreement, and for children with a parent's. First names are enough. Under 15, a parent or the coach should keep the account."))}
     ${part('Pictures and files', L('The share picture, Excel and PDF are made on your phone. The app does not keep them.'))}
-    ${part('Deleting', L('Delete a match or a team in the app at any time. To delete everything in your account, write to {email}.', {email:`<a href="mailto:${ADMIN}" style="color:inherit"><b>${ADMIN}</b></a>`}))}
+    ${part('Deleting', L('Delete a match or a team in the app at any time. A deleted team stays in the matches it played: delete those too. To delete everything in your account, write to {email}.', {email:`<a href="mailto:${ADMIN}" style="color:inherit"><b>${ADMIN}</b></a>`}))}
+    ${part('Your rights', L('You can ask for a copy of your data, a correction or its deletion: write to {email}. You can also complain to the Hellenic Data Protection Authority (dpa.gr).', {email:`<a href="mailto:${ADMIN}" style="color:inherit"><b>${ADMIN}</b></a>`}))}
     <button class="btn btn-dk" data-view="${S.user ? 'player' : 'live'}">‹ ${L('Back')}</button>`;
 }
 
@@ -3325,12 +3433,13 @@ function teamMore(ms, season){
     });
   });
   if (!sets) return '';
+  const allSets = ms.reduce((t, m) => t + scoredSets(analyze(m).score).length, 0) || sets;
   const kills = c.kill + c.plase, ofUs = n => L('{p} of our points', {p:pctOf(n, us)}), ofThem = n => L('{p} of their points', {p:pctOf(n, them)});
   const sides = esc(homeName(ms[0])) + ' : ' + (ms.length === 1 ? esc(ms[0].opp) : L('opponents'));
   const secs = [
     kpiSec(L('Points'), [
-      [L('Rally points'), `${us} : ${them}`, L('{a} : {b} per set', {a:per(us, sets), b:per(them, sets)})],
-      [L('Point difference'), fmtPM(us - them), L('{v} per set', {v:(us > them ? '+' : '') + dec((us - them) / sets)})],
+      [L('Rally points'), `${us} : ${them}`, L('{a} : {b} per set', {a:per(us, allSets), b:per(them, allSets)})],
+      [L('Point difference'), fmtPM(us - them), L('{v} per set', {v:(us > them ? '+' : '') + dec((us - them) / allSets)})],
       [L('From spikes and plasé'), kills, ofUs(kills)], [L('From aces'), c.ace, ofUs(c.ace)], [L('From blocks'), c.block, ofUs(c.block)],
       [L('With +1 {team}', {team:esc(homeName(ms[0]))}), ps.theirErr, ofUs(ps.theirErr) + ' · ' + L('their errors, or no stat tapped')],
       typed.us + typed.them ? [L('Typed in'), `${typed.us} : ${typed.them}`, L('with Fix score or a late start, no stat')] : null,
@@ -3402,14 +3511,17 @@ function opponentsSec(ms){
 }
 // One player: a match or a season of one-player matches (court time, +/-, share of the team's points on court)
 function playerMore(ms, season){
-  const c = sumCounts(ms); let sets = 0, min = 0, pm = 0, plus = 0;
-  ms.forEach(m => { const a = analyze(m); sets += setsPlayed(m); min += mins(playMs(m)); pm += a.pm; plus += a.plus; });
+  const c = sumCounts(ms); let sets = 0, min = 0, pm = 0, plus = 0, ownP = 0, ownMin = 0;
+  // (a match switched from the whole team to one player counts their points from before the switch, when there was
+  // no clock and no on-court: it stays out of the two ratios - it showed 600%)
+  ms.forEach(m => { const a = analyze(m); sets += setsPlayed(m); min += mins(playMs(m)); pm += a.pm;
+    if (!m.soloNum){ plus += a.plus; ownP += pts(counts(m)); ownMin += mins(playMs(m)); } });
   const secs = [kpiSec(L('Per set and per minute'), [
     [L('Points'), pts(c), L('{v} per set', {v:per(pts(c), sets)})], [L('Errors'), errs(c), L('{v} per set', {v:per(errs(c), sets)})],
     [L('Rating'), fmtVir(vir(c)), L('{v} per set', {v:per(vir(c), sets)})],
     min ? [L('Minutes'), min, L('{v} per set', {v:per(min, sets)})] : null,
-    min ? [L('Points per 10 minutes on court'), fmtVir(pts(c) / min * 10)] : null,
-    plus ? [L("Share of the team's points"), pctOf(pts(c), plus), L('of the points the team won while {who} was on court', {who:pWho()})] : null,
+    ownMin ? [L('Points per 10 minutes on court'), fmtVir(ownP / ownMin * 10)] : null,
+    plus ? [L("Share of the team's points"), pctOf(ownP, plus), L('of the points the team won while {who} was on court', {who:pWho()})] : null,
     [L('+/- on court'), fmtPM(pm), season ? L('{v} per match', {v:(pm > 0 ? '+' : '') + dec(pm / ms.length)}) : '']]),
     ...skillSecs(c, sets, {})];
   if (season){ const done = ms.filter(m => m.result === 'W' || m.result === 'L'), byDate = ms.slice().sort((a, b) => (a.date||'').localeCompare(b.date||'') || (a.createdAt||0) - (b.createdAt||0));
@@ -3485,12 +3597,12 @@ function matchSheets(m){
     [L('Date'), m.date || ''], [L('Competition'), m.team || ''], [L('Home or away'), L(m.away ? 'Away' : 'Home')],
     [L('Result'), m.result === 'W' ? L('Won') : m.result === 'L' ? L('Lost') : ''], [L('Sets'), ordS(m, w, l)],
     ...sets.map(n => [L('Set {n}', {n}), ordS(m, a.score[n].us, a.score[n].them)])];
-  const line = (lead, c) => [...lead, pts(c), r1(vir(c)), errs(c), ...cols.map(t => c[t.k] || 0)];
+  const line = (lead, c, noRtg) => [...lead, pts(c), noRtg ? '' : r1(vir(c)), errs(c), ...cols.map(t => c[t.k] || 0)];
   const tail = [L('Points'), L('Rating'), L('Errors'), ...cols.map(t => statName(t.k))];
   const pt = team ? playTime([m]) : {}, onc = Object.keys(pt).length ? n => pt[n] ? [minutes(pt[n].ms), pt[n].pm] : ['', ''] : () => [];
   const box = team
     ? [[L('Number'), L('Name'), L('Position'), ...onc('').map((x, i) => i ? '+/-' : L('Minutes')), ...tail], ...playerRows([m]).map(r => { const p = (m.roster||[]).find(x => x.num === r.num) || {};
-        return line([r.num ? +r.num : '', r.num ? r.name || '' : L('No player'), posName(p.pos), ...onc(r.num)], r.c); }), line([L('Team'), '', '', ...onc('')], counts(m))]
+        return line([r.num ? +r.num : '', r.num ? r.name || '' : L('No player'), posName(p.pos), ...onc(r.num)], r.c); }), line([L('Team'), '', '', ...onc('')], counts(m), true)]
     : [[L('Sets'), ...tail], ...sets.map(n => line([L('Set {n}', {n})], counts(m, n))), line([L('Match')], counts(m))];
   const court = team ? null : setCourt(m);
   const setRows = [[L('Sets'), homeName(m), m.opp, L('Result'), L('Points'), L('Errors'), ...(team ? [L('Side-out') + ' %', L('Break points') + ' %', L('Longest run') + ': ' + homeName(m), L('Longest run') + ': ' + m.opp]
@@ -3636,7 +3748,7 @@ function playerView(){
     <div class="kicker">${L('Account')}</div>
     ${S.user
       ? `<p style="margin:0">${L('Signed in as {email}. Your matches are saved in your account and sync to every phone you sign in on.', {email:`<b>${esc(S.user.email||'')}</b>`})}</p>
-         <button class="btn btn-dk" id="b-signout">${L('Sign out')}</button>${isAdmin() ? `<button class="btn btn-or" id="b-admin">${L('Admin')}</button>` : ''}`
+         <button class="btn btn-dk ${S.armed === 'signout' ? 'btn-del armed' : ''}" id="b-signout">${L(S.armed === 'signout' ? 'Tap again to sign out' : 'Sign out')}</button>${isAdmin() ? `<button class="btn btn-or" id="b-admin">${L('Admin')}</button>` : ''}`
       : `<p style="margin:0">${L('Connecting to your account…')}</p>`}
     <p class="note" style="margin:0">${L("With Google sign-in, your matches, teams, player card and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.")}</p>
   </section>
@@ -3797,6 +3909,11 @@ document.addEventListener('click', async e => {
   if (['b-setend','b-matchend','b-endyes','b-setgo','b-servey','b-endmatch'].includes(t.id) && sinceBar < 800) return;
   // (Undo sits where Skip was: a double tap on Skip must not take the stat back)
   if ((t.dataset.stat || ['b-court','b-us','b-them','b-undo'].includes(t.id)) && Date.now() - (S.barClosedAt||0) < 350) return;
+  // the assist question waits for its answer (Ian 10-12): only its own buttons, Undo, the language and light / dark
+  // go on - any other button used to close it on the way (audit 10-12)
+  { const am = S.activeId && S.matches[S.activeId];
+    if (am && assistOpen(am) && !t.closest('.tagbar') && !['b-undo', 'b-whoundo', 'b-toastact'].includes(t.id) && !t.classList.contains('langb') && !t.classList.contains('themeb')){
+      S.nudgeAt = Date.now(); toast(L('First answer: who passed the ball?')); return render(); } }
   const wasArmed = S.armed;
   if (t.id !== 'b-del') S.armed = null;
   // any other button closes the "who passed" picker
@@ -3936,7 +4053,9 @@ document.addEventListener('click', async e => {
     case 'b-setend': case 'b-endyes': return endSet(true);
     case 'b-setgo': return pickSet(+t.dataset.go);
     // "yes, we served": before the set's first point that makes us its first server too
-    case 'b-servey': { const m = S.matches[S.activeId], sc = m && analyze(m).score[S.set]; if (m && !(sc && (sc.us || sc.them))) m.serve = Object.assign({}, m.serve, {[S.set]: 'us'}); return tap(t.dataset.k); }
+    case 'b-servey': { const m = S.matches[S.activeId], sc = m && analyze(m).score[S.set];
+      if (m && !(sc && (sc.us || sc.them))){ S.svFrom = {mid:m.id, was:(m.serve||{})[S.set] || ''}; m.serve = Object.assign({}, m.serve, {[S.set]: 'us'}); }
+      tap(t.dataset.k); S.svFrom = null; return; }
     case 'b-serveskip': { const m = S.matches[S.activeId]; if (m) S.serveSkip = m.id + ':' + S.set; S.barClosedAt = Date.now(); return render(); }
     // the match ends from a set that has not started (two sets played in a friendly)
     case 'b-endmatch': { const m = S.matches[S.activeId]; if (!m) return; const {w, l} = setsDone(m), sv = savedResult(m, w, l); return finishMatch(sv.result, sv.score); }
@@ -3977,6 +4096,9 @@ document.addEventListener('click', async e => {
     }
     case 'b-signout':
       if (!window.SS_auth) return;
+      if (wasArmed !== 'signout'){ arm('signout'); return syncNote(); }
+      if (Date.now() - (S.armAt||0) < 400){ S.armed = wasArmed; return; }
+      if (!S.removed && S.db && !S.serverSeen) return toast(L('Still connecting to your account. Try again in a moment.'));
       // signing out takes the matches off this phone: the account must have them all first
       if (navigator.onLine === false) return toast(L('No internet. Sign out when it is back, so nothing is lost.'));
       clearTimeout(S.flushT); await flush();
@@ -3993,7 +4115,7 @@ document.addEventListener('click', async e => {
     case 'b-resume': return resume(t.dataset.id);
     case 'b-closenew': S.choose = false; return closeAndNew();
     case 'b-continue': S.choose = false; markSeen(); render(); window.scrollTo(0,0); return;
-    case 'b-toastact': { const f = S.toastAct; $('#toast').hidden = true; S.toastAct = null; clearTimeout(S.toastT); return f && f(); }
+    case 'b-toastact': { const f = S.toastAct; $('#toast').classList.add('tq'); $('#toast').textContent = ''; S.toastAct = null; clearTimeout(S.toastT); return f && f(); }
     case 'b-practice': keepNf(); return startPractice();
     case 'b-endpractice': dropPractice(); render(); window.scrollTo(0,0); return toast(L('Practice over. Nothing was saved.'));
     case 'b-level': { const m = S.matches[S.activeId]; if (!m) return; m.basic = !m.basic; LS.set('ss.basic', !!m.basic); save(m); render(); return toast(m.basic ? L('Basic: 6 stat buttons') : L('Full: every stat button')); }
@@ -4069,6 +4191,7 @@ function goBack(){
   if (S.lu || S.sub){ S.lu = null; S.sub = null; S.barClosedAt = Date.now(); render(); return true; }
   // the new-match steps: Back goes one step back
   if (S.view === 'live' && !m && (S.nfStep || 1) > 1){ keepNf(); S.nfStep--; render(); window.scrollTo(0,0); return true; }
+  if (m && assistOpen(m)){ S.nudgeAt = Date.now(); toast(L('First answer: who passed the ball?')); render(); return true; }
   if (S.who || S.tag || S.toAsk || S.fixAsk || S.endAsk || S.setAsk || S.serveAsk){ whoLeft(); S.who = null; S.whoOther = false; S.tag = null; S.toAsk = false; S.fixAsk = false; S.endAsk = false; S.setAsk = null; S.serveAsk = null; clearTimeout(S.tagT); S.barClosedAt = Date.now(); render(); return true; }
   // the libero and first-server questions: Back is "Later"
   if (S.view === 'live' && m && isTeam(m)){
@@ -4080,7 +4203,10 @@ function goBack(){
   if (S.view !== 'live'){
     // the team page: saved like leaving it by a tab; refused, the typing waits there
     if (S.view === 'team'){ if (teamDirty() && !saveTeamForm()) toast(L('Team not saved yet: finish it on the Team page')); else dropDraft(); }
-    S.view = 'live'; S.openId = null; S.editList = false; render(); window.scrollTo(0,0); return true; }
+    // one page back: a report or a player's page to Season, privacy to Profile, the owner's pages up one level
+    if (S.view === 'admin' && S.adm && (S.adm.match || S.adm.user)){ if (S.adm.match) S.adm.match = null; else S.adm.user = null; }
+    else S.view = S.view === 'match' || S.view === 'tplayer' ? 'history' : S.view === 'admin' || (S.view === 'privacy' && S.user) ? 'player' : 'live';
+    S.openId = null; S.editList = false; render(); window.scrollTo(0,0); return true; }
   return false;
 }
 history.pushState({ss:1}, '');
@@ -4167,14 +4293,14 @@ let waiting = 0, reported = 0;
 window.SS_waiting = () => waiting;
 function database(uid){
   const base = 'users/' + uid + '/';
-  const ok = r => { waiting--; window.SS_writeOk(r);
+  const ok = r => { waiting--; window.SS_writeOk(r); window.SS_waitChanged();
     if (!waiting && reported){ reported = 0; F.setDoc(F.doc(fs, 'users', uid), {phones:{[pid]:{wait:0, up:Date.now()}}}, {merge:true}).catch(() => {}); } };
-  const fail = (e, p) => { waiting--; window.SS_writeFailed(e, p); };
+  const fail = (e, p) => { waiting--; window.SS_writeFailed(e, p); window.SS_waitChanged(); };
   const meta = {includeMetadataChanges: true};
   return {
     doc: p => ({
-      set: body => { waiting++; F.setDoc(F.doc(fs, base + p), body).then(ok, e => fail(e, p)); return Promise.resolve(); },
-      delete: () => { waiting++; F.deleteDoc(F.doc(fs, base + p)).then(ok, e => fail(e, p)); return Promise.resolve(); },
+      set: body => { waiting++; window.SS_waitChanged(); F.setDoc(F.doc(fs, base + p), body).then(ok, e => fail(e, p)); return Promise.resolve(); },
+      delete: () => { waiting++; window.SS_waitChanged(); F.deleteDoc(F.doc(fs, base + p)).then(ok, e => fail(e, p)); return Promise.resolve(); },
       onSnapshot: (cb, err) => F.onSnapshot(F.doc(fs, base + p), meta,
         s => cb({exists: s.exists(), data: () => s.data(), metadata: s.metadata}), err),
     }),
@@ -4207,12 +4333,17 @@ window.SS_auth = {
     }
   },
   // Signing out takes the matches off this phone, so first wait until the account has every tap (at most 6 s).
-  async signOut(){
-    try{
-      const done = await Promise.race([F.waitForPendingWrites(fs).then(() => true), new Promise(r => setTimeout(() => r(false), 6000))]);
+  async signOut(now){
+    // (now: turned back at sign-in, nothing of this account on the phone yet)
+    if (!now){
+      const done = await Promise.race([F.waitForPendingWrites(fs).then(() => true, () => false), new Promise(r => setTimeout(() => r(false), 6000))]);
       if (!done) return window.SS_toast(window.SS_L('Still saving to your account. Try again in a moment.'));
-    }catch(e){}
-    return A.signOut(auth);
+    }
+    await A.signOut(auth);
+    // (the app has taken the account's matches off the phone by now; the database's own copy goes too, then a fresh start)
+    await new Promise(r => setTimeout(r, 300));
+    try{ await F.terminate(fs); await F.clearIndexedDbPersistence(fs); }catch(e){}
+    location.reload();
   },
 };
 Promise.race([A.getRedirectResult(auth), new Promise(r => setTimeout(() => r(null), 60000))])
@@ -4239,6 +4370,19 @@ async function ping(u){
   }catch(e){}
 }
 // The owner's admin page: every account's profile, matches, player card and teams (the rules allow only the owner)
+// What another account wrote is checked before the owner's page draws it: the sets are numbers 1-9, the texts are text
+const okText = v => v == null || typeof v === 'string';
+const okMatch = m => !!m && typeof m === 'object' && typeof m.id === 'string' && Array.isArray(m.log)
+  && m.log.every(e => e && typeof e === 'object' && typeof e.k === 'string' && Number.isInteger(e.set) && e.set >= 1 && e.set <= 9)
+  && ['date', 'opp', 'home', 'team', 'result', 'score'].every(k => okText(m[k]))
+  && (m.roster == null || (Array.isArray(m.roster) && m.roster.every(x => x && typeof x === 'object' && okText(x.num) && okText(x.name))));
+const okCard = p => p && typeof p === 'object' && ['name', 'num', 'pos'].every(k => okText(p[k])) ? p : null;
+const okTeam = t => t && typeof t === 'object' && okText(t.name) && (t.players == null || (Array.isArray(t.players)
+  && t.players.every(x => x && typeof x === 'object' && okText(x.num) && okText(x.name) && okText(x.pos)))) ? t : null;
+const okProfile = p => { p = p && typeof p === 'object' ? Object.assign({}, p) : {};
+  ['email', 'name', 'ver', 'kind', 'lang'].forEach(k => { if (!okText(p[k])) delete p[k]; });
+  ['last', 'first', 'alive', 'opens'].forEach(k => { if (p[k] != null && typeof p[k] !== 'number') delete p[k]; });
+  return p; };
 window.SS_admin = {
   async all(){
     const [us, bl] = await Promise.all([F.getDocs(F.collection(fs, 'users')), F.getDocs(F.collection(fs, 'blocked'))]);
@@ -4246,7 +4390,7 @@ window.SS_admin = {
     const users = await Promise.all(us.docs.map(async d => {
       const uid = d.id, [ms, p, t1, t2] = await Promise.all([F.getDocs(F.collection(fs, 'users', uid, 'matches')), F.getDoc(F.doc(fs, 'users', uid, 'settings', 'player')),
         F.getDoc(F.doc(fs, 'users', uid, 'settings', 'team')), F.getDoc(F.doc(fs, 'users', uid, 'settings', 'team2'))]);
-      return {uid, profile:d.data(), matches:ms.docs.map(x => x.data()).filter(m => m && m.id), player:p.exists() ? p.data() : null, teams:[t1, t2].map(t => t.exists() ? t.data() : null),
+      return {uid, profile:okProfile(d.data()), matches:ms.docs.map(x => x.data()).filter(okMatch), player:p.exists() ? okCard(p.data()) : null, teams:[t1, t2].map(t => t.exists() ? okTeam(t.data()) : null),
         removed:!!gone[uid], removedAt:gone[uid] && gone[uid].at};
     }));
     // removed people whose data is already deleted: still listed, so their access can be given back
@@ -4258,9 +4402,11 @@ window.SS_admin = {
   giveBack: uid => F.deleteDoc(F.doc(fs, 'blocked', uid)),
   // every document of one account: its matches, its settings and its profile
   async wipe(uid){
-    const ms = await F.getDocs(F.collection(fs, 'users', uid, 'matches'));
-    const refs = ms.docs.map(d => d.ref).concat(['player', 'team', 'team2'].map(k => F.doc(fs, 'users', uid, 'settings', k)), [F.doc(fs, 'users', uid)]);
-    for (let i = 0; i < refs.length; i += 400){ const b = F.writeBatch(fs); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit(); }
+    const [ms, lv] = await Promise.all([F.getDocs(F.collection(fs, 'users', uid, 'matches')), F.getDocs(F.query(F.collection(fs, 'live'), F.where('uid', '==', uid)))]);
+    const refs = ms.docs.map(d => d.ref).concat(['player', 'team', 'team2'].map(k => F.doc(fs, 'users', uid, 'settings', k)), [F.doc(fs, 'users', uid)], lv.docs.map(d => d.ref));
+    for (let i = 0; i < refs.length; i += 15){ const b = F.writeBatch(fs); refs.slice(i, i + 15).forEach(r => b.delete(r)); await b.commit(); }
+    // the entry that keeps the access removed stays, without the email
+    await F.setDoc(F.doc(fs, 'blocked', uid), {at:Date.now(), wiped:true});
   },
 };
 // The person's own entry on the owner's removed list (so the app can say so)

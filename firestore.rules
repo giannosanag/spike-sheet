@@ -12,13 +12,23 @@ service cloud.firestore {
     function removed() {
       return exists(/databases/$(database)/documents/blocked/$(request.auth.uid));
     }
-    // Each Google account reads and writes only its own folder: its profile (users/<uid>),
-    // its matches and its settings. The owner may read them, never change them; the owner may delete
-    // them (a deletion request, after removing the account's access).
-    match /users/{uid}/{document=**} {
+    // The owner deletes an account's data (a deletion request) only after removing its access.
+    function wipeable(uid) {
+      return isOwner() && exists(/databases/$(database)/documents/blocked/$(uid));
+    }
+    // Each Google account reads and writes only its own folder: its profile (users/<uid>), its matches and
+    // its settings. The owner may read them, never change them. The profile's email is the account's own
+    // (the owner's page shows it), and only the owner deletes a profile.
+    match /users/{uid} {
       allow read: if request.auth != null && ((request.auth.uid == uid && !removed()) || isOwner());
-      allow write: if request.auth != null && request.auth.uid == uid && !removed();
-      allow delete: if isOwner();
+      allow create, update: if request.auth != null && request.auth.uid == uid && !removed()
+        && (!('email' in request.resource.data) || request.resource.data.email == request.auth.token.email);
+      allow delete: if wipeable(uid);
+      match /{coll}/{doc=**} {
+        allow read: if request.auth != null && ((request.auth.uid == uid && !removed()) || isOwner());
+        allow write: if request.auth != null && request.auth.uid == uid && !removed();
+        allow delete: if wipeable(uid);
+      }
     }
     // The owner's list of removed people. Only the owner lists and changes it; each person may read
     // their own entry, so the app can tell them.
@@ -27,10 +37,12 @@ service cloud.firestore {
       allow list, write: if isOwner();
     }
     // A live score link: the two team names and the score only, no players. Anyone with the link's code
-    // may read that one score until it ends (nobody can list them); only the account that made it writes it.
+    // may read that one score until it ends (nobody else can list them); only the account that made it
+    // writes it. The owner lists and deletes them (a deletion request, an abusive one).
     // (A code not written yet may be read too, so a link opened before the first point keeps waiting for it.)
     match /live/{code} {
       allow get: if resource == null || resource.data.until > request.time;
+      allow list: if isOwner();
       allow create, update: if request.auth != null && !removed()
         && request.resource.data.uid == request.auth.uid
         && (resource == null || resource.data.uid == request.auth.uid)
@@ -44,7 +56,7 @@ service cloud.firestore {
         && request.resource.data.at is timestamp
         && request.resource.data.until is timestamp
         && request.resource.data.until < request.time + duration.value(2, 'd');
-      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow delete: if request.auth != null && (resource.data.uid == request.auth.uid || isOwner());
     }
   }
 }
