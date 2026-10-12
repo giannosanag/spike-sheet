@@ -583,7 +583,7 @@ const S = {matches:{}, player:{name:'', num:'', pos:''}, teams:{team:{name:'', p
 // "Player|tab": one English word with two Greek ones (the part after | is not shown in English;
 // without its own Greek it takes the plain word's).
 // The app's version, on the Player page and on the owner's page: bump it together with CACHE in sw.js on every release
-const APP_VERSION = 'v41';
+const APP_VERSION = 'v42';
 const EL = {
   // header and tabs
   'Live': 'Αγώνας', 'Season': 'Σεζόν', 'Player|tab': 'Προφίλ', 'Team': 'Ομάδα', 'Spike Sheet, home': 'Spike Sheet, αρχική', 'Views': 'Σελίδες',
@@ -653,7 +653,7 @@ const EL = {
   'Privacy': 'Απόρρητο',
   'Spike Sheet keeps only what it needs to count your matches.': 'Το Spike Sheet κρατά μόνο ό,τι χρειάζεται για να καταγράφει τους αγώνες σου.',
   'What is kept': 'Τι κρατάμε',
-  "The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player card, and the email and name of your Google account. To help and fix problems: when you open the app, the kind of phone, the app version and its error messages.": 'Τους αγώνες που καταγράφεις (σκορ, στατιστικά, φάση-φάση), τις ομάδες σου (ονόματα και αριθμούς παικτών), το προφίλ, και το email και το όνομα του λογαριασμού σου Google. Για να σε βοηθάμε και να διορθώνουμε προβλήματα: πότε ανοίγεις την εφαρμογή, τον τύπο του κινητού, την έκδοση της εφαρμογής και τα μηνύματα σφάλματός της.',
+  "The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player card, and the email and name of your Google account. To help and fix problems: when you use the app, the kind of phone, the app version and its error messages.": 'Τους αγώνες που καταγράφεις (σκορ, στατιστικά, φάση-φάση), τις ομάδες σου (ονόματα και αριθμούς παικτών), το προφίλ, και το email και το όνομα του λογαριασμού σου Google. Για να σε βοηθάμε και να διορθώνουμε προβλήματα: πότε χρησιμοποιείς την εφαρμογή, τον τύπο του κινητού, την έκδοση της εφαρμογής και τα μηνύματα σφάλματός της.',
   'Where': 'Πού',
   "In your account on Google Firebase, Google's cloud. A copy stays on this phone, so the app works without signal.": 'Στον λογαριασμό σου στο Google Firebase, το cloud της Google. Ένα αντίγραφο μένει σε αυτό το κινητό, ώστε η εφαρμογή να δουλεύει και χωρίς σήμα.',
   'Who sees it': 'Ποιος τα βλέπει',
@@ -666,6 +666,15 @@ const EL = {
   'Deleting': 'Διαγραφή',
   'Delete a match or a team in the app at any time. To delete everything in your account, write to {email}.': 'Σβήσε έναν αγώνα ή μια ομάδα στην εφαρμογή όποτε θέλεις. Για να σβηστούν όλα από τον λογαριασμό σου, γράψε στο {email}.',
   'Download all data': 'Λήψη όλων των δεδομένων',
+  'Online now': 'Συνδεδεμένοι τώρα', 'app open, last 5 min': 'εφαρμογή ανοιχτή, τελευταία 5 λεπτά', 'App open now': 'Η εφαρμογή είναι ανοιχτή τώρα',
+  'No access': 'Χωρίς πρόσβαση', 'Access': 'Πρόσβαση', 'Remove access': 'Αφαίρεση πρόσβασης', 'Tap again to remove access': 'Πάτα ξανά για αφαίρεση πρόσβασης',
+  'Give access back': 'Επαναφορά πρόσβασης', 'Download their data': 'Λήψη δεδομένων χρήστη', 'Delete all their data': 'Διαγραφή όλων των δεδομένων χρήστη',
+  'Tap again: delete everything of {email}': 'Πάτα ξανά: διαγραφή όλων του {email}', 'Download their data first. This cannot be undone.': 'Κατέβασε πρώτα τα δεδομένα. Δεν αναιρείται.',
+  'Removing access stops this person using the app, on every phone. Their data stays until you delete it.': 'Η αφαίρεση πρόσβασης σταματά αυτό το άτομο να χρησιμοποιεί την εφαρμογή, σε κάθε κινητό. Τα δεδομένα του μένουν μέχρι να τα διαγράψεις.',
+  'Access removed {when}.': 'Η πρόσβαση αφαιρέθηκε {when}.', 'Access removed': 'Η πρόσβαση αφαιρέθηκε', 'Access given back': 'Η πρόσβαση επανήλθε',
+  'All their data deleted': 'Όλα τα δεδομένα διαγράφηκαν', 'Not done ({code})': 'Δεν έγινε ({code})',
+  "The app's owner removed your access to Spike Sheet. Your matches stay on this phone.": 'Ο διαχειριστής αφαίρεσε την πρόσβασή σου στο Spike Sheet. Οι αγώνες σου μένουν σε αυτό το κινητό.',
+  'If you think this is a mistake, write to {email}.': 'Αν νομίζεις ότι είναι λάθος, γράψε στο {email}.',
   'Spike Sheet backup': 'Αντίγραφο Spike Sheet',
   'Connecting to your account…': 'Σύνδεση με τον λογαριασμό σου…',
   'Opened from Instagram, Facebook, Messenger or Viber? Open the page in Safari or Chrome first: Google sign-in does not work inside them.': 'Το άνοιξες από Instagram, Facebook, Messenger ή Viber; Άνοιξε πρώτα τη σελίδα στο Safari ή στο Chrome: η σύνδεση Google δεν λειτουργεί μέσα σε αυτές τις εφαρμογές.', 'Sign-in did not finish. Try again.': 'Η σύνδεση δεν ολοκληρώθηκε. Δοκίμασε ξανά.',
@@ -1078,9 +1087,18 @@ window.SS_onUser = (u, db) => {
     try{ localStorage.removeItem('ss.keptFor'); }catch(e){}
     LS.set('ss.uid', u.uid);
     S.user = u;
-    connect(db);
+    S.removed = undefined;
+    if (S.unRm){ S.unRm(); S.unRm = null; }
+    if (!window.SS_watchRemoved) connect(db);
+    else S.unRm = window.SS_watchRemoved(u.uid, r => {
+      if (r === S.removed) return;
+      const first = S.removed === undefined; S.removed = r;
+      if (r){ disconnect(); toast(L('Access removed')); } else if (first || !S.db) connect(db);
+      syncNote(); if (!isTyping()) render();
+    });
   } else {
-    S.user = null;
+    S.user = null; S.removed = false;
+    if (S.unRm){ S.unRm(); S.unRm = null; }
     // signed out: take this account's matches off the phone (they stay in the cloud)
     if (prev){
       clearLocal(true, refused, unsent);
@@ -1740,6 +1758,7 @@ function render(){
     S.timer = setInterval(() => { if (S.watch.data === undefined) return render(); const x = $('#wago'); if (x && S.watch.data) x.textContent = ago(S.watch.data.at); }, 15000); return; }
   document.body.classList.toggle('gate', !S.user && !LS.get('ss.uid'));
   if (document.body.classList.contains('gate') && onOld() && !keptHere() && !homeApp()) return location.replace(NEW_HOME + location.hash);
+  if (S.user && S.removed){ document.body.classList.add('gate'); document.body.classList.remove('playing'); clearInterval(S.timer); $('#app').innerHTML = removedView(); capsFix($('#app')); return; }
   if (document.body.classList.contains('gate')){ document.body.classList.remove('playing'); clearInterval(S.timer); $('#app').innerHTML = S.view === 'privacy' ? privacyView() : gateView(); capsFix($('#app')); return; }
   document.querySelectorAll('.tabs button[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history') || ((S.view==='admin' || S.view==='privacy') && b.dataset.view==='player'))));
   const app = $('#app');
@@ -3172,6 +3191,11 @@ const movedNote = () => { const link = `<a href="${NEW_HOME}" style="color:inher
   return !S.user && keptHere() ? L('Spike Sheet has a new address. Matches or a team are on this phone: sign in here first to keep them, then open {link}.', {link})
     : L('Spike Sheet has a new address: {link}. Sign in there once, your matches come with you.', {link})
       + (homeApp() ? ' ' + L('Open it in Safari or Chrome, add it to the Home Screen, then delete this icon.') : ''); };
+// Removed by the owner: only this, and Sign out (the rules refuse the account's folder meanwhile)
+const removedView = () => `<section class="panel"><h2>${L('Access removed')}</h2>
+    <p style="margin:0">${L("The app's owner removed your access to Spike Sheet. Your matches stay on this phone.")}</p>
+    <p style="margin:0">${L('If you think this is a mistake, write to {email}.', {email:`<a href="mailto:${ADMIN}" style="color:inherit"><b>${ADMIN}</b></a>`})}</p>
+    <button class="btn btn-dk" id="b-signout">${L('Sign out')}</button></section>`;
 // Signed out: only this page, until Google sign-in
 // The Google "G" (as on VIT Watch)
 const GMARK = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
@@ -3196,7 +3220,7 @@ function privacyView(){
   return `<section class="panel">
     <div class="kicker">Spike Sheet</div><h2>${L('Privacy')}</h2>
     <p style="margin:0">${L('Spike Sheet keeps only what it needs to count your matches.')}</p></section>
-    ${part('What is kept', L("The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player card, and the email and name of your Google account. To help and fix problems: when you open the app, the kind of phone, the app version and its error messages."))}
+    ${part('What is kept', L("The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player card, and the email and name of your Google account. To help and fix problems: when you use the app, the kind of phone, the app version and its error messages."))}
     ${part('Where', L("In your account on Google Firebase, Google's cloud. A copy stays on this phone, so the app works without signal."))}
     ${part('Who sees it', L("You, on every phone you sign in on. The app's owner, to help you and fix problems. Nothing is sold or given to anyone else. No ads, no tracking."))}
     ${part('Live score link', L('Only the two team names and the score, to anyone with the link, for 12 hours at most.'))}
@@ -3631,17 +3655,35 @@ function playerView(){
 /* ---------- admin: the app's owner sees every account (the Firestore rules allow it for this account only) ---------- */
 const ADMIN = 'giannosanag@gmail.com';
 const isAdmin = () => !!(S.user && S.user.email === ADMIN);
+// Remove access (kick out) or give it back, a copy of one person's data, and deleting it all (a deletion request:
+// only after the access is removed, so no phone brings it back). Never for the owner's own account.
+function admAccess(u){
+  const own = S.user && u.uid === S.user.uid, email = esc((u.profile||{}).email || u.uid);
+  const rm = S.armed === 'rm-' + u.uid, wipe = S.armed === 'wipe-' + u.uid;
+  return `<section class="sec"><div class="sec-h"><h3>${L('Access')}</h3></div>
+    <div class="row"><button class="btn btn-dk" id="b-adone">${L('Download their data')}</button>${own ? '' : u.removed
+      ? `<button class="btn btn-dk" id="b-adgive">${L('Give access back')}</button>`
+      : `<button class="btn btn-del ${rm ? 'armed' : ''}" id="b-adrm">${rm ? L('Tap again to remove access') : L('Remove access')}</button>`}</div>
+    ${own ? '' : u.removed
+      ? `<button class="btn btn-del ${wipe ? 'armed' : ''}" id="b-adwipe">${wipe ? L('Tap again: delete everything of {email}', {email}) : L('Delete all their data')}</button>
+        <p class="note" style="margin:0">${L('Download their data first. This cannot be undone.')}</p>`
+      : `<p class="note" style="margin:0">${L('Removing access stops this person using the app, on every phone. Their data stays until you delete it.')}</p>`}
+  </section>`;
+}
 // The owner's copy of everything (the free plan keeps no backups): every account's profile, matches, player card
 // and teams as one file - to the share sheet on an iPhone (Save to Files), to Downloads elsewhere
-function adminBackup(){
-  const users = (S.adm && S.adm.users) || [], d = new Date(), two = v => String(v).padStart(2, '0');
+function adminBackup(one){
+  const users = one ? [one] : (S.adm && S.adm.users) || [], d = new Date(), two = v => String(v).padStart(2, '0');
   const body = JSON.stringify({app:'Spike Sheet', version:APP_VERSION, made:d.toISOString(), users});
-  shareFile(new File([body], 'spike-sheet-backup-' + d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate()) + '.json', {type:'application/json'}), L('Spike Sheet backup'));
+  const who = one ? String((one.profile||{}).email || one.uid).replace(/@.*/, '').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') : 'backup';
+  shareFile(new File([body], 'spike-sheet-' + (who || 'account') + '-' + d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate()) + '.json', {type:'application/json'}), L('Spike Sheet backup'));
 }
 function adminLoad(){
   if (!window.SS_admin) return toast(L("Can't reach Google. Check the internet."));
+  const was = S.adm && S.adm.user;
   S.adm = {loading:true}; render();
-  window.SS_admin.all().then(users => { S.adm = {users}; if (S.view === 'admin') render(); }, e => { S.adm = {err:(e && e.code) || String(e)}; if (S.view === 'admin') render(); });
+  window.SS_admin.all().then(users => { S.adm = {users, user:was && users.some(x => x.uid === was) ? was : null}; if (S.view === 'admin') render(); },
+    e => { S.adm = {err:(e && e.code) || String(e)}; if (S.view === 'admin') render(); });
 }
 // "3 min ago", "5 h ago", else the date and time
 function ago(t){
@@ -3656,7 +3698,7 @@ function ago(t){
 // days used in the last 30, from the profile's day counts
 const activeDays = p => { const from = Date.now() - 30 * 864e5; return Object.keys((p && p.days) || {}).filter(d => Date.parse(d + 'T12:00') >= from).length; };
 function adminView(){
-  const A = S.adm || {}, head = t => `<section class="panel"><div class="kicker">${L('Admin')}</div><h2>${t}</h2>`;
+  const A = S.adm || {}, head = t => `<section class="panel"><button class="lnk" id="b-adtop" style="align-self:flex-start">‹ ${L('Back')}</button><div class="kicker">${L('Admin')}</div><h2>${t}</h2>`;
   if (!isAdmin()) return `${head(L('Admin'))}<p class="empty">${L("Only the app's owner can open this page.")}</p></section>`;
   if (A.loading) return `${head(L('Admin'))}<p class="note">${L('Reading every account…')}</p></section>`;
   if (A.err) return `${head(L('Admin'))}<p class="note">${L('The accounts could not be read ({code}). Are the new Firestore rules published?', {code:esc(A.err)})}</p><button class="btn btn-or" id="b-adload">${L('Try again')}</button></section>`;
@@ -3675,6 +3717,7 @@ function adminView(){
   if (u){ const p = u.profile || {}, ms = u.matches.slice().sort((a, b) => (b.date||'').localeCompare(a.date||'') || (b.createdAt||0) - (a.createdAt||0));
     const days = Object.keys(p.days || {}).sort().reverse().slice(0, 14), iss = admIssues(p).slice().reverse();
     return `${head(esc(p.email || u.uid))}${p.name ? `<p class="note" style="margin:0">${esc(p.name)}</p>` : ''}
+      ${onlineNow(p) ? `<p class="note" style="margin:0"><span class="dot-ok"></span>${L('App open now')}</p>` : ''}${u.removed ? `<p class="note neg" style="margin:0"><b>${L('Access removed {when}.', {when:ago(u.removedAt)})}</b></p>` : ''}
       <div class="kpis">${[[L('Last seen'), ago(p.last)], [L('Version'), esc(p.ver || '?')], [L('First seen'), ago(p.first)], [L('Opens'), +p.opens || 0], [L('Days used, last 30'), activeDays(p)],
         [L('Devices'), Object.entries(p.devices || {}).sort((a, b) => b[1] - a[1]).map(([k, t]) => esc(k) + ' (' + ago(t) + ')').join('<br>') || '–'],
         [L('Language'), esc(p.lang || '–')], [L('Last days'), days.map(d => esc(shortDate(d)) + (p.days[d] > 1 ? ' ×' + p.days[d] : '')).join(' · ') || '–']]
@@ -3688,6 +3731,7 @@ function adminView(){
       <div class="mlist">${ms.map(m => `<button class="mitem" data-amatch="${esc(m.id)}"><span class="res ${admLive(m) ? 'live' : m.done ? esc(m.result||'') : ''}">${admLive(m) ? L('LIVE') : m.done ? resLetter(m.result) : '–'}</span>
         <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${isTeam(m) ? L('whole team') : L('One player')}</div></span>
         <span class="p">${pts(counts(m))}<small>${unitW(pts(counts(m)), 'PTS')}</small></span></button>`).join('') || `<p class="empty">${L('No matches yet.')}</p>`}</div></section>
+      ${admAccess(u)}
       <button class="btn btn-dk" id="b-adback">‹ ${L('Back')}</button>`; }
   // everyone: the totals, the versions in use, the latest matches, then each person (a problem or a live match marked)
   const now = Date.now(), dayAgo = now - 864e5, weekAgo = now - 7 * 864e5, seen = x => (x.profile||{}).last || 0;
@@ -3704,6 +3748,7 @@ function adminView(){
     <p class="note" style="margin:0">${L('Someone shows here after opening this version of the app once while signed in.')}</p>
     <div class="row"><button class="btn btn-dk" id="b-adload">${L('Read again')}</button><button class="btn btn-or" id="b-adbackup">${L('Download all data')}</button></div></section>
     <div class="tiles">
+      <div class="tile"><b>${users.filter(x => onlineNow(x.profile)).length}</b><span>${L('Online now')}</span><em>${L('app open, last 5 min')}</em></div>
       <div class="tile hero"><b>${users.filter(x => seen(x) > weekAgo).length}</b><span>${L('Active this week')}</span><em>${L('{d} today', {d:users.filter(x => seen(x) > dayAgo).length})}</em></div>
       <div class="tile"><b>${all.length}</b><span>${L('Matches')}</span><em>${L('{n} this week', {n:all.filter(({m}) => (m.createdAt||0) > weekAgo).length})}</em></div>
       <div class="tile"><b>${all.filter(({m}) => admLive(m)).length}</b><span>${L('Live now')}</span></div>
@@ -3719,10 +3764,14 @@ function adminView(){
       <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${esc((x.profile||{}).email || x.uid)}</div></span><span class="p">${pts(counts(m))}<small>${unitW(pts(counts(m)), 'PTS')}</small></span></button>`).join('')}</div></section>` : ''}
     <section class="sec"><div class="sec-h"><h3>${L('People')}</h3></div>
     <div class="mlist">${users.slice().sort((a, b) => probs(b).length - probs(a).length || seen(b) - seen(a)).map(x => { const p = x.profile || {}, team = x.matches.filter(isTeam).length, pr = probs(x).length, lv = x.matches.some(admLive), u = upOf(p);
-      return `<button class="mitem adu" data-auid="${esc(x.uid)}"><span><div class="t">${esc(p.email || x.uid)}${lv ? ` <span class="res live" style="display:inline-grid;vertical-align:1px">${L('LIVE')}</span>` : ''}${pr ? ` <span class="neg" style="font-size:13px">⚠ ${nL(pr, '{n} problem', '{n} problems')}</span>` : ''}</div>
+      return `<button class="mitem adu" data-auid="${esc(x.uid)}"><span><div class="t">${onlineNow(p) ? '<span class="dot-ok"></span>' : ''}${esc(p.email || x.uid)}${x.removed ? ` <span class="neg">${L('No access')}</span>` : ''}${lv ? ` <span class="res live" style="display:inline-grid;vertical-align:1px">${L('LIVE')}</span>` : ''}${pr ? ` <span class="neg" style="font-size:13px">⚠ ${nL(pr, '{n} problem', '{n} problems')}</span>` : ''}</div>
         <div class="d">${L('Last seen')} ${ago(p.last)} · ${esc(p.ver || '?')} · ${esc(p.kind || '?')} · ${nL(activeDays(p), '{n} day in 30', '{n} days in 30')}${u.up ? ' · ' + L('uploaded {t}', {t:ago(u.up)}) : ''}${u.wait ? ` · <span class="neg">${nL(u.wait, '{n} save waiting', '{n} saves waiting')}</span>` : ''}</div>
         <div class="d">${nL(x.matches.length, '{n} match', '{n} matches')} (${L('{t} team, {p} one player', {t:team, p:x.matches.length - team})})${x.teams.filter(t => t && t.name).map(t => ' · ' + esc(t.name)).join('')}</div></span></button>`; }).join('')}</div></section>`;
 }
+// the app open now: its beat (every 4 minutes while shown) or an open in the last 5 minutes
+const onlineNow = p => Math.max(+(p && p.alive) || 0, +(p && p.last) || 0) > Date.now() - 5 * 60e3;
+// the person the owner's page is on
+const admUser = () => S.adm && S.adm.users && S.adm.users.find(x => x.uid === S.adm.user);
 // a match not finished and changed in the last two hours is being tracked now; a profile's problems, newest last
 const admLive = m => !m.done && Date.now() - (m.updatedAt || 0) < 2 * 3600e3;
 const admIssues = p => (p && Array.isArray(p.issues) ? p.issues : []).filter(i => i && i.t && i.m);
@@ -3966,6 +4015,16 @@ document.addEventListener('click', async e => {
     // the owner's admin page: every account, one account, one match
     case 'b-admin': S.view = 'admin'; window.scrollTo(0,0); return adminLoad();
     case 'b-adbackup': return adminBackup();
+    case 'b-adtop': if (S.adm && S.adm.match) S.adm.match = null; else if (S.adm && S.adm.user) S.adm.user = null; else S.view = 'player'; window.scrollTo(0,0); return render();
+    case 'b-adone': { const u = admUser(); return u && adminBackup(u); }
+    case 'b-adrm': case 'b-adwipe': { const u = admUser(), key = (t.id === 'b-adrm' ? 'rm-' : 'wipe-') + (u && u.uid);
+      if (!u || !window.SS_admin || (S.user && u.uid === S.user.uid)) return;
+      if (wasArmed !== key) return arm(key);
+      if (Date.now() - (S.armAt||0) < 400){ S.armed = wasArmed; return; }
+      const done = t.id === 'b-adrm' ? window.SS_admin.remove(u.uid, (u.profile||{}).email) : window.SS_admin.wipe(u.uid);
+      return done.then(() => { toast(L(t.id === 'b-adrm' ? 'Access removed' : 'All their data deleted')); adminLoad(); }, e => toast(L('Not done ({code})', {code:(e && e.code) || e}))); }
+    case 'b-adgive': { const u = admUser(); if (!u || !window.SS_admin) return;
+      return window.SS_admin.giveBack(u.uid).then(() => { toast(L('Access given back')); adminLoad(); }, e => toast(L('Not done ({code})', {code:(e && e.code) || e}))); }
     case 'b-adload': return adminLoad();
     case 'b-adback': if (S.adm){ if (S.adm.match) S.adm.match = null; else S.adm.user = null; } window.scrollTo(0,0); return render();
     case 'b-pdf': return printPage();
@@ -4182,14 +4241,33 @@ async function ping(u){
 // The owner's admin page: every account's profile, matches, player card and teams (the rules allow only the owner)
 window.SS_admin = {
   async all(){
-    const us = await F.getDocs(F.collection(fs, 'users'));
-    return Promise.all(us.docs.map(async d => {
+    const [us, bl] = await Promise.all([F.getDocs(F.collection(fs, 'users')), F.getDocs(F.collection(fs, 'blocked'))]);
+    const gone = Object.fromEntries(bl.docs.map(d => [d.id, d.data() || {}]));
+    const users = await Promise.all(us.docs.map(async d => {
       const uid = d.id, [ms, p, t1, t2] = await Promise.all([F.getDocs(F.collection(fs, 'users', uid, 'matches')), F.getDoc(F.doc(fs, 'users', uid, 'settings', 'player')),
         F.getDoc(F.doc(fs, 'users', uid, 'settings', 'team')), F.getDoc(F.doc(fs, 'users', uid, 'settings', 'team2'))]);
-      return {uid, profile:d.data(), matches:ms.docs.map(x => x.data()).filter(m => m && m.id), player:p.exists() ? p.data() : null, teams:[t1, t2].map(t => t.exists() ? t.data() : null)};
+      return {uid, profile:d.data(), matches:ms.docs.map(x => x.data()).filter(m => m && m.id), player:p.exists() ? p.data() : null, teams:[t1, t2].map(t => t.exists() ? t.data() : null),
+        removed:!!gone[uid], removedAt:gone[uid] && gone[uid].at};
     }));
+    // removed people whose data is already deleted: still listed, so their access can be given back
+    Object.keys(gone).filter(uid => !users.some(x => x.uid === uid)).forEach(uid => users.push({uid, profile:{email:gone[uid].email || ''}, matches:[], player:null, teams:[null, null], removed:true, removedAt:gone[uid].at}));
+    return users;
+  },
+  // kick out: the rules refuse the account's folder and live links while blocked/<uid> exists
+  remove: (uid, email) => F.setDoc(F.doc(fs, 'blocked', uid), {email:email || '', at:Date.now()}),
+  giveBack: uid => F.deleteDoc(F.doc(fs, 'blocked', uid)),
+  // every document of one account: its matches, its settings and its profile
+  async wipe(uid){
+    const ms = await F.getDocs(F.collection(fs, 'users', uid, 'matches'));
+    const refs = ms.docs.map(d => d.ref).concat(['player', 'team', 'team2'].map(k => F.doc(fs, 'users', uid, 'settings', k)), [F.doc(fs, 'users', uid)]);
+    for (let i = 0; i < refs.length; i += 400){ const b = F.writeBatch(fs); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit(); }
   },
 };
+// The person's own entry on the owner's removed list (so the app can say so)
+window.SS_watchRemoved = (uid, cb) => F.onSnapshot(F.doc(fs, 'blocked', uid), s => cb(s.exists()), () => cb(false));
+// Online now, for the owner's page: while the app is open and shown, a beat every 4 minutes (best effort)
+const alive = () => { const u = auth.currentUser; if (u && document.visibilityState === 'visible') F.setDoc(F.doc(fs, 'users', u.uid), {alive:Date.now()}, {merge:true}).catch(() => {}); };
+setInterval(alive, 4 * 60e3);
 // The live score link (liveSend): the scorer writes live/<code>, anyone with the code reads it (no sign-in)
 window.SS_live = {
   put: (code, body) => auth.currentUser ? F.setDoc(F.doc(fs, 'live', code), Object.assign({}, body, {uid:auth.currentUser.uid, at:F.serverTimestamp(), until:F.Timestamp.fromMillis(Date.now() + (body.done ? 3 : 12) * 3600e3)}))
@@ -4199,8 +4277,8 @@ window.SS_live = {
 // (nothing in this phone's copy is not an answer: it waits for the server, or says it cannot reach it)
 if (S.watch) F.onSnapshot(F.doc(fs, 'live', S.watch.code), s => { if (!s.exists() && s.metadata.fromCache) return;
   const d = s.exists() ? s.data() : null; if (d) d.at = d.at && d.at.toMillis ? d.at.toMillis() : Date.now(); window.SS_liveSeen(d); }, () => window.SS_liveSeen(null));
-A.onAuthStateChanged(auth, u => { window.SS_onUser(u ? {uid: u.uid, email: u.email} : null, u ? database(u.uid) : null); if (u) ping(u); });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && auth.currentUser) ping(auth.currentUser); });
+A.onAuthStateChanged(auth, u => { window.SS_onUser(u ? {uid: u.uid, email: u.email} : null, u ? database(u.uid) : null); if (u){ ping(u); alive(); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && auth.currentUser){ ping(auth.currentUser); alive(); } });
 </script>
 <script>
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
