@@ -1,11 +1,10 @@
-const CACHE = 'spike-sheet-v43';
-const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
+const CACHE = 'spike-sheet-v44';
+const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png',
+  ...['archivo-latin', 'archivo-latin-ext', 'roboto-condensed-latin', 'roboto-condensed-latin-ext', 'roboto-condensed-greek', 'roboto-condensed-greek-ext'].map(f => 'fonts/' + f + '.woff2')];
 // The sign-in and sync code (same version as V in index.html). Saved at install, so the first open
 // after an update also works without signal. Best effort: a miss here must not stop the install.
 const FB = 'https://www.gstatic.com/firebasejs/10.14.1/';
-const LIBS = ['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].map(f => FB + f)
-  // the font stylesheet too: the page waits for it, so after an update on a weak signal it must not come from the network
-  .concat('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Roboto+Condensed:wght@600..800&display=swap');
+const LIBS = ['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].map(f => FB + f);
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE)
     .then(c => c.addAll(SHELL).then(() => Promise.all(LIBS.map(u => c.add(u).catch(() => {})))))
@@ -21,7 +20,7 @@ self.addEventListener('fetch', e => {
   // Google's sign-in pages (/__/auth/) and Firebase's own files are never touched: a saved or substituted copy breaks the sign-in
   if (url.pathname.startsWith('/__/')) return;
   const same = url.origin === location.origin;
-  const staticLib = url.host === 'www.gstatic.com' || url.host === 'fonts.googleapis.com' || url.host === 'fonts.gstatic.com';
+  const staticLib = url.host === 'www.gstatic.com';
   if (same){
     // newest copy from the internet, but never wait more than 2.5 s for it on a weak court-side signal:
     // then the saved copy opens and the download keeps going in the background for next time
