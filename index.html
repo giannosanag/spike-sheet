@@ -2957,7 +2957,7 @@ function picBars(ctx, c, W, P, y, rs, noErr){
 function picHead(ctx, m, a, sets, W, H, P){
   const {w, l} = finalSets(m);
   ctx.fillStyle = PIC.bg; ctx.fillRect(0, 0, W, H);
-  picText(ctx, 'spike-sheet-theo.firebaseapp.com', W/2, H-40, {size:24, color:PIC.muted, align:'center'});
+  picText(ctx, NEW_HOST, W/2, H-40, {size:24, color:PIC.muted, align:'center'});
   // brand + date
   ctx.fillStyle = PIC.volt; ctx.beginPath(); ctx.arc(P+12, 92, 12, 0, 7); ctx.fill();
   picText(ctx, 'SPIKE SHEET', P+36, 108, {w:800, size:46, head:true});
@@ -3075,8 +3075,10 @@ window.SS_liveSeen = d => { if (!S.watch) return;
     won:[0, 1].map(i => liveInt((d.won || [])[i])), sets:(Array.isArray(d.sets) ? d.sets : []).slice(0, 9).map(s => ({n:liveInt(s && s.n), u:liveInt(s && s.u), t:liveInt(s && s.t)}))} : null;
   render(); };
 // Spike Sheet moved from GitHub Pages to Firebase Hosting (2026-10-09): Google's sign-in helper is on the page's own address there
-const OLD_HOST = 'giannosanag.github.io', NEW_HOME = 'https://spike-sheet-theo.firebaseapp.com/';
-const onOld = () => location.hostname === OLD_HOST;
+const NEW_HOST = 'spikesheet.web.app', NEW_HOME = 'https://' + NEW_HOST + '/';
+// the addresses it had before: GitHub Pages (to 10-09) and the Firebase project's own address (10-09 to 10-12)
+const OLD_HOSTS = ['giannosanag.github.io', 'spike-sheet-theo.firebaseapp.com'];
+const onOld = () => OLD_HOSTS.includes(location.hostname);
 const ssGet = k => { try{ return sessionStorage.getItem(k); }catch(e){ return null; } };
 // things only this phone holds (practice matches are never kept): saved by signing in here, before moving
 const keptHere = () => Object.values(S.matches).some(m => !m.practice) || SLOTS.some(k => (S.teams[k].players || []).length) || !!S.player.name;
@@ -3086,7 +3088,7 @@ const allSaved = () => { const cloud = new Set(LS.get('ss.cloud') || []);
     && Object.values(S.matches).every(m => m.practice || cloud.has(m.id)); };
 // a Home Screen app: a link to the new address opens in a browser sheet, so it is told the way instead
 const homeApp = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
-const movedNote = () => { const link = `<a href="${NEW_HOME}" style="color:inherit"><b>spike-sheet-theo.firebaseapp.com</b></a>`;
+const movedNote = () => { const link = `<a href="${NEW_HOME}" style="color:inherit"><b>${NEW_HOST}</b></a>`;
   return !S.user && keptHere() ? L('Spike Sheet has a new address. Matches or a team are on this phone: sign in here first to keep them, then open {link}.', {link})
     : L('Spike Sheet has a new address: {link}. Sign in there once, your matches come with you.', {link})
       + (homeApp() ? ' ' + L('Open it in Safari or Chrome, add it to the Home Screen, then delete this icon.') : ''); };
@@ -3964,7 +3966,7 @@ const CONFIG = {
   // The page's own address, so the sign-in never depends on another site's storage (Safari, home-screen apps).
   // Firebase Hosting serves Google's sign-in helper (/__/auth/) there. The old address keeps its self-hosted copy
   // only for phones still signed in on it.
-  authDomain: location.hostname === 'giannosanag.github.io' ? 'giannosanag.github.io' : 'spike-sheet-theo.firebaseapp.com',
+  authDomain: [NEW_HOST, ...OLD_HOSTS].includes(location.hostname) ? location.hostname : NEW_HOST,
   projectId: "spike-sheet-theo",
   storageBucket: "spike-sheet-theo.firebasestorage.app",
   messagingSenderId: "617616185148",
