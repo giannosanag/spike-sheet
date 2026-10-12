@@ -1,4 +1,4 @@
-const CACHE = 'spike-sheet-v34';
+const CACHE = 'spike-sheet-v35';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 // The sign-in and sync code (same version as V in index.html). Saved at install, so the first open
 // after an update also works without signal. Best effort: a miss here must not stop the install.
@@ -18,6 +18,8 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // Google's sign-in pages (/__/auth/) and Firebase's own files are never touched: a saved or substituted copy breaks the sign-in
+  if (url.pathname.startsWith('/__/')) return;
   const same = url.origin === location.origin;
   const staticLib = url.host === 'www.gstatic.com' || url.host === 'fonts.googleapis.com' || url.host === 'fonts.gstatic.com';
   if (same){

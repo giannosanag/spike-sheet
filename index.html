@@ -601,6 +601,9 @@ const EL = {
   'No internet. Sign out when it is back, so nothing is lost.': 'Δεν υπάρχει ίντερνετ. Αποσυνδέσου όταν επανέλθει, για να μη χαθεί τίποτα.',
   'Still saving to your account. Try again in a moment.': 'Ακόμα αποθηκεύεται στον λογαριασμό σου. Δοκίμασε ξανά σε λίγο.',
   'Signing out…': 'Αποσύνδεση…', 'Sign-in failed ({code})': 'Η σύνδεση απέτυχε ({code})',
+  'Spike Sheet has a new address. Matches are on this phone: sign in here first to keep them, then open {link}.': 'Το Spike Sheet άλλαξε διεύθυνση. Σε αυτό το κινητό υπάρχουν αγώνες: συνδέσου πρώτα εδώ για να τους κρατήσεις και μετά άνοιξε το {link}.',
+  'Spike Sheet has a new address: {link}. Sign in there once, your matches come with you.': 'Το Spike Sheet άλλαξε διεύθυνση: {link}. Συνδέσου εκεί μία φορά, οι αγώνες σου έρχονται μαζί.',
+  'Open it in Safari or Chrome, add it to the Home Screen, then delete this icon.': 'Άνοιξέ το στο Safari ή στο Chrome, πρόσθεσέ το στην Αρχική οθόνη και μετά σβήσε αυτό το εικονίδιο.',
   'Signing in…': 'Σύνδεση…', 'Sign-in did not finish. Try again.': 'Η σύνδεση δεν ολοκληρώθηκε. Δοκίμασε ξανά.',
   'Won with sets {s}? Check the result': 'Νίκη με σετ {s}; Έλεγξε το αποτέλεσμα', 'Lost with sets {s}? Check the result': 'Ήττα με σετ {s}; Έλεγξε το αποτέλεσμα',
   'Sets already played: type them like 25-20, 22-25': 'Γράψε τα σετ έτσι: 25-20, 22-25', 'Score now: type it like 10-12': 'Γράψε το σκορ έτσι: 10-12',
@@ -1036,6 +1039,8 @@ function syncNote(){
         ? (Object.keys(S.matches).length ? '' : L('Matches you tracked in Safari stay there: sign in with Google there and here to bring them over.'))
         : Object.keys(S.matches).length ? L('On iPhone, sign in to keep your matches: Safari deletes them after a week unused, and the Home Screen app does not see them.')
         : L('On iPhone, add it to the Home Screen before your first match: Safari deletes its data after a week unused.')));
+  // the old address: where to go now (kept on screen until the phone moves)
+  if (S.user && onOld()) n.innerHTML = `<b>${movedNote()}</b> ` + n.innerHTML;
   // the phone is full: said all the time, not once
   if (S.lsFail) n.innerHTML = `<b style="color:var(--neg)">${L('This phone is full: new taps are not saved. Free some space.')}</b> ` + n.innerHTML;
   // a warning stays on screen in court mode too
@@ -1235,7 +1240,7 @@ function tap(k){
   // a double tap is one stat: nobody plays two aces in 0.4 s
   if (S.lastStat && S.lastStat.k === k && Date.now() - S.lastStat.at < 400) return;
   S.lastStat = {k, at:Date.now()};
-  if (closed(m)) return render();
+  if (tapBlocked(m)) return render();
   whoLeft();
   S.tag = null; S.who = null; clearTimeout(S.tagT);
   const team = isTeam(m), sv = team && ['ace','serve','serr'].includes(k), stc = sv && court(m, S.set);
@@ -1324,7 +1329,9 @@ const firstUnnamed = m => (m.log||[]).findIndex(needsWho);
 const lastUnnamed = (m, s) => { const log = m.log||[]; for (let i = log.length - 1; i >= 0; i--) if (log[i].set === s && needsWho(log[i])) return i; return -1; };
 // A set that is over takes no more points until End set or Keep playing, and a match that is over none until it is
 // confirmed or Keep tracking: a tap meant for the next set added a point to this one (26-18).
-function closed(m){
+// (Never name a top-level function after a window property: "function closed" replaced window.closed, and Google's
+// sign-in frame then took the page for closed and never handed the sign-in back - every new sign-in hung, 10-07..10-12.)
+function tapBlocked(m){
   if (m.toOn){ toast(L('Time-out: tap Resume play first')); return true; }
   const so = setOver(m, analyze(m));
   if (so && S.keepSet !== m.id + ':' + S.set + ':' + so.us + '-' + so.them){ toast(L('Answer first: is set {n} over?', {n:S.set})); return true; }
@@ -1334,7 +1341,7 @@ function closed(m){
 }
 function teamPoint(side){
   const m = S.matches[S.activeId]; if (!m) return;
-  if (closed(m)) return render();
+  if (tapBlocked(m)) return render();
   // a double tap is one point: no rally is over in 0.4 s
   if (S.lastPt && S.lastPt.side === side && Date.now() - S.lastPt.at < 400) return;
   S.lastPt = {side, at:Date.now()};
@@ -1641,7 +1648,7 @@ function render(){
   if (S.watch){ document.body.classList.add('watch'); document.body.classList.remove('playing'); $('#app').innerHTML = watchView(); capsFix($('#app')); clearInterval(S.timer);
     S.timer = setInterval(() => { if (S.watch.data === undefined) return render(); const x = $('#wago'); if (x && S.watch.data) x.textContent = ago(S.watch.data.at); }, 15000); return; }
   document.body.classList.toggle('gate', !S.user && !LS.get('ss.uid'));
-  if (document.body.classList.contains('gate') && location.hostname === OLD_HOST) return location.replace(NEW_HOME + location.hash);
+  if (document.body.classList.contains('gate') && onOld() && !keptHere() && !homeApp()) return location.replace(NEW_HOME + location.hash);
   if (document.body.classList.contains('gate')){ document.body.classList.remove('playing'); clearInterval(S.timer); $('#app').innerHTML = gateView(); capsFix($('#app')); return; }
   document.querySelectorAll('.tabs button[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history') || (S.view==='admin' && b.dataset.view==='player'))));
   const app = $('#app');
@@ -3055,10 +3062,20 @@ window.SS_liveSeen = d => { if (!S.watch) return;
   render(); };
 // Spike Sheet moved from GitHub Pages to Firebase Hosting (2026-10-09): Google's sign-in helper is on the page's own address there
 const OLD_HOST = 'giannosanag.github.io', NEW_HOME = 'https://spike-sheet-theo.firebaseapp.com/';
+const onOld = () => location.hostname === OLD_HOST;
+// matches only this phone holds (practice ones are never kept): they are saved by signing in here, before moving
+const keptHere = () => Object.values(S.matches).some(m => !m.practice);
+// a Home Screen app: a link to the new address opens in a browser sheet, so it is told the way instead
+const homeApp = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const movedNote = () => { const link = `<a href="${NEW_HOME}" style="color:inherit"><b>spike-sheet-theo.firebaseapp.com</b></a>`;
+  return !S.user && keptHere() ? L('Spike Sheet has a new address. Matches are on this phone: sign in here first to keep them, then open {link}.', {link})
+    : L('Spike Sheet has a new address: {link}. Sign in there once, your matches come with you.', {link})
+      + (homeApp() ? ' ' + L('Open it in Safari or Chrome, add it to the Home Screen, then delete this icon.') : ''); };
 // Signed out: only this page, until Google sign-in
 const gateView = () => `<section class="panel">
     ${S.signErr ? `<p style="margin:0;color:var(--neg)"><b>${L(S.signErr === 'none' ? 'Sign-in did not finish. Try again.' : 'Sign-in failed ({code})', {code:esc(S.signErr)})}</b></p>`
       : sessionStorage.getItem('ss.signing') ? `<p style="margin:0"><b>${L('Signing in…')}</b></p>` : ''}
+    ${onOld() ? `<p style="margin:0"><b>${movedNote()}</b></p>` : ''}
     <p style="margin:0">${L('Sign in with Google to start. Your matches are saved in your account and sync to every phone you sign in on.')}</p>
     <button class="btn btn-or" id="b-signin">${L('Sign in with Google')}</button>
     <p class="note" style="margin:0">${L("With Google sign-in, your matches, teams, player card and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.")}</p>
