@@ -5,9 +5,23 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<script>
+// Light or dark before anything is drawn, so the page never flashes the other colours: the phone's own setting,
+// or the choice kept on this phone (Player page). The browser bar and the status bar follow it.
+window.SS_theme = function(t){
+  if (t !== undefined){ try{ t ? localStorage.setItem('ss.theme', JSON.stringify(t)) : localStorage.removeItem('ss.theme'); }catch(e){} }
+  else { try{ t = JSON.parse(localStorage.getItem('ss.theme')); }catch(e){ t = null; } }
+  if (t !== 'light' && t !== 'dark') t = null;
+  var d = document.documentElement, m = document.querySelectorAll('meta[name="theme-color"]');
+  if (t) d.setAttribute('data-theme', t); else d.removeAttribute('data-theme');
+  m[0].content = t === 'dark' ? '#000000' : '#FFFFFF'; m[1].content = t === 'light' ? '#FFFFFF' : '#000000';
+  return t;
+};
+SS_theme();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Spike Sheet">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -391,6 +405,8 @@ html{scrollbar-gutter:stable}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:999px;font-size:14px;font-weight:500;z-index:10;max-width:calc(100% - 32px);width:max-content;text-align:center;border-radius:16px}
 /* a message must never sit on, or take the tap of, a number in an open bar */
 .toast{pointer-events:none}
+/* the sign-in button with the Google mark */
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px}.gbtn svg{width:20px;height:20px;flex:none}
 /* a live score link: the score only (no tabs, no sync line) */
 body.watch nav.tabs,body.watch #syncnote{display:none!important}
 /* the sign-in page: nothing of the app until Google says who this is */
@@ -600,7 +616,9 @@ const EL = {
   'Spike Sheet has a new address. Matches or a team are on this phone: sign in here first to keep them, then open {link}.': 'Το Spike Sheet άλλαξε διεύθυνση. Σε αυτό το κινητό υπάρχουν αγώνες ή ομάδα: συνδέσου πρώτα εδώ για να τα κρατήσεις και μετά άνοιξε το {link}.',
   'Spike Sheet has a new address: {link}. Sign in there once, your matches come with you.': 'Το Spike Sheet άλλαξε διεύθυνση: {link}. Συνδέσου εκεί μία φορά, οι αγώνες σου έρχονται μαζί.',
   'Open it in Safari or Chrome, add it to the Home Screen, then delete this icon.': 'Άνοιξέ το στο Safari ή στο Chrome, πρόσθεσέ το στην Αρχική οθόνη και μετά σβήσε αυτό το εικονίδιο.',
-  'Signing in…': 'Σύνδεση…', 'Connecting to your account…': 'Σύνδεση με τον λογαριασμό σου…',
+  'Loading…': 'Φόρτωση…', 'Checking sign-in…': 'Έλεγχος σύνδεσης…', 'Opening Google…': 'Άνοιγμα Google…',
+  'Appearance': 'Εμφάνιση', 'Light': 'Φωτεινή', 'Dark': 'Σκοτεινή', 'Auto': 'Αυτόματη',
+  'Connecting to your account…': 'Σύνδεση με τον λογαριασμό σου…',
   'Opened from Instagram, Facebook, Messenger or Viber? Open the page in Safari or Chrome first: Google sign-in does not work inside them.': 'Το άνοιξες από Instagram, Facebook, Messenger ή Viber; Άνοιξε πρώτα τη σελίδα στο Safari ή στο Chrome: η σύνδεση Google δεν λειτουργεί μέσα σε αυτές τις εφαρμογές.', 'Sign-in did not finish. Try again.': 'Η σύνδεση δεν ολοκληρώθηκε. Δοκίμασε ξανά.',
   'Won with sets {s}? Check the result': 'Νίκη με σετ {s}; Έλεγξε το αποτέλεσμα', 'Lost with sets {s}? Check the result': 'Ήττα με σετ {s}; Έλεγξε το αποτέλεσμα',
   'Sets already played: type them like 25-20, 22-25': 'Γράψε τα σετ έτσι: 25-20, 22-25', 'Score now: type it like 10-12': 'Γράψε το σκορ έτσι: 10-12',
@@ -1022,6 +1040,8 @@ window.SS_writeOk = () => { LS.set('ss.upAt', Date.now()); if (S.saveFailed){ S.
 window.SS_toast = t => toast(t);
 // back from Google without an account: the sign-in page says why
 window.SS_signErr = code => { S.signErr = code; if (!S.user) render(); };
+// the answer from Google has been read (the sign-in page can take a press again)
+window.SS_signDone = () => { if (!S.user) render(); };
 window.SS_L = (t, v) => L(t, v);
 function syncNote(){
   const n = document.getElementById('syncnote');
@@ -3071,15 +3091,22 @@ const movedNote = () => { const link = `<a href="${NEW_HOME}" style="color:inher
     : L('Spike Sheet has a new address: {link}. Sign in there once, your matches come with you.', {link})
       + (homeApp() ? ' ' + L('Open it in Safari or Chrome, add it to the Home Screen, then delete this icon.') : ''); };
 // Signed out: only this page, until Google sign-in
-const gateView = () => `<section class="panel">
-    ${S.signErr ? `<p style="margin:0;color:var(--neg)"><b>${L(S.signErr === 'none' ? 'Sign-in did not finish. Try again.' : 'Sign-in failed ({code})', {code:esc(S.signErr)})}</b></p>`
-      : ssGet('ss.signing') ? `<p style="margin:0"><b>${L('Signing in…')}</b></p>` : ''}
+// The Google "G" (as on VIT Watch)
+const GMARK = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+const gateView = () => {
+  // the button is off until the sign-in code has loaded (a press before did nothing), while the answer from Google
+  // is read, and while Google opens; an old Home Screen icon with nothing to keep is only told the way to the new one
+  const ready = !!(window.SS_auth || S.authSlow), wait = !!ssGet('ss.signing'), off = !ready || wait || !!S.opening;
+  const label = !ready ? 'Loading…' : wait ? 'Checking sign-in…' : S.opening ? 'Opening Google…' : 'Sign in with Google';
+  const moveOnly = onOld() && homeApp() && !keptHere();
+  return `<section class="panel">
+    ${S.signErr ? `<p style="margin:0;color:var(--neg)"><b>${L(S.signErr === 'none' ? 'Sign-in did not finish. Try again.' : 'Sign-in failed ({code})', {code:esc(S.signErr)})}</b></p>` : ''}
     ${onOld() ? `<p style="margin:0"><b>${movedNote()}</b></p>` : ''}
-    <p style="margin:0">${L('Sign in with Google to start. Your matches are saved in your account and sync to every phone you sign in on.')}</p>
-    <button class="btn btn-or" id="b-signin">${L('Sign in with Google')}</button>
+    ${moveOnly ? '' : `<p style="margin:0">${L('Sign in with Google to start. Your matches are saved in your account and sync to every phone you sign in on.')}</p>
+    <button class="btn btn-or gbtn" id="b-signin"${off ? ' disabled aria-busy="true"' : ''}>${GMARK}<span>${L(label)}</span></button>`}
     <p class="note" style="margin:0">${L("With Google sign-in, your matches, teams, player card and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.")}</p>
     <p class="note" style="margin:0">${L('Opened from Instagram, Facebook, Messenger or Viber? Open the page in Safari or Chrome first: Google sign-in does not work inside them.')}</p>
-  </section>`;
+  </section>`; };
 
 /* ---------- more stats: folded sections under every report and season ---------- */
 // One pass over a match's rallies, per set: the biggest lead each way, points from 20-all (10-all in the deciding
@@ -3494,6 +3521,11 @@ function playerView(){
   <section class="panel">
     <div class="kicker">Language · Γλώσσα</div>
     <div class="seg" role="group" aria-label="Language · Γλώσσα"><button data-lang="en" aria-pressed="${S.lang !== 'el'}" lang="en">English</button><button data-lang="el" aria-pressed="${S.lang === 'el'}" lang="el">Ελληνικά</button></div>
+  </section>
+  <section class="panel">
+    <div class="kicker">${L('Appearance')}</div>
+    <div class="seg" role="group" aria-label="${L('Appearance')}">${[['light', 'Light'], ['dark', 'Dark'], ['', 'Auto']].map(([v, t]) =>
+      `<button data-theme-set="${v}" aria-pressed="${(document.documentElement.getAttribute('data-theme') || '') === v}">${L(t)}</button>`).join('')}</div>
   </section>`;
 }
 
@@ -3720,6 +3752,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.amatch){ S.adm.match = t.dataset.amatch; window.scrollTo(0,0); return render(); }
   if (t.dataset.arecent){ const [u, id] = t.dataset.arecent.split('|'); S.adm.user = u; S.adm.match = id; window.scrollTo(0,0); return render(); }
   // the language, kept on this phone; the page is drawn again in it, and what is typed on it stays
+  if (t.dataset.themeSet != null){ window.SS_theme(t.dataset.themeSet || null); return render(); }
   if (t.dataset.lang){
     const keep = [...document.querySelectorAll('#app input[id], #app select[id]')].map(i => [i.id, i.type === 'checkbox' ? i.checked : i.value]), late = $('#f-late')?.open;
     S.lang = t.dataset.lang; LS.set('ss.lang', S.lang); syncNote(); render();
@@ -3769,7 +3802,13 @@ document.addEventListener('click', async e => {
     case 'b-lucancel': S.lu = null; S.barClosedAt = Date.now(); return render();
     case 'b-lusave': return saveLineup();
     case 'b-nfback': keepNf(); S.nfStep = Math.max(1, (S.nfStep || 1) - 1); render(); window.scrollTo(0,0); return;
-    case 'b-signin': S.signErr = null; return window.SS_auth && navigator.onLine !== false ? window.SS_auth.signIn() : toast(L("Can't reach Google. Check the internet."));
+    case 'b-signin': {
+      if (!window.SS_auth || navigator.onLine === false) return toast(L("Can't reach Google. Check the internet."));
+      // "Opening Google…" until the page leaves (a phone) or the pop-up is done (a computer); after 20 s the button is back
+      S.signErr = null; S.opening = true; render();
+      clearTimeout(S.openT); S.openT = setTimeout(() => { S.opening = false; if (!S.user) render(); }, 20000);
+      return Promise.resolve(window.SS_auth.signIn()).finally(() => { S.opening = false; clearTimeout(S.openT); if (!S.user) render(); });
+    }
     case 'b-signout':
       if (!window.SS_auth) return;
       // signing out takes the matches off this phone: the account must have them all first
@@ -3844,7 +3883,7 @@ document.addEventListener('input', e => { if (e.target.closest && e.target.close
 document.addEventListener('toggle', e => { if (e.target.matches && e.target.matches('details.coach')) S.coachOpen = e.target.open; }, true);
 window.addEventListener('pagehide', () => { backup(); flush(); markSeen(); keepOpen(); });
 // back from the browser's page cache: another copy of the app may have changed things meanwhile
-window.addEventListener('pageshow', e => { if (e.persisted){ try{ sessionStorage.removeItem('ss.signing'); }catch(x){} restore(); if (!isTyping()) render(); } });
+window.addEventListener('pageshow', e => { if (e.persisted){ try{ sessionStorage.removeItem('ss.signing'); }catch(x){} S.opening = false; restore(); if (!isTyping()) render(); } });
 // Android Back (and Escape on a computer): first close the open bar, then go back to Live; only Back on
 // Live with nothing open leaves the app. The time-out screen stays until Resume play.
 function goBack(){
@@ -3908,6 +3947,7 @@ S.lang = LS.get('ss.lang') || (/^el\b/i.test(navigator.language || '') ? 'el' : 
 try{ navigator.storage?.persist?.(); }catch(e){}
 { const c = (location.hash.match(/^#live=([a-z0-9]{8,32})$/) || [])[1]; if (c) S.watch = {code:c, t0:Date.now()}; }
 S.choose = idleLong();
+setTimeout(() => { S.authSlow = true; if (document.body.classList.contains('gate')) render(); }, 8000);
 // (the same site answers at spike-sheet-theo.web.app, where the sign-in is not set up)
 if (location.hostname === 'spike-sheet-theo.web.app') location.replace(NEW_HOME + location.hash);
 render();
@@ -3999,7 +4039,7 @@ window.SS_auth = {
 };
 Promise.race([A.getRedirectResult(auth), new Promise(r => setTimeout(() => r(null), 60000))])
   .then(r => { if (!r && sessionStorage.getItem('ss.signing') && !auth.currentUser) window.SS_signErr('none'); },
-    e => window.SS_signErr(e.code || String(e))).finally(() => sessionStorage.removeItem('ss.signing'));
+    e => window.SS_signErr(e.code || String(e))).finally(() => { sessionStorage.removeItem('ss.signing'); window.SS_signDone(); });
 // Who uses the app and when, for the owner's admin page: the account's profile (users/<uid>), written at most
 // once every 30 minutes per phone. Best effort: a refused write never shows as "not saved".
 async function ping(u){
