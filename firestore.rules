@@ -18,15 +18,23 @@ service cloud.firestore {
     }
     // Each Google account reads and writes only its own folder: its profile (users/<uid>), its matches and
     // its settings. The owner may read them, never change them. The profile's email is the account's own
-    // (the owner's page shows it), and only the owner deletes a profile.
+    // (the owner's page shows it, so it is always there), and only the owner deletes a profile.
     match /users/{uid} {
       allow read: if request.auth != null && ((request.auth.uid == uid && !removed()) || isOwner());
       allow create, update: if request.auth != null && request.auth.uid == uid && !removed()
-        && (!('email' in request.resource.data) || request.resource.data.email == request.auth.token.email);
+        && request.resource.data.email == request.auth.token.email;
       allow delete: if wipeable(uid);
-      match /{coll}/{doc=**} {
+      // Only the app's own documents: the matches and the seven settings (five players, two teams). Nothing else
+      // can be stored where the owner's page, the backups and a deletion would not see it (audit 10-12).
+      match /matches/{id} {
         allow read: if request.auth != null && ((request.auth.uid == uid && !removed()) || isOwner());
         allow write: if request.auth != null && request.auth.uid == uid && !removed();
+        allow delete: if wipeable(uid);
+      }
+      match /settings/{name} {
+        allow read: if request.auth != null && ((request.auth.uid == uid && !removed()) || isOwner());
+        allow write: if request.auth != null && request.auth.uid == uid && !removed()
+          && name in ['player', 'player2', 'player3', 'player4', 'player5', 'team', 'team2'];
         allow delete: if wipeable(uid);
       }
     }

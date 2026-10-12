@@ -382,7 +382,6 @@ html,body{overscroll-behavior-y:contain}
 /* no sideways jump of the column on a computer when a page starts to scroll */
 html{scrollbar-gutter:stable}
 /* landscape iPhone: buttons clear of the notch and the rounded corners */
-.tagbar{padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
 /* keyboard focus shows on the dark bars too */
 .tagbar :focus-visible{outline-color:var(--bg)}
 /* a mouse gets a hover, not only the press */
@@ -408,9 +407,12 @@ html{scrollbar-gutter:stable}
 .panel.adm{gap:10px;padding:12px 16px 18px}
 .panel.adm h2{font-size:26px}
 .panel.adm h2.who{font:700 20px/1.2 var(--font);text-transform:none;letter-spacing:0;overflow-wrap:anywhere}
-.btn-sm{font-size:13px;padding:9px 14px;max-width:100%}
+.btn-sm{font-size:13px;padding:9px 14px;max-width:100%;min-height:44px;overflow-wrap:anywhere}
 .row>.btn-sm{flex:0 0 auto}
-.tiles.sm{grid-template-columns:repeat(12,1fr);gap:6px}
+.tiles.sm{grid-template-columns:repeat(12,minmax(0,1fr));gap:6px}
+.tiles.sm .tile span,.tiles.sm .tile em{overflow-wrap:anywhere;hyphens:auto}
+/* a seg inside a panel (the players on Profile, language, light / dark): its own track, so the choices read as buttons */
+.panel .seg{background:var(--bg)}
 .tiles.sm .tile{padding:10px 8px;border-radius:12px;gap:2px;grid-column:span 3}
 .tiles.sm .tile:nth-child(n+5){grid-column:span 4}
 .tiles.sm .tile b{font-size:24px}
@@ -497,7 +499,7 @@ input,select{min-width:0;max-width:100%}
 input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-height:48px;text-align:left}
 input::-webkit-date-and-time-value{text-align:left}
 /* who passed to the player */
-.tagbar{position:fixed;left:0;right:0;bottom:0;z-index:9;background:var(--ink);color:var(--bg);padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;box-shadow:0 -8px 24px rgba(0,0,0,.25)}
+.tagbar{position:fixed;left:0;right:0;bottom:0;z-index:9;background:var(--ink);color:var(--bg);padding:14px max(16px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:10px;box-shadow:0 -8px 24px rgba(0,0,0,.25)}
 .tagbar .q{font-size:14px;font-weight:600}
 .tagbar .nums{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;max-height:42vh;overflow-y:auto}
 .tagbar button{height:44px;border-radius:12px;background:var(--bg);color:var(--ink);font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
@@ -511,9 +513,9 @@ input::-webkit-date-and-time-value{text-align:left}
 .tagbar.who .nums .skip{padding:0 2px;font-size:13px}
 .roster{display:flex;flex-direction:column;gap:8px}
 .rrow{display:grid;grid-template-columns:58px minmax(0,1fr) 98px auto;gap:6px}
-.rrow .t-pos{font-size:14px;padding:13px 6px;color:var(--ink)}
+.rrow .t-pos{padding:13px 6px;color:var(--ink)}
 .rrow .rm{padding:0 15px;border-radius:12px;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
-.rrow .rm.armed{background:var(--neg);color:#fff;border-color:var(--neg)}
+.rrow .rm.armed{background:var(--neg);border-color:var(--neg)}
 @media (max-width:440px){.tabs{gap:14px}.brand{font-size:24px}}
 @media (max-width:360px){.rrow{grid-template-columns:58px minmax(0,1fr) 44px}.rrow .t-pos{grid-column:1/-1}.rrow .rm{grid-row:1;grid-column:3}}
 .tagbar .two{display:flex;gap:6px}.tagbar .two button{flex:1;font-size:15px}
@@ -542,7 +544,7 @@ input::-webkit-date-and-time-value{text-align:left}
 @media (orientation:landscape) and (max-height:500px){body.playing header{display:none}}
 @media (max-width:380px){:root[lang="el"] body.playing .tabs{gap:8px}:root[lang="el"] .act.undo .fab-i{display:none}}
 /* the team page: "Πασαδόρος" fits the position box */
-:root[lang="el"] .rrow .t-pos{font-size:13px;padding-inline:2px}
+:root[lang="el"] .rrow .t-pos{padding-inline:2px}
 @media print{
   :root,:root:not([data-theme="light"]),:root[data-theme="dark"]{--bg:#FFFFFF;--soft:#F2F2F2;--soft2:#E6E6E6;--ink:#000000;--muted:#555555;--faint:#888888;--line:#DDDDDD;--hi:#000000;--pos:#0A6B30;--neg:#B00004}
   @page{margin:12mm}
@@ -624,7 +626,7 @@ const S = {matches:{}, players:{}, pslot:'player', teams:{team:{name:'', players
 // "Player|tab": one English word with two Greek ones (the part after | is not shown in English;
 // without its own Greek it takes the plain word's).
 // The app's version, on the Player page and on the owner's page: bump it together with CACHE in sw.js on every release
-const APP_VERSION = 'v46';
+const APP_VERSION = 'v47';
 const EL = {
   // header and tabs
   'Live': 'Αγώνας', 'Season': 'Σεζόν', 'Profile|tab': 'Προφίλ', 'Team': 'Ομάδα', 'Spike Sheet, home': 'Spike Sheet, αρχική', 'Views': 'Σελίδες',
@@ -670,7 +672,7 @@ const EL = {
   'Set {n} now {score}': 'Σετ {n}: τώρα {score}', 'Back in set {n}': 'Πίσω στο σετ {n}', 'Undone: score typed in': 'Αναιρέθηκε: σκορ με το χέρι',
   'Undone: {what}': 'Αναιρέθηκε: {what}', 'Set {n} has no points yet': 'Το σετ {n} δεν έχει πόντους ακόμα', 'Set {n}: {score}': 'Σετ {n}: {score}',
   'Saved. It is in Season.': 'Ο αγώνας αποθηκεύτηκε. Θα τον βρεις στη Σεζόν.',
-  "Add the player's number first (Profile tab)": 'Βάλε πρώτα τον αριθμό στο Προφίλ', 'Add the team first (Team tab)': 'Φτιάξε πρώτα την ομάδα (σελίδα Ομάδα)',
+  "Add {name}'s number first (Profile tab)": 'Βάλε πρώτα τον αριθμό του μέλους {name} (Προφίλ)', 'Add the team first (Team tab)': 'Φτιάξε πρώτα την ομάδα (σελίδα Ομάδα)',
   "Now {team} · {name}'s taps are #{n}": 'Τώρα {team} · τα στατιστικά μέχρι εδώ πάνε στο #{n} {name}', 'Now {name} only (#{n})': 'Τώρα ατομικά: {name} (#{n})',
   'Finish the live match first': 'Τελείωσε πρώτα τον αγώνα που τρέχει', 'Match deleted': 'Ο αγώνας διαγράφηκε',
   'Finish the live match of this team first': 'Η ομάδα έχει αγώνα σε εξέλιξη: τελείωσέ τον πρώτα',
@@ -695,18 +697,18 @@ const EL = {
   'Privacy': 'Απόρρητο',
   'Spike Sheet keeps only what it needs to count your matches.': 'Το Spike Sheet κρατά μόνο ό,τι χρειάζεται για να καταγράφει τους αγώνες σου.',
   'What is kept': 'Τι κρατάμε',
-  "The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player cards, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages.": 'Τους αγώνες που καταγράφεις (σκορ, στατιστικά, φάση-φάση), τις ομάδες σου (ονόματα και αριθμούς των μελών), τα προφίλ, και το email και το όνομα του λογαριασμού σου Google. Για να σε βοηθάμε και να διορθώνουμε προβλήματα: πότε και ποιες μέρες χρησιμοποιείς την εφαρμογή (κάθε λίγα λεπτά όσο είναι ανοιχτή), τον τύπο του κινητού και έναν κωδικό του, τη γλώσσα, την έκδοση της εφαρμογής και τα μηνύματα σφάλματός της.',
+  "The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player cards, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (the last 30 days; every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages.": 'Τους αγώνες που καταγράφεις (σκορ, στατιστικά, φάση-φάση), τις ομάδες σου (ονόματα και αριθμούς των μελών), τα προφίλ, και το email και το όνομα του λογαριασμού σου Google. Για να σε βοηθάμε και να διορθώνουμε προβλήματα: πότε και ποιες μέρες χρησιμοποιείς την εφαρμογή (τις τελευταίες 30 μέρες· κάθε λίγα λεπτά όσο είναι ανοιχτή), τον τύπο του κινητού και έναν κωδικό του, τη γλώσσα, την έκδοση της εφαρμογής και τα μηνύματα σφάλματός της.',
   'Where': 'Πού',
-  "In your account on Google Firebase, Google's cloud: Google provides the servers and the sign-in. A copy stays on this phone while you are signed in, so the app works without signal.": 'Στον λογαριασμό σου στο Google Firebase, το cloud της Google: η Google παρέχει τους διακομιστές και τη σύνδεση. Ένα αντίγραφο μένει σε αυτό το κινητό όσο έχεις συνδεθεί, ώστε η εφαρμογή να δουλεύει και χωρίς σήμα.',
+  "In your account on Google Firebase, Google's cloud: Google provides the servers and the sign-in. A copy stays on this phone while you are signed in, so the app works without signal; if your access is removed, the matches stay on it.": 'Στον λογαριασμό σου στο Google Firebase, το cloud της Google: η Google παρέχει τους διακομιστές και τη σύνδεση. Ένα αντίγραφο μένει σε αυτό το κινητό όσο έχεις συνδεθεί, ώστε η εφαρμογή να δουλεύει και χωρίς σήμα· αν αφαιρεθεί η πρόσβασή σου, οι αγώνες μένουν σε αυτό.',
   'Who sees it': 'Ποιος τα βλέπει',
   "You, on every phone you sign in on. The app's owner, to help you and fix problems. Nothing is sold or given to anyone else. No ads, no tracking.": 'Εσύ, σε κάθε κινητό όπου συνδέεσαι. Ο διαχειριστής της εφαρμογής, για να σε βοηθά και να διορθώνει προβλήματα. Τίποτα δεν πουλιέται ούτε δίνεται σε άλλους. Χωρίς διαφημίσεις, χωρίς παρακολούθηση.',
-  'Only the two team names and the score, to anyone with the link, for 12 hours at most.': 'Μόνο τα ονόματα των δύο ομάδων και το σκορ, σε όποιον έχει τον σύνδεσμο, για 12 ώρες το πολύ.',
+  'Only the two team names and the score (and a code for your account, no name or email), to anyone with the link, for 12 hours at most.': 'Μόνο τα ονόματα των δύο ομάδων και το σκορ (και ένας κωδικός του λογαριασμού σου, χωρίς όνομα ή email), σε όποιον έχει τον σύνδεσμο, για 12 ώρες το πολύ.',
   "Add players with their agreement, and for children with a parent's. First names are enough. Under 15, a parent or the coach should keep the account.": 'Πρόσθεσε μέλη με τη συμφωνία τους, και για παιδιά με τη συμφωνία ενός γονιού. Αρκούν τα μικρά ονόματα. Κάτω από 15 ετών, τον λογαριασμό καλό είναι να τον έχει ένας γονιός ή ο προπονητής.',
   'Players|privacy': 'Μέλη της ομάδας',
   'Pictures and files': 'Εικόνες και αρχεία',
   'The share picture, Excel and PDF are made on your phone. The app does not keep them.': 'Η εικόνα, το Excel και το PDF φτιάχνονται στο κινητό σου. Η εφαρμογή δεν τα κρατά.',
   'Deleting': 'Διαγραφή',
-  'Delete a match or a team in the app at any time. A deleted team stays in the matches it played: delete those too. To delete everything in your account, write to {email}.': 'Σβήσε έναν αγώνα ή μια ομάδα στην εφαρμογή όποτε θέλεις. Μια ομάδα που σβήνεις μένει στους αγώνες που έπαιξε: σβήσε κι αυτούς. Για να σβηστούν όλα από τον λογαριασμό σου, γράψε στο {email}.',
+  'Delete a match, a team or a player in the app at any time. A deleted team or player, or a player taken off a team, stays in the matches already played: delete those too. To delete everything in your account, write to {email}.': 'Σβήσε έναν αγώνα, μια ομάδα ή ένα μέλος στην εφαρμογή όποτε θέλεις. Μια ομάδα ή ένα μέλος που σβήνεις, ή ένα μέλος που βγάζεις από την ομάδα, μένει στους αγώνες που έχουν παιχτεί: σβήσε κι αυτούς. Για να σβηστούν όλα από τον λογαριασμό σου, γράψε στο {email}.',
   'Download all data': 'Λήψη όλων των δεδομένων',
   'Tap again to sign out': 'Πάτα ξανά για αποσύνδεση',
   'The browser blocked the Google window. Allow pop-ups for this site, then try again.': 'Ο browser μπλόκαρε το παράθυρο της Google. Επίτρεψε τα αναδυόμενα παράθυρα για αυτή τη σελίδα και δοκίμασε ξανά.',
@@ -739,7 +741,7 @@ const EL = {
   'Won with sets {s}? Check the result': 'Νίκη με σετ {s}; Έλεγξε το αποτέλεσμα', 'Lost with sets {s}? Check the result': 'Ήττα με σετ {s}; Έλεγξε το αποτέλεσμα',
   'Sets already played: type them like 25-20, 22-25': 'Γράψε τα σετ έτσι: 25-20, 22-25', 'Score now: type it like 10-12': 'Γράψε το σκορ έτσι: 10-12',
   'At most 4 sets already played': 'Το πολύ 4 σετ που έχουν ήδη παιχτεί', 'Those sets already finish the match': 'Με αυτά τα σετ ο αγώνας έχει ήδη τελειώσει',
-  'Player saved': 'Το προφίλ αποθηκεύτηκε', 'Press Back again to leave': 'Πάτα ξανά Πίσω για έξοδο',
+  'Player saved': 'Το μέλος αποθηκεύτηκε', 'Press Back again to leave': 'Πάτα ξανά Πίσω για έξοδο',
   'Pick a team with players, or add them first': 'Διάλεξε ομάδα με μέλη ή πρόσθεσέ τα πρώτα', "Type the player's name": 'Γράψε το όνομα',
   // time-out and fix score
   'Time-out': 'Τάιμ άουτ', 'Time-outs': 'Τάιμ άουτ', '{ord} in this set': '{ord} σε αυτό το σετ', 'Resume play': 'Συνέχεια παιχνιδιού',
@@ -754,7 +756,11 @@ const EL = {
   'Back': 'Πίσω', 'New match · step {n} of 4': 'Νέος αγώνας · βήμα {n} από 4', 'What do you want to track?': 'Τι θέλεις να καταγράψεις;', 'Track': 'Καταγραφή',
   'Whole team': 'Όλη η ομάδα', 'every player, by number': 'κάθε μέλος, με αριθμό', 'One player': 'Ατομικά', "one player's stats": 'στατιστικά ενός μέλους',
   'Which team?': 'Ποια ομάδα;', 'Add your team': 'Πρόσθεσε την ομάδα σου', 'the names and numbers, once': 'ονόματα και αριθμοί, μία φορά', '{n} player': '{n} μέλος', '{n} players': '{n} μέλη', 'no players yet: add them': 'χωρίς μέλη ακόμα: πρόσθεσέ τα', 'Change {team}': 'Επεξεργασία: {team}',
-  'Which player?': 'Όνομα και αριθμός', 'Which player?|pick': 'Ποιο μέλος;', 'Edit players': 'Επεξεργασία προφίλ', 'Name': 'Όνομα', 'e.g. Theo': 'π.χ. Θοδωρής', 'Number': 'Αριθμός',
+  'Which player?': 'Όνομα και αριθμός', 'Which player?|pick': 'Ποιο μέλος;', 'Edit players': 'Επεξεργασία μελών', 'Pick the player': 'Διάλεξε μέλος',
+  'Five players already: pick one, or delete one on the Profile page.': 'Ήδη 5 μέλη: διάλεξε ένα, ή διάγραψε ένα στο Προφίλ.',
+  "Five players already: {name}'s matches stay in Season.": 'Ήδη 5 μέλη: οι αγώνες του μέλους {name} μένουν στη Σεζόν.',
+  '{name} (old)|player': '{name} (πρώην)', 'Tap again to rename': 'Πάτα ξανά για μετονομασία',
+  "{old}'s matches ({n}) will show {name}. Tap again to rename. A new player: + Add player.": 'Οι αγώνες του μέλους {old} ({n}) θα δείχνουν {name}. Πάτα ξανά για μετονομασία. Νέο μέλος: + Προσθήκη μέλους.', 'Name': 'Όνομα', 'e.g. Theo': 'π.χ. Θοδωρής', 'Number': 'Αριθμός',
   'The match': 'Ο αγώνας', 'Your team': 'Η ομάδα σου', 'e.g. Panathinaikos': 'π.χ. Παναθηναϊκός', 'The team you keep the stats for': 'Η ομάδα που κρατάς τα στατιστικά της',
   'e.g. Olympiacos': 'π.χ. Ολυμπιακός', 'Home or away?': 'Εντός ή εκτός έδρας;', 'Home or away': 'Εντός ή εκτός έδρας', 'Home': 'Εντός έδρας', 'we play in our gym': 'παίζουμε στο γήπεδό μας',
   'Away': 'Εκτός έδρας', 'we play in their gym': 'παίζουμε στο γήπεδό τους', 'Last details': 'Τελευταία στοιχεία', 'Date': 'Ημερομηνία', 'Competition': 'Διοργάνωση',
@@ -881,7 +887,7 @@ const EL = {
   'You can keep two teams. Every player needs a number and a name. A new match asks what to track: {name} only, or a whole team. In a team match you tap the stat, then the number of the player.':
     'Μπορείς να κρατάς δύο ομάδες. Κάθε μέλος θέλει αριθμό και όνομα. Ο νέος αγώνας ρωτά τι θα καταγράψεις: «Όλη η ομάδα» ή «Ατομικά». Σε αγώνα ομάδας πατάς τη φάση και μετά τον αριθμό.',
   // player card and account
-  'Players|cards': 'Μέλη', 'For one-player matches, up to 5 players. A whole team is on the Team page.': 'Για τα «Ατομικά» στατιστικά, έως 5 μέλη. Την ομάδα τη φτιάχνεις στη σελίδα «Ομάδα».', 'Choose': 'Διάλεξε', 'Save player': 'Αποθήκευση', 'Delete this player': 'Διαγραφή μέλους',
+  'Players|cards': 'Μέλη', 'For one-player matches, up to 5 players. A whole team is on the Team page.': 'Για τα «Ατομικά» στατιστικά, έως 5 μέλη. Την ομάδα τη φτιάχνεις στη σελίδα «Ομάδα».', 'Choose': 'Διάλεξε', 'Save player': 'Αποθήκευση', 'Then also delete the sign-in in the Firebase console (Authentication, Users).': 'Μετά σβήσε και τη σύνδεση Google του λογαριασμού στην κονσόλα Firebase (Authentication, Users).', 'Delete this player': 'Διαγραφή μέλους',
   '{name} deleted. Their matches stay in Season.': 'Το μέλος {name} διαγράφηκε. Οι αγώνες του μένουν στη Σεζόν.', 'Finish the live match of this player first': 'Το μέλος έχει αγώνα σε εξέλιξη: τελείωσέ τον πρώτα', 'Account': 'Λογαριασμός', 'Sign out': 'Αποσύνδεση',
   'Signed in as {email}. Your matches are saved in your account and sync to every phone you sign in on.': 'Σύνδεση: {email}. Οι αγώνες σου αποθηκεύονται στον λογαριασμό σου και συγχρονίζονται σε κάθε κινητό όπου συνδέεσαι.',
   'Sign in with Google to start. Your matches are saved in your account and sync to every phone you sign in on.': 'Συνδέσου με Google για να ξεκινήσεις. Οι αγώνες σου αποθηκεύονται στον λογαριασμό σου και συγχρονίζονται σε κάθε κινητό όπου συνδέεσαι.',
@@ -934,19 +940,36 @@ const teamLabel = slot => teamOf(slot).name || (slot === 'team2' ? L('Team 2') :
 // (a new team in that slot starts a fresh season).
 const seasonKey = m => m.teamGone ? 'old:' + m.teamGone : slotOf(m);
 const seasonLabel = k => String(k).startsWith('old:') ? L('{team} (old)', {team:k.slice(4)}) : teamLabel(k);
-// Up to five players per account for one-player matches (settings/player, settings/player2..5 - Ian 10-12); S.player is
-// the one chosen now. A one-player match keeps its player's place (pslot; none = the first, as every match before v46).
+// Up to five players per account for one-player matches, in five places (settings/player, settings/player2..5 - Ian
+// 10-12); S.player is the one shown on the Profile page. Each player has an id, given when first named (v47; a card from
+// before keeps its place's name as id), and a one-player match keeps its player's id with the name and number it had
+// (pid, pname, pnum; before v47 only its place, pslot: none = the first). A match belongs to the card with its id, in
+// whichever place: two phones filling one place at once, or a deleted player's place used again, never move a match to
+// another player - a match whose player is gone shows as "<name> (old)" (audit 10-12).
 const PSLOTS = ['player', 'player2', 'player3', 'player4', 'player5'];
 const blankP = () => ({name:'', num:'', pos:''});
 PSLOTS.forEach(k => S.players[k] = blankP());
 Object.defineProperty(S, 'player', {get(){ return S.players[S.pslot]; }, set(v){ S.players[S.pslot] = v; }});
 const pslotOf = m => m && PSLOTS.includes(m.pslot) ? m.pslot : 'player';
 const namedP = () => PSLOTS.filter(k => S.players[k].name);
-// a match's player: the card in its place, or the name and number it had when that player was deleted
-const pCard = m => !m ? S.player : m.playerGone ? {name:m.playerGone, num:m.playerNum || '', pos:''} : S.players[pslotOf(m)];
-// the season of a one-player match: its player's place, or 'pold:<name>' for a deleted player (like a deleted team)
-const pKey = m => m.playerGone ? 'pold:' + m.playerGone : pslotOf(m);
+const newPid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const cid = k => S.players[k].id || k;
+const midOf = m => m.pid || pslotOf(m);
+// the place of a one-player match's player (null: that player is gone)
+const pslotFor = m => (!m.playerGone && PSLOTS.find(k => S.players[k].name && cid(k) === midOf(m))) || null;
+// a match's player (without a match, the one on the Profile page): its card, or the name and number it kept
+const pCard = m => { if (!m) return S.player; const k = pslotFor(m); return k ? S.players[k] : {name:m.pname || m.playerGone || '', num:m.pnum || m.playerNum || '', pos:''}; };
+// the season of a one-player match: its player's place, or 'pold:...' for a player who is gone (like a deleted team)
+const pKey = m => pslotFor(m) || 'pold:' + (m.pid || (m.playerGone || '') + '|' + (m.playerNum || ''));
 const isPKey = k => PSLOTS.includes(k) || String(k).startsWith('pold:');
+// a one-player match gets its player: the id, and the name and number for the day that player is gone
+const givePlayer = (m, k) => { const p = S.players[k]; Object.assign(m, {pslot:k, pid:cid(k), pname:p.name || '', pnum:p.num || ''}); delete m.playerGone; delete m.playerNum; };
+// the players a team match can switch to: on this team's list by number (a brother and sister with one number: the one
+// whose first name is on the list), and court time already in the match (it was one player's before) keeps it theirs
+const fname = s => first(String(s || '').trim()).toLowerCase();
+const canSwitch = (m, k) => { const p = S.players[k], n = jnum(p.num || ''), on = (m.roster || []).find(x => x.num === n);
+  return !!(p.name && n && on) && !PSLOTS.some(j => j !== k && S.players[j].name && jnum(S.players[j].num || '') === n && fname(S.players[j].name) === fname(on.name) && fname(p.name) !== fname(on.name))
+    && (!(m.log || []).some(e => e.k === 'on') || midOf(m) === cid(k)); };
 // Playing positions, chosen per player on the team page
 const POS = [{k:'S', l:'Setter'}, {k:'OH', l:'Outside'}, {k:'OPP', l:'Opposite'}, {k:'MB', l:'Middle'}, {k:'L', l:'Libero'}];
 // short on the court and the line-up sheet (Greek: Π, Α, Δ, Κ, Λ)
@@ -1054,6 +1077,9 @@ async function flush(){
   S.flushing = true;
   try{
     for (const path of Object.keys(S.pending)){
+      // a player's place is written once the account has answered for it: a phone that has not received the account's
+      // players yet must not write a new one over one of them (it waits; the answer may move it, see connect)
+      if (path.startsWith('settings/player') && !(S.pSeen && S.pSeen.has(path.slice(9)))) continue;
       delete S.pending[path];
       const body = bodyFor(path);
       // a refused write comes back through SS_writeFailed, which queues it again
@@ -1106,7 +1132,12 @@ function connect(db){
         }
         S.matches[d.id] = JSON.parse(JSON.stringify(r)); changed = true;
       }
-      else if (reconcile && (local.updatedAt||0) > (r.updatedAt||0)){ if (!hasEv(local, lastEv(r))){ keepCopy(r); changed = true; } queue('matches/'+d.id); }
+      else if (reconcile && (local.updatedAt||0) > (r.updatedAt||0)){
+        if (hasEv(local, lastEv(r))) queue('matches/'+d.id);
+        else if (d.id === S.activeId){ keepCopy(r); changed = true; queue('matches/'+d.id); }
+        // (written forgotten: backup would otherwise put this phone's newer-stamped copy back)
+        else { keepCopy(local); S.matches[d.id] = JSON.parse(JSON.stringify(r)); delete written[d.id]; changed = true; }
+      }
       // what the account has confirmed holding, and from which save (the old address's "all saved")
       if (!snap.metadata?.fromCache && !d.pending) S.confirmed[d.id] = r.updatedAt||0;
     });
@@ -1146,13 +1177,25 @@ function connect(db){
     if (S.activeId && (!act || act.done)) { S.activeId = null; S.choose = false; changed = true; }
     if (changed){ backup(); if (!isTyping()) render(); }
   }, () => {}));
+  S.pSeen = new Set();
   PSLOTS.forEach(k => {
     let firstP = true;
     S.unsubs.push(db.doc('settings/' + k).onSnapshot(d => {
-      const r = d.exists && d.data();
-      if (r && (r.updatedAt||0) > (S.players[k].updatedAt||0)) { S.players[k] = Object.assign(blankP(), r); backup(); if (!isTyping()) render(); }
-      else if (firstP && !d.metadata?.fromCache && (S.players[k].updatedAt||0) > ((r && r.updatedAt)||0)) queue('settings/' + k);
-      if (!d.metadata?.fromCache) firstP = false;
+      const r = d.exists && d.data(), mine = S.players[k]; let changed = false;
+      // two different players in one place: two phones each added one, or this phone added one before the account's
+      // players arrived. The account's stays; this phone's, if newer, moves to a free place (its matches follow its
+      // id); with no place free, its matches stay in Season under its name
+      if (r && r.name && mine.name && (r.id || k) !== cid(k) && (mine.updatedAt||0) > (r.updatedAt||0)){
+        const to = PSLOTS.find(x => x !== k && !S.players[x].name);
+        delete S.pending['settings/' + k];
+        if (to){ S.players[to] = Object.assign({}, mine, {id:cid(k)}); savePlayer(to); }
+        else toast(L("Five players already: {name}'s matches stay in Season.", {name:mine.name}));
+        S.players[k] = Object.assign(blankP(), r); changed = true;
+      }
+      else if (r && (r.updatedAt||0) > (mine.updatedAt||0)){ S.players[k] = Object.assign(blankP(), r); changed = true; }
+      else if (firstP && !d.metadata?.fromCache && (mine.updatedAt||0) > ((r && r.updatedAt)||0)) queue('settings/' + k);
+      if (!d.metadata?.fromCache){ firstP = false; if (!S.pSeen.has(k)){ S.pSeen.add(k); if (S.pending['settings/' + k]) queue('settings/' + k); } }
+      if (changed){ backup(); if (!isTyping()) render(); }
     }, () => {}));
   });
   SLOTS.forEach(k => {
@@ -1179,7 +1222,7 @@ function clearLocal(keepUnsaved, keepCards, unsent){
   S.matches = keep; S.activeId = null; dropDraft();
   try{ localStorage.removeItem('ss.matches'); }catch(e){} S.oldLeft = false;
   // keepCards: a save was being refused, so the player card and roster may exist only here
-  if (!keepCards){ PSLOTS.forEach(k => S.players[k] = blankP()); S.pslot = 'player'; LS.set('ss.pslot', 'player'); S.teams = {team:{name:'', players:[]}, team2:{name:'', players:[]}}; }
+  if (!keepCards){ PSLOTS.forEach(k => S.players[k] = blankP()); S.pslot = 'player'; LS.set('ss.pslot', 'player'); S.pDraft = null; S.nfP = null; S.teams = {team:{name:'', players:[]}, team2:{name:'', players:[]}}; }
   try{ localStorage.removeItem('ss.synced'); localStorage.removeItem('ss.deleted'); localStorage.removeItem('ss.cloud'); }catch(e){}
   backup();
 }
@@ -1441,14 +1484,14 @@ function startMatch(f){
   if (f.basic) m.basic = true;
   if (f.practice) m.practice = true;
   if (f.mode === 'team'){ m.mode = 'team'; m.teamSlot = S.slot; m.roster = JSON.parse(JSON.stringify(f.roster || S.team.players)); if (!m.home) m.home = S.team.name || ''; }
-  else m.pslot = S.pslot;
+  else givePlayer(m, PSLOTS.find(x => S.players[x].name && cid(x) === (f.pid || S.nfP)) || (S.player.name ? S.pslot : namedP()[0] || S.pslot));
   // started late: the sets already played are over, the match carries on in the next one
   (f.sets||[]).forEach(([u, t], i) => { pushLate(m, i+1, u, t); m.ended.push(i+1); });
   S.set = (f.sets||[]).length + 1; m.curSet = m.maxSet = S.set;
   if (f.now) pushLate(m, S.set, f.now[0], f.now[1]);
   S.activeId = id; S.choose = false;
   // (a practice leaves the new-match steps as they were, to go on with after it)
-  if (!f.practice){ S.nfAway = false; S.nfDraft = null; S.nfStep = 1; S.nfBasic = null; S.nfAddP = false; LS.set('ss.basic', !!f.basic); }
+  if (!f.practice){ S.nfAway = false; S.nfDraft = null; S.nfStep = 1; S.nfBasic = null; S.nfAddP = false; S.nfP = null; LS.set('ss.basic', !!f.basic); }
   if (f.starter && !isTeam(m)) courtOn(m);
   save(m);
   keepAwake(); render(); window.scrollTo(0,0);
@@ -1459,7 +1502,7 @@ const nfBasic = () => S.nfBasic ?? LS.get('ss.basic') ?? !Object.keys(S.matches)
 // Never saved or uploaded, and gone as soon as its screen is left.
 function startPractice(){
   const team = trackMode() === 'team', demo = ['S','OH','MB','OPP','OH','MB','L','','','','',''].map((pos, i) => ({num:String(i + 1), name:'', pos}));
-  startMatch({opp:L('Opponent'), mode:team ? 'team' : 'player', practice:true, basic:nfBasic(), roster:team && !S.team.players.length ? demo : null});
+  startMatch({opp:L('Opponent'), mode:team ? 'team' : 'player', practice:true, basic:nfBasic(), roster:team && !S.team.players.length ? demo : null, pid:S.nfP});
   toast(L('Practice match: nothing is saved. Leave it any time.'));
 }
 function dropPractice(){ const m = S.matches[S.activeId]; if (m && m.practice){ delete S.matches[m.id]; S.activeId = null; S.lu = null; S.who = null; S.sub = null; } }
@@ -1825,7 +1868,7 @@ function closeAndNew(){
 function switchToTeam(){
   const m = S.matches[S.activeId]; if (!m || isTeam(m)) return;
   const pc = pCard(m), num = jnum(pc.num || '');
-  if (!num) return toast(L("Add the player's number first (Profile tab)"));
+  if (!num) return toast(L("Add {name}'s number first (Profile tab)", {name:pName(m)}));
   if (!S.team.players.length) return toast(L('Add the team first (Team tab)'));
   // the court clock is for one player only: close the spell now
   if (m.onCourt){ const seg = m.courtSince ? Date.now() - m.courtSince : 0, pre = m.stintMs||0; push(m, {k:'off', dur:pre+seg, onAt:m.courtSince, pre}); m.playMs = (m.playMs||0) + seg; m.onCourt = false; m.courtSince = null; m.stintMs = 0; }
@@ -1840,10 +1883,9 @@ function switchToTeam(){
 // Team match -> player match (k: which player, else the one chosen now): every tap is kept, only the player's number
 // is shown and counts in that player's Season.
 function switchToPlayer(k = S.pslot){
-  const m = S.matches[S.activeId]; if (!m || !isTeam(m) || !PSLOTS.includes(k)) return;
+  const m = S.matches[S.activeId]; if (!m || !isTeam(m) || !PSLOTS.includes(k) || !canSwitch(m, k)) return;
   const num = jnum(S.players[k].num || '');
-  if (!num) return toast(L("Add the player's number first (Profile tab)"));
-  delete m.mode; m.soloNum = num; m.pslot = k;
+  delete m.mode; m.soloNum = num; givePlayer(m, k);
   S.who = null; save(m); render(); window.scrollTo(0,0); toast(L('Now {name} only (#{n})', {name:pName(m), n:num}));
 }
 // Hidden while a match is live: that match's screen is where Live leads.
@@ -1942,7 +1984,7 @@ const markSeen = () => { if (S.view === 'live' && !S.choose && S.activeId) LS.se
 // Closed by mistake (or by the phone) halfway through a line-up or the new-match steps: it waits for the next open
 function keepOpen(){
   if (S.view === 'live' && !S.activeId) keepNf();
-  LS.set('ss.open', {t:Date.now(), lu:S.lu, nf:S.view === 'live' && (!S.activeId || S.matches[S.activeId]?.practice) ? {d:S.nfDraft, step:S.nfStep, away:S.nfAway, basic:S.nfBasic} : null});
+  LS.set('ss.open', {t:Date.now(), lu:S.lu, nf:S.view === 'live' && (!S.activeId || S.matches[S.activeId]?.practice) ? {d:S.nfDraft, step:S.nfStep, away:S.nfAway, basic:S.nfBasic, p:S.nfP} : null});
 }
 function chooseView(m){
   const a = analyze(m), sc = a.score[m.curSet||1] || {us:0, them:0}, {w, l} = setsWon(m);
@@ -1964,7 +2006,7 @@ function newView(){
   // a new user sees one "Add your team" (no empty second team, no Next that cannot go on)
   const anyTeam = SLOTS.some(k => teamOf(k).players.length);
   // one player: a button for each player saved, or the boxes for a new one
-  const named = namedP(), adding = !named.length || !!S.nfAddP;
+  const named = namedP(), adding = !named.length || !!S.nfAddP, nfM = {pid:S.nfP};
   const home = nd['f-home'] ?? (team ? S.team.name || '' : (last?.home || S.team.name || ''));
   return `
   <section class="panel">
@@ -1974,7 +2016,7 @@ function newView(){
         <h2>${L('What do you want to track?')}</h2>
         <div class="pick" role="group" aria-label="${L('Track')}" style="margin-top:14px">
           <button type="button" data-track="team" aria-pressed="${chosen === 'team'}">${L('Whole team')}<small>${L('every player, by number')}</small></button>
-          <button type="button" data-track="player" aria-pressed="${chosen === 'player'}">${L('One player')}<small>${esc(namedP().map(k => S.players[k].name).join(', ') || L("one player's stats"))}</small></button></div>
+          <button type="button" data-track="player" aria-pressed="${chosen === 'player'}">${L('One player')}<small>${esc(namedP().length > 2 ? nL(namedP().length, '{n} player', '{n} players') : namedP().map(k => S.players[k].name).join(', ') || L("one player's stats"))}</small></button></div>
       </div>
       <div class="step" ${st(2)}>
         ${team ? `<h2>${L('Which team?')}</h2>
@@ -1983,7 +2025,7 @@ function newView(){
         ${S.team.players.length ? `<button type="button" class="lnk" data-view="team">${L('Change {team}', {team:esc(teamLabel(S.slot))})}</button>` : ''}`
         : `<h2>${L(named.length ? 'Which player?|pick' : 'Which player?')}</h2>
         ${named.length ? `<div class="wrap" style="gap:8px;margin-top:6px">${named.map(k => { const p = S.players[k];
-          return `<button type="button" class="btn btn-dk pickteam" data-nfpslot="${k}"><b>${esc(p.name)}${p.num ? ' · #' + esc(p.num) : ''}</b>${p.pos ? `<small>${esc(L(p.pos))}</small>` : ''}</button>`; }).join('')}
+          return `<button type="button" class="btn btn-dk pickteam" data-nfpslot="${k}" aria-pressed="${cid(k) === S.nfP}"><b>${esc(p.name)}${p.num ? ' · #' + esc(p.num) : ''}</b>${p.pos ? `<small>${esc(L(p.pos))}</small>` : ''}</button>`; }).join('')}
           ${named.length < PSLOTS.length && !adding ? `<button type="button" class="btn btn-dk pickteam" id="b-nfaddp"><b>+ ${L('Add player')}</b></button>` : ''}</div>` : ''}
         ${adding ? `<div class="row"><label>${L('Name')}<input id="f-pname" autocomplete="off" value="${esc(nd['f-pname']||'')}" placeholder="${L('e.g. Theo')}"></label>
         <label>${L('Number')}<input id="f-pnum" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(nd['f-pnum']||'')}" placeholder="7"></label></div>` : ''}
@@ -2005,7 +2047,7 @@ function newView(){
           <label>${L('Date')}<input id="f-date" type="date" value="${esc(nd['f-date'] || today())}"></label>
           <label>${L('Competition')}<input id="f-team" autocomplete="off" placeholder="${L('League, cup, friendly')}" value="${esc(nd['f-team'] ?? last?.team ?? '')}"></label>
         </div>
-        ${team ? '' : `<label class="check" id="l-starter"><input id="f-starter" type="checkbox" ${nd['f-starter'] ? 'checked' : ''}> ${L('{name} starts on court', {name:esc(pName())})}</label>`}
+        ${team ? '' : `<label class="check" id="l-starter"><input id="f-starter" type="checkbox" ${nd['f-starter'] ? 'checked' : ''}> ${L('{name} starts on court', {name:esc(pName(nfM))})}</label>`}
         <details class="more" id="f-late" ${nd['f-sets'] || nd['f-now'] ? 'open' : ''}><summary>${L('Started late?')}</summary>
           <div class="row" style="margin-top:10px">
             <label>${L('Sets already played')}<input id="f-sets" autocomplete="off" placeholder="${L('e.g. 25-20, 22-25')}" value="${esc(nd['f-sets']||'')}"></label>
@@ -2014,7 +2056,7 @@ function newView(){
           <p class="note">${L('Your team first. These points are only the score: no stats, no time on court.')}</p>
         </details>
         <p class="note">${team ? L("Count the score with the two big buttons. Tap a stat as it happens, then the player's number: a point adds one to your team, an error adds one to the other team. No time for the number? Tap Later, or just the next stat, and name it with Who? between rallies.")
-          : L('Count the score with the two big buttons. Tap {whose} stats as they happen: a point adds one to your team, an error adds one to the other team. Tap the court button each time {who} goes on or off.', {whose:pWhose(), who:pWho()})}</p>
+          : L('Count the score with the two big buttons. Tap {whose} stats as they happen: a point adds one to your team, an error adds one to the other team. Tap the court button each time {who} goes on or off.', {whose:pWhose(nfM), who:pWho(nfM)})}</p>
       </div>
       ${step === 1 || (step === 2 && (team || !adding)) ? '' : step < 4 ? `<button class="btn btn-or" type="submit" id="b-nfnext">${L('Next')} ›</button>` : `<button class="btn btn-or" type="submit" id="b-start">${L('Start match')}</button>`}
     </form>
@@ -2035,8 +2077,8 @@ function nfNext(){
   if (step === 2 && trackMode() !== 'team' && (S.nfAddP || !namedP().length)){
     const name = ($('#f-pname')?.value || '').trim(), num = jnum($('#f-pnum')?.value || ''), k = PSLOTS.find(x => !S.players[x].name);
     if (!name){ $('#f-pname')?.focus(); return toast(L("Type the player's name")); }
-    if (!k){ S.nfAddP = false; return render(); }
-    S.pslot = k; LS.set('ss.pslot', k); S.players[k] = Object.assign({}, S.players[k], {name, num}); savePlayer(k); S.nfAddP = false;
+    if (!k){ S.nfAddP = false; render(); return toast(L('Five players already: pick one, or delete one on the Profile page.')); }
+    S.players[k] = Object.assign({}, S.players[k], {name, num, id:newPid()}); savePlayer(k); S.nfP = S.players[k].id; S.nfAddP = false;
   }
   S.nfStep = Math.min(4, step + 1); render(); window.scrollTo(0,0);
 }
@@ -2118,7 +2160,7 @@ function teamPlayerView(num){
   // slot: a team slot, or 'old:<name>' for a deleted team (its own players' names come from its matches)
   const slot = S.seasonMode && !isPKey(S.seasonMode) ? S.seasonMode : 'team', tm = SLOTS.includes(slot) ? teamOf(slot) : {players:[]};
   const sorted = Object.values(S.matches).filter(m => isTeam(m) && seasonKey(m) === slot).sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
-  const per = sorted.filter(m => (m.log||[]).some(e => e.p === num)).map(m => ({m, c:counts(m, null, num)}));
+  const per = sorted.filter(m => (m.log||[]).some(e => e.p === num || (TAG_KEYS.includes(e.k) && e.s === num))).map(m => ({m, c:counts(m, null, num)}));
   const back = `<button class="btn btn-dk" data-view="history">‹ ${L('Back to team season')}</button>`;
   const name = (tm.players.find(p => p.num === num) || {}).name || (per.map(x => (x.m.roster||[]).find(p => p.num === num)).find(p => p && p.name) || {}).name || '';
   if (!per.length) return `<section class="panel"><h2>#${esc(num)} ${esc(name)}</h2><p class="empty">${L('No team matches yet.')}</p></section>${back}`;
@@ -2150,7 +2192,7 @@ function teamPlayerView(num){
   ${pctRows(total)}
   <section class="sec"><div class="sec-h"><h3>${L('Game log')}</h3><span class="note">${L('tap for the team report')}</span></div>
   <div class="mlist">${per.map(({m,c})=>{ const live = m.id===S.activeId; return `
-    <button class="mitem" data-open="${m.id}"><span class="res ${live?'live':(m.result||'')}">${live?L('LIVE'):resLetter(m.result)}</span>
+    <button class="mitem" data-open="${esc(m.id)}"><span class="res ${live?'live':esc(m.result||'')}">${live?L('LIVE'):resLetter(m.result)}</span>
       <span><div class="t">${L('vs {opp}', {opp:esc(m.opp)})}</div><div class="d">${esc(fmtDate(m.date))}${m.score?' · '+esc(m.score):''} · ${nL(errs(c), '{n} error', '{n} errors')}</div></span>
       <span class="p vir">${fmtVir(vir(c))}<small>${L('RTG')}</small></span>
       <span class="p">${pts(c)}<small>${unitW(pts(c), 'PTS')}</small></span>
@@ -2229,8 +2271,8 @@ function teamLive(m){
     <h2>${L('Final whistle')}</h2>
     ${finishForm(m)}
   </section>
-  ${PSLOTS.filter(k => S.players[k].num).map(k => `<button class="btn btn-dk" data-toplayer="${k}">${L('Switch to {name} only', {name:esc(S.players[k].name || L('Player|name'))})}</button>`).join('')}
-  ${m.practice ? '' : `<button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?L('Tap again to delete this match'):L('Delete this match')}</button>`}
+  ${PSLOTS.filter(k => canSwitch(m, k)).map(k => `<button class="btn btn-dk" data-toplayer="${k}">${L('Switch to {name} only', {name:esc(S.players[k].name)})}</button>`).join('')}
+  ${m.practice ? '' : `<button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${esc(m.id)}">${S.armed==='del-'+m.id?L('Tap again to delete this match'):L('Delete this match')}</button>`}
   ${m.toOn ? freezeView(m) + whoBar(m) : lineupSheet(m) || subBar(m) || whoBar(m) || timeoutBar(m) || askBar(m) || setBar(m, a) || libBar(m) || libInBar(m) || serveBar(m, a) || howBar(m)}`;
 }
 // At 0-0 of a set nobody has said who serves (no line-up): asked in a bar at the bottom, so nothing on the screen
@@ -2281,10 +2323,10 @@ function teamMatchView(m){
   <div class="row" style="align-items:center"><div><div class="kicker">${L(m.result==='W'?'Final · Win':m.result==='L'?'Final · Loss':'Final')}${m.score?' '+esc(m.score):''} · ${L('whole team')}</div><h2>${vsLine(m)}</h2></div></div>
   ${scoreBug(m, a, {live:false})}
   <div class="row">
-    <button class="btn btn-or" id="b-share" data-id="${m.id}">${L('Share picture')}</button>
-    <button class="btn btn-dk" id="b-sharetext" data-id="${m.id}">${L('Share score')}</button>
+    <button class="btn btn-or" id="b-share" data-id="${esc(m.id)}">${L('Share picture')}</button>
+    <button class="btn btn-dk" id="b-sharetext" data-id="${esc(m.id)}">${L('Share score')}</button>
   </div>
-  <div class="row"><button class="btn btn-dk" id="b-xlsx" data-id="${m.id}">Excel</button><button class="btn btn-dk" id="b-pdf">PDF</button></div>
+  <div class="row"><button class="btn btn-dk" id="b-xlsx" data-id="${esc(m.id)}">Excel</button><button class="btn btn-dk" id="b-pdf">PDF</button></div>
   <div class="tiles">
     <div class="tile hero"><b>${pts(c)}</b><span>${L('Points by players')}</span><em>${L('of {n} team points', {n:teamPts})}</em></div>
     <div class="tile"><b>${errs(c)}</b><span>${L('Errors')}</span><em>${L('points given away')}</em></div>
@@ -2309,8 +2351,8 @@ function teamMatchView(m){
     <section class="sec"><div class="sec-h"><h3>${L('Full table')}</h3></div>${boxTable(rows.map(r=>({label:pLabel(r), c:r.c})).concat({label:L('Team'), c, sum:true, noRtg:true}), L('Player'), true)}${legend()}${legendTeam()}</section>`)}
   ${a.feed.length ? `<section class="sec pbpsec"><div class="sec-h"><h3>${L('Play by play')}</h3><span class="note">${L('tap a line to change the player')}</span></div><div class="pbpbox">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
   <div class="row">
-    <button class="btn btn-dk" id="b-resume" data-id="${m.id}">${L('Keep tracking')}</button>
-    <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${m.id}">${armed?L('Tap again to delete'):L('Delete')}</button>
+    <button class="btn btn-dk" id="b-resume" data-id="${esc(m.id)}">${L('Keep tracking')}</button>
+    <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${esc(m.id)}">${armed?L('Tap again to delete'):L('Delete')}</button>
   </div>
   ${newMatchBtn()}
   <button class="btn btn-dk" data-view="history">‹ ${L('Back to season')}</button>
@@ -2335,13 +2377,13 @@ function teamSeason(list, seg, slot){
   ${newMatchBtn()}
   <section class="sec"><div class="sec-h"><h3>${L('Game log')}</h3><button class="lnk" id="b-editlist">${S.editList?L('Done'):L('Remove matches')}</button></div>
   <div class="mlist">${per.map(({m,c})=>{ const live = m.id===S.activeId, armed = S.armed==='x-'+m.id;
-    const info = `<span class="res ${live?'live':(m.result||'')}">${live?L('LIVE'):resLetter(m.result)}</span>
+    const info = `<span class="res ${live?'live':esc(m.result||'')}">${live?L('LIVE'):resLetter(m.result)}</span>
       <span><div class="t">${L('vs {opp}', {opp:esc(m.opp)})}</div><div class="d">${esc(fmtDate(m.date))}${m.score?' · '+esc(m.score):''}</div></span>`;
     return S.editList ? `
     <div class="mitem medit">${info}
       <button class="btn btn-del xdel ${armed?'armed':''}" data-xdel="${m.id}" aria-label="${armed?L('Tap again to delete'):L('Delete')} ${L('vs {opp}', {opp:esc(m.opp)})}">${armed?L('Sure?'):L('Delete')}</button>
     </div>` : `
-    <button class="mitem" data-open="${m.id}">${info}
+    <button class="mitem" data-open="${esc(m.id)}">${info}
       <span class="p vir">${errs(c)}<small>${unitW(errs(c), 'ERR')}</small></span>
       <span class="p">${pts(c)}<small>${unitW(pts(c), 'PTS')}</small></span>
     </button>`; }).join('')}</div>
@@ -2403,14 +2445,15 @@ function deleteTeam(){
 // The player on the Profile page is deleted. Their matches stay in Season under their name, in a season of their own,
 // so a new player in this place starts afresh. Not while that player's match is live.
 function deletePlayer(){
-  const k = S.pslot, p = S.player, lm = S.activeId && S.matches[S.activeId];
-  if (lm && !isTeam(lm) && pKey(lm) === k) return toast(L('Finish the live match of this player first'));
+  const k = S.pslot, p = S.player, id = cid(k), lm = S.activeId && S.matches[S.activeId];
+  if (lm && !isTeam(lm) && pslotFor(lm) === k) return toast(L('Finish the live match of this player first'));
   const name = p.name;
-  Object.values(S.matches).forEach(m => { if (!isTeam(m) && !m.practice && pKey(m) === k){ m.playerGone = name; m.playerNum = p.num || ''; save(m); } });
-  // newer than the card it replaces, so the delete reaches every phone
+  // a match started before v47 keeps no name of its own: it is given the player's name and number now
+  Object.values(S.matches).forEach(m => { if (!isTeam(m) && !m.practice && !m.pname && pslotFor(m) === k){ m.playerGone = name; m.playerNum = p.num || ''; save(m); } });
+  // newer than the card it replaces, so the delete reaches every phone (no id: the place is free)
   S.players[k] = Object.assign(blankP(), {updatedAt:p.updatedAt||0}); savePlayer(k);
-  if (S.seasonMode === k) S.seasonMode = 'pold:' + name;
-  S.pslot = namedP()[0] || 'player'; LS.set('ss.pslot', S.pslot);
+  if (S.seasonMode === k){ const one = Object.values(S.matches).find(m => !isTeam(m) && midOf(m) === id); S.seasonMode = one ? pKey(one) : undefined; }
+  S.pslot = namedP()[0] || 'player'; LS.set('ss.pslot', S.pslot); S.pDraft = null;
   render(); toast(L('{name} deleted. Their matches stay in Season.', {name}));
 }
 // Save what is on the team page. Refused (false, with the reason) unless every player has a number and a name,
@@ -2478,7 +2521,7 @@ function liveView(m){
     ${finishForm(m)}
   </section>
   <button class="btn btn-dk" id="b-toteam">${L('Switch to the whole team')}</button>
-  ${m.practice ? '' : `<button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?L('Tap again to delete this match'):L('Delete this match')}</button>`}
+  ${m.practice ? '' : `<button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${esc(m.id)}">${S.armed==='del-'+m.id?L('Tap again to delete this match'):L('Delete this match')}</button>`}
   ${m.toOn && freezeView(m) || tagBar(m) || timeoutBar(m) || askBar(m) || setBar(m, a) || howBar(m)}`;
 }
 // Under the live screen: fewer or all stat buttons, and the live score link (a practice is never shared)
@@ -2581,15 +2624,17 @@ function finishForm(m){
   const {w, l} = setsDone(m);
   // Won / Lost is guessed only once a team has the sets to win (a match stopped at 1-0 is "Not sure")
   const sv = savedResult(m, w, l), guess = m.result || w >= winSets(m) || l >= winSets(m) ? sv.result : '';
+  // typed in the hall's order, like the score card (away: their sets first)
+  const shown = m.away && /^\d+-\d+$/.test(sv.score) ? sv.score.split('-').reverse().join('-') : sv.score;
   return `<div class="row">
       <label>${L('Result')}<select id="fin-res"><option value="W" ${guess==='W'?'selected':''}>${L('Won')}</option><option value="L" ${guess==='L'?'selected':''}>${L('Lost')}</option><option value="" ${guess===''?'selected':''}>${L('Not sure')}</option></select></label>
-      <label>${L('Sets')}<input id="fin-score" placeholder="${L('e.g. 3-1')}" autocomplete="off" value="${esc(sv.score)}"></label>
+      <label>${L('Sets')} <span class="note">${esc(m.away ? m.opp : homeName(m))} – ${esc(m.away ? homeName(m) : m.opp)}</span><input id="fin-score" placeholder="${L('e.g. 3-1')}" autocomplete="off" value="${esc(shown)}"></label>
     </div>
     <button class="btn btn-or" id="b-finish">${L('End the match')}</button>`;
 }
 function feedHTML(m, rows){
   // team match: a stat line is a button that asks for the player again (a number forgotten or wrong)
-  return `<div class="pbp">${rows.map(r=>{ const ev = evLabel(r.e, m), cells = `<span class="st">${L('SET {n}', {n:r.e.set})}</span><span class="sc">${ordS(m, r.us, r.them)}</span><span class="ev ${ev.c}">${esc(ev.t)}${isTeam(m) && BYK[r.e.k] && !r.e.p && !BYK[r.e.k].noWho ? ' · ' + L('no player') : ''}</span>`;
+  return `<div class="pbp">${rows.map(r=>{ const ev = evLabel(r.e, m), cells = `<span class="st">${L('SET {n}', {n:esc(r.e.set)})}</span><span class="sc">${ordS(m, r.us, r.them)}</span><span class="ev ${ev.c}">${esc(ev.t)}${isTeam(m) && BYK[r.e.k] && !r.e.p && !BYK[r.e.k].noWho ? ' · ' + L('no player') : ''}</span>`;
     return isTeam(m) && BYK[r.e.k] && !BYK[r.e.k].noWho ? `<button data-fix="${m.log.indexOf(r.e)}">${cells}</button>` : `<div>${cells}</div>`; }).join('')}</div>`;
 }
 
@@ -2675,6 +2720,8 @@ function setCourt(m){
   });
   return out;
 }
+// a match switched from the whole team to one player: the sets before the first Sub in have no court time to show
+const preSwitch = (m, s) => !!m.soloNum && !(m.log||[]).some(e => e.k === 'on' && e.set <= s);
 function setCards(m, a){
   const court = setCourt(m);
   const sets = Object.keys(a.score).map(Number).filter(s => { const c = counts(m, s), x = a.score[s]; return x.us || x.them || pts(c) || errs(c); }).sort((x,y)=>x-y);
@@ -2684,7 +2731,7 @@ function setCards(m, a){
     const ended = (m.ended||[]).includes(s);
     const res = L(ended ? (x.us > x.them ? 'won' : x.them > x.us ? 'lost' : 'tied') : 'not finished');
     const p = pts(c), e = errs(c), good = listOf(c, ['dig','pass','assist','serve','att']);
-    const onTxt = !cr.rallies ? '' : cr.onR === cr.rallies ? L('On court the whole set') : cr.onR ? L('On court for {a} of {b} rallies', {a:cr.onR, b:cr.rallies}) : L('On the bench this set');
+    const onTxt = !cr.rallies || preSwitch(m, s) ? '' : cr.onR === cr.rallies ? L('On court the whole set') : cr.onR ? L('On court for {a} of {b} rallies', {a:cr.onR, b:cr.rallies}) : L('On the bench this set');
     return `<div class="setc">
       <div class="setc-h"><b>${L('Set {n}', {n:s})}</b><span>${ordS(m, x.us, x.them)} ${res}</span></div>
       ${typedOnly(m, s) ? '' : scoreGraph(m, s)}
@@ -2936,7 +2983,7 @@ function fieldHTML(m){
     <div class="net" aria-hidden="true"></div>
     <div class="six">${COURT_ORDER.map(i => { const p = rosterP(m, st.pos[i]), srv = i === 0 && st.serving === 'us' && !st.unsure, nx = i === 1 && st.serving === 'them' && !st.unsure;
       return `<button type="button" data-subspot="${i}" class="${srv ? 'srv-on' : ''}${p.pos === 'L' ? ' lib' : ''}" aria-label="${L('Position {r}', {r:ROMAN[i]})}: #${esc(p.num)} ${esc(p.name)}">${srv ? '<i class="srv"></i>' : nx ? '<i class="srv nx"></i>' : ''}<span class="rn" aria-hidden="true">${ROMAN[i]}</span>${esc(p.num)}<small>${p.pos ? esc(posAb(p.pos)) + ' · ' : ''}${esc(first(p.name))}</small></button>`; }).join('')}</div>
-    <div class="cap"><span>${st.unsure ? L('Points were typed in: check the line-up') : st.serving === 'us' ? L('#{n} serves · tap a player to sub', {n:st.pos[0]}) : st.serving === 'them' ? L('Next to serve: #{n} · tap a player to sub', {n:st.pos[1]}) : L('Tap a player to sub')}</span><button class="lnk" id="b-lineup">${L('Line-up')} ›</button></div>
+    <div class="cap"><span>${st.unsure ? L('Points were typed in: check the line-up') : st.serving === 'us' ? L('#{n} serves · tap a player to sub', {n:esc(st.pos[0])}) : st.serving === 'them' ? L('Next to serve: #{n} · tap a player to sub', {n:esc(st.pos[1])}) : L('Tap a player to sub')}</span><button class="lnk" id="b-lineup">${L('Line-up')} ›</button></div>
     <div class="cap"><span>${L('Subs {n}', {n:subsUsed(m, S.set)})}</span>${(tu => `<span class="${tu >= TOS ? 'neg' : ''}">${L('Time-outs {n} of {max}', {n:tu, max:TOS})}</span>`)(tosUsed(m, S.set, 'us'))}</div>
   </section>`;
 }
@@ -3054,7 +3101,7 @@ function seasonChart(list){
     const isSel = m.id === sel, isMax = v === hi && v > 0;
     const lab = (isSel || isMax) ? `<text class="v" x="${x+bw/2}" y="${v >= 0 ? y1-4 : Math.min(y2+11, H-bot-2)}" text-anchor="middle">${dec(v)}</text>` : '';
     const dl = ms.length <= 8 || i === 0 || i === ms.length-1 ? `<text x="${x+bw/2}" y="${H-6}" text-anchor="middle">${esc(shortDate(m.date))}</text>` : '';
-    return `<path class="bar${isSel?' sel':''}" d="${d}"/>${lab}${dl}<rect class="hit" data-csel="${m.id}" x="${i*slot}" y="0" width="${slot}" height="${H}"><title>${esc(L('vs {opp}', {opp:m.opp}))}: ${dec(v)}</title></rect>`;
+    return `<path class="bar${isSel?' sel':''}" d="${d}"/>${lab}${dl}<rect class="hit" data-csel="${esc(m.id)}" x="${i*slot}" y="0" width="${slot}" height="${H}"><title>${esc(L('vs {opp}', {opp:m.opp}))}: ${dec(v)}</title></rect>`;
   }).join('');
   const sm = ms.find(m => m.id === sel), sc = counts(sm), sa = analyze(sm);
   return `<section class="sec chart"><div class="sec-h"><h3>${L('Progress')}</h3>
@@ -3134,7 +3181,7 @@ function drawReport(m){
     if (typedOnly(m, n)){ picText(ctx, L('score typed in, no stats'), P+330, y-4, {size:30, color:PIC.muted}); y += 64; return; }
     picText(ctx, nL(p, '{n} pt', '{n} pts') + ' · ' + nL(e, '{n} error', '{n} errors'), P+330, y-4, {size:30, color:PIC.muted});
     if (cr.onR) picText(ctx, fmtPM(cr.pm), W-P-22, y-4, {w:700, size:30, align:'right', color:cr.pm > 0 ? PIC.pos : cr.pm < 0 ? PIC.neg : PIC.ink});
-    else picText(ctx, L('bench'), W-P-22, y-4, {size:28, align:'right', color:PIC.muted});
+    else if (!preSwitch(m, n)) picText(ctx, L('bench'), W-P-22, y-4, {size:28, align:'right', color:PIC.muted});
     y += 64;
   });
   const pl = passLine(m);
@@ -3392,13 +3439,13 @@ function privacyView(){
   return `<section class="panel">
     <div class="kicker">Spike Sheet</div><h2>${L('Privacy')}</h2>
     <p style="margin:0">${L('Spike Sheet keeps only what it needs to count your matches.')}</p></section>
-    ${part('What is kept', L("The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player cards, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages."))}
-    ${part('Where', L("In your account on Google Firebase, Google's cloud: Google provides the servers and the sign-in. A copy stays on this phone while you are signed in, so the app works without signal."))}
+    ${part('What is kept', L("The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player cards, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (the last 30 days; every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages."))}
+    ${part('Where', L("In your account on Google Firebase, Google's cloud: Google provides the servers and the sign-in. A copy stays on this phone while you are signed in, so the app works without signal; if your access is removed, the matches stay on it."))}
     ${part('Who sees it', L("You, on every phone you sign in on. The app's owner, to help you and fix problems. Nothing is sold or given to anyone else. No ads, no tracking."))}
-    ${part('Live score link', L('Only the two team names and the score, to anyone with the link, for 12 hours at most.'))}
+    ${part('Live score link', L('Only the two team names and the score (and a code for your account, no name or email), to anyone with the link, for 12 hours at most.'))}
     ${part('Players|privacy', L("Add players with their agreement, and for children with a parent's. First names are enough. Under 15, a parent or the coach should keep the account."))}
     ${part('Pictures and files', L('The share picture, Excel and PDF are made on your phone. The app does not keep them.'))}
-    ${part('Deleting', L('Delete a match or a team in the app at any time. A deleted team stays in the matches it played: delete those too. To delete everything in your account, write to {email}.', {email:`<a href="mailto:${ADMIN}" style="color:inherit"><b>${ADMIN}</b></a>`}))}
+    ${part('Deleting', L('Delete a match, a team or a player in the app at any time. A deleted team or player, or a player taken off a team, stays in the matches already played: delete those too. To delete everything in your account, write to {email}.', {email:`<a href="mailto:${ADMIN}" style="color:inherit"><b>${ADMIN}</b></a>`}))}
     ${part('Your rights', L('You can ask for a copy of your data, a correction or its deletion: write to {email}. You can also complain to the Hellenic Data Protection Authority (dpa.gr).', {email:`<a href="mailto:${ADMIN}" style="color:inherit"><b>${ADMIN}</b></a>`}))}
     <button class="btn btn-dk" data-view="${S.user ? 'player' : 'live'}">‹ ${L('Back')}</button>`;
 }
@@ -3451,8 +3498,8 @@ function skillSecs(c, sets, opts){
     kpiSec(L('Serve'), [
       opts.serves ? [L('Serves'), opts.serves.of, L('rallies we served')] : null,
       opts.serves ? [L('Serves in'), pctOf(opts.serves.of - opts.serves.err, opts.serves.of)] : c.serve ? [L('Serves in'), pctOf(c.ace + c.serve, c.ace + c.serve + c.serr)] : null,
-      [L('Aces'), c.ace, L('{v} per set', {v:per(c.ace, sets)}) + (opts.serves ? ' · ' + L('{p} of serves', {p:pctOf(c.ace, opts.serves.of)}) : '')],
-      [L('Serve errors'), c.serr, L('{v} per set', {v:per(c.serr, sets)}) + (opts.serves ? ' · ' + L('{p} of serves', {p:pctOf(c.serr, opts.serves.of)}) : '')],
+      [L('Aces'), c.ace, L('{v} per set', {v:per(c.ace, sets)}) + (opts.serves ? ' · ' + L('{p} of serves', {p:pctOf(Math.min(c.ace, opts.serves.of - opts.serves.err), opts.serves.of)}) : '')],
+      [L('Serve errors'), c.serr, L('{v} per set', {v:per(c.serr, sets)}) + (opts.serves ? ' · ' + L('{p} of serves', {p:pctOf(opts.serves.err, opts.serves.of)}) : '')],
       [L('Aces : errors'), `${c.ace} : ${c.serr}`],
       ...(opts.serveRows || [])]),
     kpiSec(L('Reception'), graded ? [
@@ -3673,7 +3720,7 @@ function matchSheets(m){
   const setRows = [[L('Sets'), homeName(m), m.opp, L('Result'), L('Points'), L('Errors'), ...(team ? [L('Side-out') + ' %', L('Break points') + ' %', L('Longest run') + ': ' + homeName(m), L('Longest run') + ': ' + m.opp]
       : [L('Rallies on court'), '+/-'])],
     ...sets.map(n => { const x = a.score[n], cs = counts(m, n), res = (m.ended||[]).includes(n) ? L(x.us > x.them ? 'won' : x.them > x.us ? 'lost' : 'tied') : L('not finished');
-      if (!team){ const cr = court[n] || {onR:0, pm:0}; return [n, x.us, x.them, res, pts(cs), errs(cs), cr.onR, cr.pm]; }
+      if (!team){ const cr = court[n] || {onR:0, pm:0}, pre = preSwitch(m, n); return [n, x.us, x.them, res, pts(cs), errs(cs), pre ? '' : cr.onR, pre ? '' : cr.pm]; }
       const t = sv[n] || {}, rn = runs(m, n);
       return [n, x.us, x.them, res, pts(cs), errs(cs), t.soOf ? pct100(t.so, t.soOf) : '', t.bpOf ? pct100(t.bp, t.bpOf) : '', rn.us, rn.them]; })];
   const name = n => ((m.roster||[]).find(p => p.num === n) || {}).name || '';
@@ -3719,10 +3766,10 @@ function matchView(m){
   ${scoreBug(m, a, {live:false})}
   ${tiles(c, {pm:a.pm, min:mins(playMs(m)), pmNote:`<em>${L('{a} won, {b} lost', {a:a.plus, b:a.minus})}</em>`, ptsNote:`<em>${L('{v} per set', {v:fmtVir(pts(c)/setsPlayed(m))})}</em>`})}
   <div class="row">
-    <button class="btn btn-or" id="b-share" data-id="${m.id}">${L('Share picture')}</button>
-    <button class="btn btn-dk" id="b-sharetext" data-id="${m.id}">${L('Share score')}</button>
+    <button class="btn btn-or" id="b-share" data-id="${esc(m.id)}">${L('Share picture')}</button>
+    <button class="btn btn-dk" id="b-sharetext" data-id="${esc(m.id)}">${L('Share score')}</button>
   </div>
-  <div class="row"><button class="btn btn-dk" id="b-xlsx" data-id="${m.id}">Excel</button><button class="btn btn-dk" id="b-pdf">PDF</button></div>
+  <div class="row"><button class="btn btn-dk" id="b-xlsx" data-id="${esc(m.id)}">Excel</button><button class="btn btn-dk" id="b-pdf">PDF</button></div>
   ${pctRows(c)}
   ${setCards(m, a)}
   ${a.stints.length ? `<section class="sec"><div class="sec-h"><h3>${L('Time on court')}</h3><span class="note">${nL(a.stints.length, '{n} spell', '{n} spells')}</span></div><div class="stints">${a.stints.map(st=>`
@@ -3732,8 +3779,8 @@ function matchView(m){
   <details class="more sec"><summary>${L('Full table')}</summary><span class="note">${esc(pName(m))}${pCard(m).num?' #'+esc(pCard(m).num):''}</span>${boxTable(rows,L('Sets'),!!m.soloNum)}${legend()}</details>
   ${a.feed.length ? `<section class="sec pbpsec"><div class="sec-h"><h3>${L('Play by play')}</h3><span class="note">${L('{n} events', {n:a.feed.length})}</span></div><div class="pbpbox">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
   <div class="row">
-    <button class="btn btn-dk" id="b-resume" data-id="${m.id}">${L('Keep tracking')}</button>
-    <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${m.id}">${armed?L('Tap again to delete'):L('Delete')}</button>
+    <button class="btn btn-dk" id="b-resume" data-id="${esc(m.id)}">${L('Keep tracking')}</button>
+    <button class="btn btn-del ${armed?'armed':''}" id="b-del" data-id="${esc(m.id)}">${armed?L('Tap again to delete'):L('Delete')}</button>
   </div>
   ${newMatchBtn()}
   <button class="btn btn-dk" data-view="history">‹ ${L('Back to season')}</button>`;
@@ -3746,11 +3793,11 @@ function historyView(){
   // (a deleted team keeps its own season, under its old name)
   const slots = [...SLOTS.filter(k => all.some(m => isTeam(m) && seasonKey(m) === k)), ...new Set(all.filter(m => isTeam(m) && m.teamGone).map(seasonKey))];
   // a season per player: each one with a card or a one-player match, then the matches of a deleted player
-  const solo = [...PSLOTS.filter(k => S.players[k].name || all.some(m => !isTeam(m) && pKey(m) === k)), ...new Set(all.filter(m => !isTeam(m) && m.playerGone).map(pKey))];
+  const solo = [...namedP(), ...new Set(all.filter(m => !isTeam(m) && !pslotFor(m)).map(pKey))];
   const mode = [...solo, ...slots].includes(S.seasonMode) ? S.seasonMode : slots.length && (!solo.length || all.every(isTeam)) ? slots[0] : solo.includes(S.pslot) ? S.pslot : solo[0] || 'player';
   if (!isPKey(mode)) S.seasonMode = mode;
   const seg = slots.length || solo.length > 1 ? `<div><div class="seg" role="group" aria-label="${L('Season of')}">
-    ${solo.map(k => `<button data-season="${esc(k)}" aria-pressed="${mode===k}">${esc(k.startsWith('pold:') ? L('{team} (old)', {team:k.slice(5)}) : S.players[k].name || L('Player|name'))}</button>`).join('')}${slots.map(k => `<button data-season="${esc(k)}" aria-pressed="${mode===k}">${esc(seasonLabel(k))}</button>`).join('')}</div></div>` : '';
+    ${solo.map(k => `<button data-season="${esc(k)}" aria-pressed="${mode===k}">${esc(k.startsWith('pold:') ? L('{name} (old)|player', {name:pName(all.find(m => !isTeam(m) && pKey(m) === k))}) : S.players[k].name)}</button>`).join('')}${slots.map(k => `<button data-season="${esc(k)}" aria-pressed="${mode===k}">${esc(seasonLabel(k))}</button>`).join('')}</div></div>` : '';
   if (!isPKey(mode)) return teamSeason(all.filter(m => isTeam(m) && seasonKey(m) === mode), seg, mode);
   const list = all.filter(m => !isTeam(m) && pKey(m) === mode), pc = PSLOTS.includes(mode) ? S.players[mode] : pCard(list[0]), pn = pc.name || L('Player|name');
   if (!list.length) return `${seg}<section class="panel"><h2>${L('Season')}</h2><p class="empty">${L('No matches yet.')}</p></section>${newMatchBtn()}`;
@@ -3778,14 +3825,14 @@ function historyView(){
   ${newMatchBtn()}
   <section class="sec"><div class="sec-h"><h3>${L('Game log')}</h3><button class="lnk" id="b-editlist">${S.editList?L('Done'):L('Remove matches')}</button></div>
   <div class="mlist">${per.map(({m,c,a})=>{ const live = m.id===S.activeId, armed = S.armed==='x-'+m.id;
-    const info = `<span class="res ${live?'live':(m.result||'')}">${live?L('LIVE'):resLetter(m.result)}</span>
+    const info = `<span class="res ${live?'live':esc(m.result||'')}">${live?L('LIVE'):resLetter(m.result)}</span>
       <span><div class="t">${L('vs {opp}', {opp:esc(m.opp)})}</div><div class="d">${esc(fmtDate(m.date))}${m.score?' · '+esc(m.score):''} · ${L('{n} min', {n:mins(playMs(m))})} · <span class="${pmClass(a.pm)}">${fmtPM(a.pm)}</span></div></span>`;
     // remove mode: the row stops opening the match and gets its own delete button
     return S.editList ? `
     <div class="mitem medit">${info}
       <button class="btn btn-del xdel ${armed?'armed':''}" data-xdel="${m.id}" aria-label="${armed?L('Tap again to delete'):L('Delete')} ${L('vs {opp}', {opp:esc(m.opp)})}">${armed?L('Sure?'):L('Delete')}</button>
     </div>` : `
-    <button class="mitem" data-open="${m.id}">${info}
+    <button class="mitem" data-open="${esc(m.id)}">${info}
       <span class="p vir">${fmtVir(vir(c))}<small>${L('RTG')}</small></span>
       <span class="p">${pts(c)}<small>${unitW(pts(c), 'PTS')}</small></span>
     </button>`; }).join('')}</div>
@@ -3798,17 +3845,18 @@ function historyView(){
 function playerView(){
   // up to five players: a button each to show its card, and + Add player while there is room
   const p = S.player, named = namedP(), free = PSLOTS.find(k => !S.players[k].name), del = S.armed === 'delplayer';
+  const dr = S.pDraft && S.pDraft.k === S.pslot ? S.pDraft : p;
   return `<section class="panel">
     <h2>${L('Players|cards')}</h2>
     <p class="note" style="margin:0">${L('For one-player matches, up to 5 players. A whole team is on the Team page.')}</p>
     ${named.length ? `<div><div class="seg" role="group" aria-label="${L('Players|cards')}">${named.map(k => `<button type="button" data-pslot="${k}" aria-pressed="${S.pslot === k}">${esc(S.players[k].name)}</button>`).join('')}${free ? `<button type="button" data-pslot="${free}" aria-pressed="${!p.name}">+ ${L('Add player')}</button>` : ''}</div></div>` : ''}
     <form id="pform" class="wrap" style="max-width:none;gap:12px">
       <div class="row">
-        <label>${L('Name')}<input id="p-name" autocomplete="off" value="${esc(p.name)}" placeholder="${L('Name')}"></label>
-        <label style="flex:0 1 110px">${L('Number')}<input id="p-num" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(p.num)}" placeholder="7"></label>
+        <label>${L('Name')}<input id="p-name" autocomplete="off" value="${esc(dr.name)}" placeholder="${L('Name')}"></label>
+        <label style="flex:0 1 110px">${L('Number')}<input id="p-num" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(dr.num)}" placeholder="7"></label>
       </div>
-      <label>${L('Position')}<select id="p-pos">${['','Outside hitter','Opposite','Middle blocker','Setter','Libero','Defensive specialist'].map(o=>`<option ${o===p.pos?'selected':''} value="${esc(o)}">${o ? L(o) : L('Choose')}</option>`).join('')}</select></label>
-      <button class="btn btn-or" type="submit">${L('Save player')}</button>
+      <label>${L('Position')}<select id="p-pos">${['','Outside hitter','Opposite','Middle blocker','Setter','Libero','Defensive specialist'].map(o=>`<option ${o===dr.pos?'selected':''} value="${esc(o)}">${o ? L(o) : L('Choose')}</option>`).join('')}</select></label>
+      <button class="btn btn-or" type="submit">${S.armed === 'prename' ? L('Tap again to rename') : L('Save player')}</button>
     </form>
     ${p.name ? `<button type="button" class="btn btn-del ${del ? 'armed' : ''}" id="b-delplayer">${del ? L('Tap again to delete {team}', {team:esc(p.name)}) : L('Delete this player')}</button>` : ''}
   </section>
@@ -3845,7 +3893,7 @@ function admAccess(u){
         <button class="btn btn-del btn-sm ${wipe ? 'armed' : ''}" id="b-adwipe">${wipe ? L('Tap again: delete everything of {email}', {email}) : L('Delete all their data')}</button>`
       : `<button class="btn btn-del btn-sm ${rm ? 'armed' : ''}" id="b-adrm">${rm ? L('Tap again to remove access') : L('Remove access')}</button>`}</div>
     ${own ? '' : u.removed
-      ? `<p class="note" style="margin:0">${L('Download their data first. This cannot be undone.')}</p>`
+      ? `<p class="note" style="margin:0">${L('Download their data first. This cannot be undone.')} ${L('Then also delete the sign-in in the Firebase console (Authentication, Users).')}</p>`
       : `<p class="note" style="margin:0">${L('Removing access stops this person using the app, on every phone. Their data stays until you delete it.')}</p>`}`;
 }
 // The owner's copy of everything (the free plan keeps no backups): every account's profile, matches, player card
@@ -3908,7 +3956,7 @@ function adminView(){
         <p class="note" style="margin:0">${(t.players||[]).map(x => '#' + esc(x.num) + ' ' + esc(x.name) + (x.pos ? ' (' + esc(posAb(x.pos)) + ')' : '')).join(' · ')}</p></section>`).join('')}
       <section class="sec"><div class="sec-h"><h3>${L('Matches')}</h3><span class="note">${ms.length}</span></div>
       <div class="mlist">${ms.map(m => `<button class="mitem" data-amatch="${esc(m.id)}"><span class="res ${admLive(m) ? 'live' : m.done ? esc(m.result||'') : ''}">${admLive(m) ? L('LIVE') : m.done ? resLetter(m.result) : '–'}</span>
-        <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${isTeam(m) ? L('whole team') : esc(m.playerGone || ((u.players || {})[pslotOf(m)] || {}).name || L('One player'))}</div></span>
+        <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${isTeam(m) ? L('whole team') : esc(admPlayer(u, m))}</div></span>
         <span class="p">${pts(counts(m))}<small>${unitW(pts(counts(m)), 'PTS')}</small></span></button>`).join('') || `<p class="empty">${L('No matches yet.')}</p>`}</div></section>
       <button class="btn btn-dk" id="b-adback">‹ ${L('Back')}</button>`; }
   // everyone: the totals, the versions in use, each person (a problem or a live match marked), then the latest matches
@@ -3948,6 +3996,9 @@ function adminView(){
 }
 // the app open now: its beat (every 4 minutes while shown) or an open in the last 5 minutes
 const onlineNow = p => Math.max(+(p && p.alive) || 0, +(p && p.last) || 0) > Date.now() - 5 * 60e3;
+// a one-player match's player on the owner's page: the account's card with its id, else the name the match kept
+const admPlayer = (u, m) => { const ps = u.players || {}, id = m.pid || (PSLOTS.includes(m.pslot) ? m.pslot : 'player');
+  const k = !m.playerGone && PSLOTS.find(k => ps[k] && ps[k].name && (ps[k].id || k) === id); return k ? ps[k].name : m.pname || m.playerGone || L('One player'); };
 // the person the owner's page is on
 const admUser = () => S.adm && S.adm.users && S.adm.users.find(x => x.uid === S.adm.user);
 // a match not finished and changed in the last two hours is being tracked now; a profile's problems, newest last
@@ -3978,7 +4029,7 @@ document.addEventListener('click', async e => {
   // the assist question waits for its answer (Ian 10-12): only its own buttons, Undo, the language and light / dark
   // go on - any other button used to close it on the way (audit 10-12)
   { const am = S.activeId && S.matches[S.activeId];
-    if (am && assistOpen(am) && !t.closest('.tagbar') && !['b-undo', 'b-whoundo', 'b-toastact'].includes(t.id) && !t.classList.contains('langb') && !t.classList.contains('themeb')){
+    if (am && assistOpen(am) && !t.closest('.tagbar') && !['b-undo', 'b-whoundo', 'b-toastact', 'b-continue', 'b-closenew'].includes(t.id) && !t.classList.contains('langb') && !t.classList.contains('themeb')){
       S.nudgeAt = Date.now(); toast(L('First answer: who passed the ball?')); return render(); } }
   const wasArmed = S.armed;
   if (t.id !== 'b-del') S.armed = null;
@@ -4038,9 +4089,9 @@ document.addEventListener('click', async e => {
   if (t.dataset.setby != null) return setBy(t.dataset.setby);
   if (t.dataset.tp){ const slot = S.view === 'match' ? seasonKey(S.matches[S.openId]) : S.seasonMode && !isPKey(S.seasonMode) ? S.seasonMode : 'team';
     S.view = 'tplayer'; S.tpNum = t.dataset.tp; S.seasonMode = slot; render(); window.scrollTo(0,0); return; }
-  if (t.dataset.season){ S.seasonMode = t.dataset.season; S.editList = false; return render(); }
+  if (t.dataset.season){ S.seasonMode = t.dataset.season; S.editList = false; render(); return document.querySelector(`[data-season="${CSS.escape(S.seasonMode)}"]`)?.focus(); }
   // the Profile page: which player's card is shown (or a free place for a new one)
-  if (t.dataset.pslot && PSLOTS.includes(t.dataset.pslot)){ S.pslot = t.dataset.pslot; LS.set('ss.pslot', S.pslot); return render(); }
+  if (t.dataset.pslot && PSLOTS.includes(t.dataset.pslot)){ S.pslot = t.dataset.pslot; LS.set('ss.pslot', S.pslot); render(); return document.querySelector(`[data-pslot="${S.pslot}"]`)?.focus(); }
   if (t.dataset.toplayer) return switchToPlayer(t.dataset.toplayer);
   // new-match form: switch without redrawing, so what is typed stays
   if (t.dataset.track){
@@ -4067,7 +4118,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.nfpslot && PSLOTS.includes(t.dataset.nfpslot)){
     document.querySelectorAll('[data-nfpslot]').forEach(b => b.setAttribute('aria-pressed', String(b === t)));
     clearTimeout(S.pickT); S.pickT = setTimeout(() => {
-      keepNf(); S.pslot = t.dataset.nfpslot; LS.set('ss.pslot', S.pslot); S.nfAddP = false;
+      keepNf(); S.nfP = cid(t.dataset.nfpslot); S.nfAddP = false;
       S.nfStep = 3; render(); window.scrollTo(0,0);
     }, 250);
     return;
@@ -4176,7 +4227,7 @@ document.addEventListener('click', async e => {
       if (!window.SS_auth) return;
       if (wasArmed !== 'signout'){ arm('signout'); return syncNote(); }
       if (Date.now() - (S.armAt||0) < 400){ S.armed = wasArmed; return; }
-      if (!S.removed && S.db && !S.serverSeen) return toast(L('Still connecting to your account. Try again in a moment.'));
+      if (!S.removed && !S.serverSeen) return toast(L('Still connecting to your account. Try again in a moment.'));
       // signing out takes the matches off this phone: the account must have them all first
       if (navigator.onLine === false) return toast(L('No internet. Sign out when it is back, so nothing is lost.'));
       clearTimeout(S.flushT); await flush();
@@ -4187,7 +4238,7 @@ document.addEventListener('click', async e => {
     case 'b-finish': {
       // "3-1" sets the result (a score that finishes the match: "1-0" of a match stopped early does not);
       // Won with "1-3" is asked about, not saved
-      let res = $('#fin-res').value; const sc = $('#fin-score').value.trim(), x = /^(\d+)\s*[-–:.\/]\s*(\d+)$/.exec(sc);
+      const fm = S.matches[S.activeId]; let res = $('#fin-res').value; const sc = $('#fin-score').value.trim(), x0 = /^(\d+)\s*[-–:.\/]\s*(\d+)$/.exec(sc), x = x0 && fm && fm.away ? [x0[0], x0[2], x0[1]] : x0;
       if (x && +x[1] !== +x[2] && Math.max(+x[1], +x[2]) >= winSets(S.matches[S.activeId])){ const r = +x[1] > +x[2] ? 'W' : 'L'; if (res && res !== r) return toast(L(res === 'W' ? 'Won with sets {s}? Check the result' : 'Lost with sets {s}? Check the result', {s:x[1] + '-' + x[2]})); res = r; }
       return finishMatch(res, x ? x[1] + '-' + x[2] : sc); }
     case 'b-resume': return resume(t.dataset.id);
@@ -4246,22 +4297,29 @@ document.addEventListener('submit', e => {
   if (e.target.id === 'newform' && (S.nfStep || 1) < 4) return nfNext();
   if (e.target.id === 'newform' && trackMode() === 'team' && !S.team.players.length){ S.view = 'team'; return render(); }
   if (e.target.id === 'newform'){
+    // the player picked at step 2 (deleted or not picked meanwhile: picked again)
+    if (trackMode() !== 'team' && !PSLOTS.some(x => S.players[x].name && cid(x) === S.nfP)){ S.nfStep = 2; render(); window.scrollTo(0,0); return toast(L('Pick the player')); }
     const sets = parseScores($('#f-sets').value), now = parseScores($('#f-now').value);
     if (!sets) return toast(L('Sets already played: type them like 25-20, 22-25'));
     if (!now || now.length > 1) return toast(L('Score now: type it like 10-12'));
     if (sets.length >= 5) return toast(L('At most 4 sets already played'));
     if ([0, 1].some(i => sets.filter(s => s[i] > s[1-i]).length >= 3)) return toast(L('Those sets already finish the match'));
-    startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:!!$('#f-starter')?.checked, mode:trackMode(), away:!!S.nfAway, basic:nfBasic(), sets, now:now[0]});
+    startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:!!$('#f-starter')?.checked, mode:trackMode(), away:!!S.nfAway, basic:nfBasic(), sets, now:now[0], pid:S.nfP});
   }
   if (e.target.id === 'pform'){
     // every player has a name (a place without one is free); the page stays, to add or change another
-    const name = $('#p-name').value.trim();
+    const name = $('#p-name').value.trim(), old = S.player, n = old.name && name !== old.name ? Object.values(S.matches).filter(m => !isTeam(m) && !m.practice && pslotFor(m) === S.pslot).length : 0;
     if (!name){ $('#p-name').focus(); return toast(L("Type the player's name")); }
-    S.player = Object.assign({}, S.player, {name, num:$('#p-num').value.trim(), pos:$('#p-pos').value});
-    savePlayer(); LS.set('ss.pslot', S.pslot); toast(L('Player saved')); render();
+    // a new name over a player with matches moves those matches to the new name: asked once more (a parent typing a
+    // second child over the first one - a new player is + Add player)
+    if (n && S.armed !== 'prename'){ arm('prename'); return toast(L("{old}'s matches ({n}) will show {name}. Tap again to rename. A new player: + Add player.", {old:old.name, n, name})); }
+    S.armed = null;
+    S.player = Object.assign({}, old, {name, num:$('#p-num').value.trim(), pos:$('#p-pos').value}, old.name ? {} : {id:newPid()});
+    S.pDraft = null; savePlayer(); LS.set('ss.pslot', S.pslot); toast(L('Player saved')); render();
   }
 });
-document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#teamform')) keepDraft(readTeamRaw()); });
+document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#teamform')) keepDraft(readTeamRaw());
+  if (e.target.closest && e.target.closest('#pform')) S.pDraft = {k:S.pslot, name:$('#p-name').value, num:$('#p-num').value, pos:$('#p-pos').value}; });
 // "For coaches" stays open while the page is drawn again (a play-by-play fix, a sync)
 document.addEventListener('toggle', e => { if (e.target.matches && e.target.matches('details.coach')) S.coachOpen = e.target.open; }, true);
 window.addEventListener('pagehide', () => { backup(); flush(); markSeen(); keepOpen(); });
@@ -4275,7 +4333,8 @@ function goBack(){
   if (S.lu || S.sub){ S.lu = null; S.sub = null; S.barClosedAt = Date.now(); render(); return true; }
   // the new-match steps: Back goes one step back
   if (S.view === 'live' && !m && (S.nfStep || 1) > 1){ keepNf(); S.nfStep--; render(); window.scrollTo(0,0); return true; }
-  if (m && assistOpen(m)){ S.nudgeAt = Date.now(); toast(L('First answer: who passed the ball?')); render(); return true; }
+  // (on "Match in progress" the question is not on screen: Back is a Back there, and Continue brings it again)
+  if (m && assistOpen(m)){ if (S.view === 'live' && S.choose) return false; S.nudgeAt = Date.now(); toast(L('First answer: who passed the ball?')); render(); return true; }
   if (S.who || S.tag || S.toAsk || S.fixAsk || S.endAsk || S.setAsk || S.serveAsk){ whoLeft(); S.who = null; S.whoOther = false; S.tag = null; S.toAsk = false; S.fixAsk = false; S.endAsk = false; S.setAsk = null; S.serveAsk = null; clearTimeout(S.tagT); S.barClosedAt = Date.now(); render(); return true; }
   // the libero and first-server questions: Back is "Later"
   if (S.view === 'live' && m && isTeam(m)){
@@ -4328,7 +4387,7 @@ restore();
 // what was half done when the app closed, under 2 hours ago: the line-up being filled, the new-match steps
 { const o = LS.get('ss.open'); if (o && Date.now() - o.t < 2*3600e3){
   if (o.lu && o.lu.mid === S.activeId && o.lu.set === S.set) S.lu = o.lu;
-  if (o.nf && !S.activeId){ S.nfDraft = o.nf.d; S.nfStep = o.nf.step; S.nfAway = o.nf.away; S.nfBasic = o.nf.basic ?? null; } } }
+  if (o.nf && !S.activeId){ S.nfDraft = o.nf.d; S.nfStep = o.nf.step; S.nfAway = o.nf.away; S.nfBasic = o.nf.basic ?? null; S.nfP = o.nf.p || null; } } }
 S.lang = LS.get('ss.lang') || (/^el\b/i.test(navigator.language || '') ? 'el' : 'en');
 // asks the browser not to clear this site's data when the phone runs low (Chrome on Android grants it)
 try{ navigator.storage?.persist?.(); }catch(e){}
@@ -4449,7 +4508,9 @@ async function ping(u){
     // per phone: its kind and version, its last confirmed upload and the saves still waiting
     const phone = {kind, ver, at:now, up:+localStorage.getItem('ss.upAt') || 0, wait:waiting + Object.keys(S.pending).length};
     reported = phone.wait;
-    await F.setDoc(ref, Object.assign({email:u.email || '', name:u.displayName || '', last:now, opens:F.increment(1), days:{[day]:F.increment(1)}, devices:{[kind]:now}, phones:{[pid]:phone}, lang:document.documentElement.lang || '', ver, kind, issues},
+    // the days of use: the last 30 only (the owner's page uses no more; the privacy page says so)
+    const gone = Object.keys((had && had.days) || {}).filter(k => Date.parse(k + 'T12:00') < now - 31 * 864e5);
+    await F.setDoc(ref, Object.assign({email:u.email || '', name:u.displayName || '', last:now, opens:F.increment(1), days:Object.assign({[day]:F.increment(1)}, Object.fromEntries(gone.map(k => [k, F.deleteField()]))), devices:{[kind]:now}, phones:{[pid]:phone}, lang:document.documentElement.lang || '', ver, kind, issues},
       had && had.first ? {} : {first:now}), {merge:true});
   }catch(e){}
 }
@@ -4457,10 +4518,12 @@ async function ping(u){
 // What another account wrote is checked before the owner's page draws it: the sets are numbers 1-9, the texts are text
 const okText = v => v == null || typeof v === 'string';
 const okMatch = m => !!m && typeof m === 'object' && typeof m.id === 'string' && Array.isArray(m.log)
-  && m.log.every(e => e && typeof e === 'object' && typeof e.k === 'string' && Number.isInteger(e.set) && e.set >= 1 && e.set <= 9)
-  && ['date', 'opp', 'home', 'team', 'result', 'score', 'pslot', 'playerGone', 'playerNum'].every(k => okText(m[k]))
+  && m.log.every(e => e && typeof e === 'object' && typeof e.k === 'string' && Number.isInteger(e.set) && e.set >= 1 && e.set <= 9
+    && (e.side == null || e.side === 'us' || e.side === 'them') && ['p', 's', 'in', 'out'].every(k => e[k] == null || /^\d{0,3}$/.test(e[k]))
+    && (e.pos == null || (Array.isArray(e.pos) && e.pos.every(x => x == null || /^\d{0,3}$/.test(x)))))
+  && ['date', 'opp', 'home', 'team', 'result', 'score', 'pslot', 'playerGone', 'playerNum', 'pid', 'pname', 'pnum'].every(k => okText(m[k]))
   && (m.roster == null || (Array.isArray(m.roster) && m.roster.every(x => x && typeof x === 'object' && okText(x.num) && okText(x.name))));
-const okCard = p => p && typeof p === 'object' && ['name', 'num', 'pos'].every(k => okText(p[k])) ? p : null;
+const okCard = p => p && typeof p === 'object' && ['name', 'num', 'pos', 'id'].every(k => okText(p[k])) ? p : null;
 const okTeam = t => t && typeof t === 'object' && okText(t.name) && (t.players == null || (Array.isArray(t.players)
   && t.players.every(x => x && typeof x === 'object' && okText(x.num) && okText(x.name) && okText(x.pos)))) ? t : null;
 const okProfile = p => { p = p && typeof p === 'object' ? Object.assign({}, p) : {};
