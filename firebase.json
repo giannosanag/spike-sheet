@@ -6,7 +6,8 @@
         "firebase.json",
         "README.md",
         "firestore.rules",
-        "**/.*"
+        "**/.*",
+        "NOTES.txt"
       ],
       "headers": [
         {
@@ -31,7 +32,8 @@
         "firebase.json",
         "README.md",
         "firestore.rules",
-        "**/.*"
+        "**/.*",
+        "NOTES.txt"
       ],
       "headers": [
         {
@@ -50,5 +52,8 @@
       ],
       "site": "spike-sheet-theo"
     }
-  ]
+  ],
+  "firestore": {
+    "rules": "firestore.rules"
+  }
 }
