@@ -619,12 +619,12 @@ const WEIGHT = {ace:1,kill:1,plase:1,block:1,dig:1,pass:.5,p3:.5,p2:.5,p1:0,assi
 // a stat that still needs a player's number (a position fault is the team's)
 const needsWho = e => BYK[e.k] && !e.p && !BYK[e.k].noWho && !e.nk;
 
-const S = {matches:{}, player:{name:'', num:'', pos:''}, teams:{team:{name:'', players:[]}, team2:{name:'', players:[]}}, slot:'team', activeId:null, view:'live', openId:null, set:1, db:null, pending:{}, flushing:false, timer:null, armed:null, unsubs:[], user:null};
+const S = {matches:{}, players:{}, pslot:'player', teams:{team:{name:'', players:[]}, team2:{name:'', players:[]}}, slot:'team', activeId:null, view:'live', openId:null, set:1, db:null, pending:{}, flushing:false, timer:null, armed:null, unsubs:[], user:null};
 // Words on screen: the English text is the key, EL holds the Greek. {name} in a text is filled from v.
 // "Player|tab": one English word with two Greek ones (the part after | is not shown in English;
 // without its own Greek it takes the plain word's).
 // The app's version, on the Player page and on the owner's page: bump it together with CACHE in sw.js on every release
-const APP_VERSION = 'v45';
+const APP_VERSION = 'v46';
 const EL = {
   // header and tabs
   'Live': 'Αγώνας', 'Season': 'Σεζόν', 'Profile|tab': 'Προφίλ', 'Team': 'Ομάδα', 'Spike Sheet, home': 'Spike Sheet, αρχική', 'Views': 'Σελίδες',
@@ -695,7 +695,7 @@ const EL = {
   'Privacy': 'Απόρρητο',
   'Spike Sheet keeps only what it needs to count your matches.': 'Το Spike Sheet κρατά μόνο ό,τι χρειάζεται για να καταγράφει τους αγώνες σου.',
   'What is kept': 'Τι κρατάμε',
-  "The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player card, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages.": 'Τους αγώνες που καταγράφεις (σκορ, στατιστικά, φάση-φάση), τις ομάδες σου (ονόματα και αριθμούς των μελών), το προφίλ, και το email και το όνομα του λογαριασμού σου Google. Για να σε βοηθάμε και να διορθώνουμε προβλήματα: πότε και ποιες μέρες χρησιμοποιείς την εφαρμογή (κάθε λίγα λεπτά όσο είναι ανοιχτή), τον τύπο του κινητού και έναν κωδικό του, τη γλώσσα, την έκδοση της εφαρμογής και τα μηνύματα σφάλματός της.',
+  "The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player cards, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages.": 'Τους αγώνες που καταγράφεις (σκορ, στατιστικά, φάση-φάση), τις ομάδες σου (ονόματα και αριθμούς των μελών), τα προφίλ, και το email και το όνομα του λογαριασμού σου Google. Για να σε βοηθάμε και να διορθώνουμε προβλήματα: πότε και ποιες μέρες χρησιμοποιείς την εφαρμογή (κάθε λίγα λεπτά όσο είναι ανοιχτή), τον τύπο του κινητού και έναν κωδικό του, τη γλώσσα, την έκδοση της εφαρμογής και τα μηνύματα σφάλματός της.',
   'Where': 'Πού',
   "In your account on Google Firebase, Google's cloud: Google provides the servers and the sign-in. A copy stays on this phone while you are signed in, so the app works without signal.": 'Στον λογαριασμό σου στο Google Firebase, το cloud της Google: η Google παρέχει τους διακομιστές και τη σύνδεση. Ένα αντίγραφο μένει σε αυτό το κινητό όσο έχεις συνδεθεί, ώστε η εφαρμογή να δουλεύει και χωρίς σήμα.',
   'Who sees it': 'Ποιος τα βλέπει',
@@ -754,7 +754,7 @@ const EL = {
   'Back': 'Πίσω', 'New match · step {n} of 4': 'Νέος αγώνας · βήμα {n} από 4', 'What do you want to track?': 'Τι θέλεις να καταγράψεις;', 'Track': 'Καταγραφή',
   'Whole team': 'Όλη η ομάδα', 'every player, by number': 'κάθε μέλος, με αριθμό', 'One player': 'Ατομικά', "one player's stats": 'στατιστικά ενός μέλους',
   'Which team?': 'Ποια ομάδα;', 'Add your team': 'Πρόσθεσε την ομάδα σου', 'the names and numbers, once': 'ονόματα και αριθμοί, μία φορά', '{n} player': '{n} μέλος', '{n} players': '{n} μέλη', 'no players yet: add them': 'χωρίς μέλη ακόμα: πρόσθεσέ τα', 'Change {team}': 'Επεξεργασία: {team}',
-  'Which player?': 'Όνομα και αριθμός', 'Change the player': 'Επεξεργασία προφίλ', 'Name': 'Όνομα', 'e.g. Theo': 'π.χ. Θοδωρής', 'Number': 'Αριθμός',
+  'Which player?': 'Όνομα και αριθμός', 'Which player?|pick': 'Ποιο μέλος;', 'Edit players': 'Επεξεργασία προφίλ', 'Name': 'Όνομα', 'e.g. Theo': 'π.χ. Θοδωρής', 'Number': 'Αριθμός',
   'The match': 'Ο αγώνας', 'Your team': 'Η ομάδα σου', 'e.g. Panathinaikos': 'π.χ. Παναθηναϊκός', 'The team you keep the stats for': 'Η ομάδα που κρατάς τα στατιστικά της',
   'e.g. Olympiacos': 'π.χ. Ολυμπιακός', 'Home or away?': 'Εντός ή εκτός έδρας;', 'Home or away': 'Εντός ή εκτός έδρας', 'Home': 'Εντός έδρας', 'we play in our gym': 'παίζουμε στο γήπεδό μας',
   'Away': 'Εκτός έδρας', 'we play in their gym': 'παίζουμε στο γήπεδό τους', 'Last details': 'Τελευταία στοιχεία', 'Date': 'Ημερομηνία', 'Competition': 'Διοργάνωση',
@@ -881,10 +881,11 @@ const EL = {
   'You can keep two teams. Every player needs a number and a name. A new match asks what to track: {name} only, or a whole team. In a team match you tap the stat, then the number of the player.':
     'Μπορείς να κρατάς δύο ομάδες. Κάθε μέλος θέλει αριθμό και όνομα. Ο νέος αγώνας ρωτά τι θα καταγράψεις: «Όλη η ομάδα» ή «Ατομικά». Σε αγώνα ομάδας πατάς τη φάση και μετά τον αριθμό.',
   // player card and account
-  'Player card': 'Προφίλ', 'For one-player matches. A whole team is on the Team page.': 'Για τα «Ατομικά» στατιστικά. Την ομάδα τη φτιάχνεις στη σελίδα «Ομάδα».', 'Choose': 'Διάλεξε', 'Save player': 'Αποθήκευση', 'Account': 'Λογαριασμός', 'Sign out': 'Αποσύνδεση',
+  'Players|cards': 'Μέλη', 'For one-player matches, up to 5 players. A whole team is on the Team page.': 'Για τα «Ατομικά» στατιστικά, έως 5 μέλη. Την ομάδα τη φτιάχνεις στη σελίδα «Ομάδα».', 'Choose': 'Διάλεξε', 'Save player': 'Αποθήκευση', 'Delete this player': 'Διαγραφή μέλους',
+  '{name} deleted. Their matches stay in Season.': 'Το μέλος {name} διαγράφηκε. Οι αγώνες του μένουν στη Σεζόν.', 'Finish the live match of this player first': 'Το μέλος έχει αγώνα σε εξέλιξη: τελείωσέ τον πρώτα', 'Account': 'Λογαριασμός', 'Sign out': 'Αποσύνδεση',
   'Signed in as {email}. Your matches are saved in your account and sync to every phone you sign in on.': 'Σύνδεση: {email}. Οι αγώνες σου αποθηκεύονται στον λογαριασμό σου και συγχρονίζονται σε κάθε κινητό όπου συνδέεσαι.',
   'Sign in with Google to start. Your matches are saved in your account and sync to every phone you sign in on.': 'Συνδέσου με Google για να ξεκινήσεις. Οι αγώνες σου αποθηκεύονται στον λογαριασμό σου και συγχρονίζονται σε κάθε κινητό όπου συνδέεσαι.',
-  "With Google sign-in, your matches, teams, player card and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.": 'Με σύνδεση Google, οι αγώνες, οι ομάδες, το προφίλ σου και το πότε ανοίγεις την εφαρμογή αποθηκεύονται στον λογαριασμό σου. Ο διαχειριστής της εφαρμογής μπορεί να τα δει, για να σε βοηθά και να διορθώνει προβλήματα.',
+  "With Google sign-in, your matches, teams, player cards and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.": 'Με σύνδεση Google, οι αγώνες, οι ομάδες, τα προφίλ σου και το πότε ανοίγεις την εφαρμογή αποθηκεύονται στον λογαριασμό σου. Ο διαχειριστής της εφαρμογής μπορεί να τα δει, για να σε βοηθά και να διορθώνει προβλήματα.',
   // the admin page
   'Admin': 'Διαχείριση', "Only the app's owner can open this page.": 'Μόνο ο διαχειριστής της εφαρμογής μπορεί να ανοίξει αυτή τη σελίδα.', 'Reading every account…': 'Διαβάζονται όλοι οι λογαριασμοί…',
   'The accounts could not be read ({code}). Are the new Firestore rules published?': 'Οι λογαριασμοί δεν διαβάστηκαν ({code}). Έχουν δημοσιευτεί οι νέοι κανόνες του Firestore;',
@@ -933,6 +934,19 @@ const teamLabel = slot => teamOf(slot).name || (slot === 'team2' ? L('Team 2') :
 // (a new team in that slot starts a fresh season).
 const seasonKey = m => m.teamGone ? 'old:' + m.teamGone : slotOf(m);
 const seasonLabel = k => String(k).startsWith('old:') ? L('{team} (old)', {team:k.slice(4)}) : teamLabel(k);
+// Up to five players per account for one-player matches (settings/player, settings/player2..5 - Ian 10-12); S.player is
+// the one chosen now. A one-player match keeps its player's place (pslot; none = the first, as every match before v46).
+const PSLOTS = ['player', 'player2', 'player3', 'player4', 'player5'];
+const blankP = () => ({name:'', num:'', pos:''});
+PSLOTS.forEach(k => S.players[k] = blankP());
+Object.defineProperty(S, 'player', {get(){ return S.players[S.pslot]; }, set(v){ S.players[S.pslot] = v; }});
+const pslotOf = m => m && PSLOTS.includes(m.pslot) ? m.pslot : 'player';
+const namedP = () => PSLOTS.filter(k => S.players[k].name);
+// a match's player: the card in its place, or the name and number it had when that player was deleted
+const pCard = m => !m ? S.player : m.playerGone ? {name:m.playerGone, num:m.playerNum || '', pos:''} : S.players[pslotOf(m)];
+// the season of a one-player match: its player's place, or 'pold:<name>' for a deleted player (like a deleted team)
+const pKey = m => m.playerGone ? 'pold:' + m.playerGone : pslotOf(m);
+const isPKey = k => PSLOTS.includes(k) || String(k).startsWith('pold:');
 // Playing positions, chosen per player on the team page
 const POS = [{k:'S', l:'Setter'}, {k:'OH', l:'Outside'}, {k:'OPP', l:'Opposite'}, {k:'MB', l:'Middle'}, {k:'L', l:'Libero'}];
 // short on the court and the line-up sheet (Greek: Π, Α, Δ, Κ, Λ)
@@ -980,7 +994,7 @@ function backup(){
   if (S.oldLeft){ const old = LS.get('ss.matches') || {}; let ch = false;
     Object.keys(old).forEach(id => { if (!S.matches[id] || written[id] != null){ delete old[id]; ch = true; } });
     if (!Object.keys(old).length){ try{ localStorage.removeItem('ss.matches'); }catch(e){} S.oldLeft = false; } else if (ch) LS.set('ss.matches', old); }
-  LS.set('ss.active', S.matches[S.activeId]?.practice ? null : S.activeId); LS.set('ss.player', S.player); LS.set('ss.team', S.teams.team); LS.set('ss.team2', S.teams.team2);
+  LS.set('ss.active', S.matches[S.activeId]?.practice ? null : S.activeId); PSLOTS.forEach(k => LS.set('ss.' + k, S.players[k])); LS.set('ss.team', S.teams.team); LS.set('ss.team2', S.teams.team2);
 }
 function restore(){
   const ms = {};
@@ -1004,7 +1018,8 @@ function restore(){
     else { S.oldLeft = true; LS.set('ss.matches', old); }
   }
   S.matches = ms;
-  const p = LS.get('ss.player'); if (p && typeof p === 'object') S.player = Object.assign({name:'', num:'', pos:''}, p);
+  PSLOTS.forEach(k => { const p = LS.get('ss.' + k); if (p && typeof p === 'object') S.players[k] = Object.assign(blankP(), p); });
+  S.pslot = PSLOTS.includes(LS.get('ss.pslot')) ? LS.get('ss.pslot') : 'player';
   SLOTS.forEach(k => { const t = LS.get('ss.' + k); if (t && typeof t === 'object') S.teams[k] = Object.assign({name:'', players:[]}, t); });
   S.slot = LS.get('ss.slot') === 'team2' ? 'team2' : 'team';
   const td = LS.get('ss.teamDraft'); if (td && td.d && Array.isArray(td.d.players)){ S.teamDraft = td.d; S.draftSlot = td.slot; }
@@ -1023,14 +1038,14 @@ function save(m){
   if (m.liveId) liveSend(m);
 }
 function saveTeam(){ S.team.updatedAt = stamp(S.team); backup(); queue('settings/' + S.slot); }
-function savePlayer(){ S.player.updatedAt = stamp(S.player); backup(); queue('settings/player'); }
+function savePlayer(k = S.pslot){ const p = S.players[k]; p.updatedAt = stamp(p); backup(); queue('settings/' + k); }
 function queue(path){
   if (!S.db || S.matches[path.slice(8)]?.practice) return;
   S.pending[path] = true;
   clearTimeout(S.flushT); S.flushT = setTimeout(flush, 500);
 }
 function bodyFor(path){
-  if (path === 'settings/player') return S.player;
+  if (path.startsWith('settings/player')) return S.players[path.slice(9)];
   if (path === 'settings/team' || path === 'settings/team2') return S.teams[path.slice(9)];
   return S.matches[path.slice(8)];
 }
@@ -1131,13 +1146,15 @@ function connect(db){
     if (S.activeId && (!act || act.done)) { S.activeId = null; S.choose = false; changed = true; }
     if (changed){ backup(); if (!isTyping()) render(); }
   }, () => {}));
-  let firstP = true;
-  S.unsubs.push(db.doc('settings/player').onSnapshot(d => {
-    const r = d.exists && d.data();
-    if (r && (r.updatedAt||0) > (S.player.updatedAt||0)) { S.player = Object.assign({}, r); backup(); if (!isTyping()) render(); }
-    else if (firstP && !d.metadata?.fromCache && (S.player.updatedAt||0) > ((r && r.updatedAt)||0)) queue('settings/player');
-    if (!d.metadata?.fromCache) firstP = false;
-  }, () => {}));
+  PSLOTS.forEach(k => {
+    let firstP = true;
+    S.unsubs.push(db.doc('settings/' + k).onSnapshot(d => {
+      const r = d.exists && d.data();
+      if (r && (r.updatedAt||0) > (S.players[k].updatedAt||0)) { S.players[k] = Object.assign(blankP(), r); backup(); if (!isTyping()) render(); }
+      else if (firstP && !d.metadata?.fromCache && (S.players[k].updatedAt||0) > ((r && r.updatedAt)||0)) queue('settings/' + k);
+      if (!d.metadata?.fromCache) firstP = false;
+    }, () => {}));
+  });
   SLOTS.forEach(k => {
     let firstT = true;
     S.unsubs.push(db.doc('settings/' + k).onSnapshot(d => {
@@ -1162,7 +1179,7 @@ function clearLocal(keepUnsaved, keepCards, unsent){
   S.matches = keep; S.activeId = null; dropDraft();
   try{ localStorage.removeItem('ss.matches'); }catch(e){} S.oldLeft = false;
   // keepCards: a save was being refused, so the player card and roster may exist only here
-  if (!keepCards){ S.player = {name:'', num:'', pos:''}; S.teams = {team:{name:'', players:[]}, team2:{name:'', players:[]}}; }
+  if (!keepCards){ PSLOTS.forEach(k => S.players[k] = blankP()); S.pslot = 'player'; LS.set('ss.pslot', 'player'); S.teams = {team:{name:'', players:[]}, team2:{name:'', players:[]}}; }
   try{ localStorage.removeItem('ss.synced'); localStorage.removeItem('ss.deleted'); localStorage.removeItem('ss.cloud'); }catch(e){}
   backup();
 }
@@ -1178,7 +1195,7 @@ window.SS_onUser = (u, db) => {
     // and back, to be saved, when its owner signs in here again
     const kept = LS.get('ss.keptFor');
     if (kept && kept.uid !== u.uid){
-      if (!LS.set('ss.aside.' + kept.uid, {email:kept.email, matches:S.matches, player:S.player, teams:S.teams})){
+      if (!LS.set('ss.aside.' + kept.uid, {email:kept.email, matches:S.matches, players:S.players, teams:S.teams})){
         // (they would be uploaded into this account) - signed out again, nothing mixed
         toast(L('This phone still holds unsaved matches of {email}: sign in as {email} first.', {email:kept.email || L('another account')}));
         if (window.SS_auth) window.SS_auth.signOut(true); return; }
@@ -1187,7 +1204,8 @@ window.SS_onUser = (u, db) => {
     const aside = LS.get('ss.aside.' + u.uid);
     if (aside){
       Object.values(aside.matches || {}).forEach(x => { if (x && x.id && (!S.matches[x.id] || (x.updatedAt||0) > (S.matches[x.id].updatedAt||0))) S.matches[x.id] = x; });
-      if (aside.player && (aside.player.updatedAt||0) > (S.player.updatedAt||0)) S.player = aside.player;
+      // (set aside by v45 or older: one player)
+      PSLOTS.forEach(k => { const p = aside.players ? aside.players[k] : k === 'player' && aside.player; if (p && (p.updatedAt||0) > (S.players[k].updatedAt||0)) S.players[k] = p; });
       SLOTS.forEach(k => { const t = aside.teams && aside.teams[k]; if (t && (t.updatedAt||0) > (S.teams[k].updatedAt||0)) S.teams[k] = t; });
       try{ localStorage.removeItem('ss.aside.' + u.uid); }catch(e){}
       backup();
@@ -1369,10 +1387,11 @@ document.addEventListener('visibilitychange', ()=>{
   keepAwake();
   if (S.hiddenAt && idleLong() && !S.choose){ S.choose = true; S.view = 'live'; render(); window.scrollTo(0,0); }
 });
-const pName = () => S.player.name || L('Player|name');
+// (m: a match, for its own player; without one, the player chosen now)
+const pName = m => pCard(m).name || L('Player|name');
 // mid-sentence: the name, or "the player" (no he/she anywhere)
-const pWho = () => esc(S.player.name || L('the player'));
-const pWhose = () => S.player.name ? L("{name}'s", {name:esc(S.player.name)}) : L("the player's");
+const pWho = m => esc(pCard(m).name || L('the player'));
+const pWhose = m => pCard(m).name ? L("{name}'s", {name:esc(pCard(m).name)}) : L("the player's");
 const homeName = m => m.home || L('Us');
 // a score or the teams in the hall's order: away, the home team (the opponent) first, as on the scoreboard
 const ordS = (m, us, them) => m.away ? them + '–' + us : us + '–' + them;
@@ -1395,8 +1414,8 @@ function evLabel(e, m){
   if (e.k === 'them') return {t:L('Point {team}', {team:m.opp||L('them')}), c:'team'};
   if (e.k === 'lineup') return {t: L('Line-up') + ': ' + e.pos.map(n => '#' + n).join(' '), c:'sub'};
   if (e.k === 'sub') return {t: L('Sub: #{a} in for #{b}', {a:e.in, b:e.out}), c:'sub'};
-  if (e.k === 'on') return {t: L('{name} on court', {name:pName()}), c:'sub'};
-  if (e.k === 'off') return {t: L('{name} to the bench', {name:pName()}), c:'sub'};
+  if (e.k === 'on') return {t: L('{name} on court', {name:pName(m)}), c:'sub'};
+  if (e.k === 'off') return {t: L('{name} to the bench', {name:pName(m)}), c:'sub'};
   return {t:e.k, c:''};
 }
 
@@ -1422,13 +1441,14 @@ function startMatch(f){
   if (f.basic) m.basic = true;
   if (f.practice) m.practice = true;
   if (f.mode === 'team'){ m.mode = 'team'; m.teamSlot = S.slot; m.roster = JSON.parse(JSON.stringify(f.roster || S.team.players)); if (!m.home) m.home = S.team.name || ''; }
+  else m.pslot = S.pslot;
   // started late: the sets already played are over, the match carries on in the next one
   (f.sets||[]).forEach(([u, t], i) => { pushLate(m, i+1, u, t); m.ended.push(i+1); });
   S.set = (f.sets||[]).length + 1; m.curSet = m.maxSet = S.set;
   if (f.now) pushLate(m, S.set, f.now[0], f.now[1]);
   S.activeId = id; S.choose = false;
   // (a practice leaves the new-match steps as they were, to go on with after it)
-  if (!f.practice){ S.nfAway = false; S.nfDraft = null; S.nfStep = 1; S.nfBasic = null; LS.set('ss.basic', !!f.basic); }
+  if (!f.practice){ S.nfAway = false; S.nfDraft = null; S.nfStep = 1; S.nfBasic = null; S.nfAddP = false; LS.set('ss.basic', !!f.basic); }
   if (f.starter && !isTeam(m)) courtOn(m);
   save(m);
   keepAwake(); render(); window.scrollTo(0,0);
@@ -1467,7 +1487,7 @@ function tap(k){
   const server = stc ? (stc.serving === 'us' && !stc.unsure ? stc.pos[0] : null) : sv ? keptServer(m) : null;
   // a stat means the player is playing: put them on court if the tap was forgotten
   let rs = false;
-  if (team){} else if (!m.onCourt){ courtOn(m, true); toast(L('{name} put on court', {name:pName()})); } else rs = resumeClock(m);
+  if (team){} else if (!m.onCourt){ courtOn(m, true); toast(L('{name} put on court', {name:pName(m)})); } else rs = resumeClock(m);
   push(m, Object.assign(rs ? {k, rs:1} : {k}, m.soloNum && !team ? {p:m.soloNum} : {}, server ? {p:server} : {}, S.svFrom && S.svFrom.mid === m.id ? {svFrom:S.svFrom.was} : {}));
   const idx = m.log.length - 1;
   // the player's point wins the rally for the team; an error gives it to the other team
@@ -1494,8 +1514,8 @@ function setPasser(n){
   n = jnum(n);
   if (e && n){
     e.from = '#' + n; save(m); toast(L('Pass from #{n}', {n}));
-    const known = +n >= 1 && +n <= 20 || (S.player.extraNums||[]).includes(n);
-    if (!known){ S.player.extraNums = [...(S.player.extraNums||[]), n].sort((a,b)=>a-b); savePlayer(); }
+    const p = pCard(m), known = +n >= 1 && +n <= 20 || (p.extraNums||[]).includes(n);
+    if (!known && !m.playerGone){ p.extraNums = [...(p.extraNums||[]), n].sort((a,b)=>a-b); savePlayer(pslotOf(m)); }
   }
   S.tag = null; S.barAt = S.barClosedAt = Date.now(); clearTimeout(S.tagT); render();
 }
@@ -1603,7 +1623,7 @@ function toCard(m, set){
   const rows = [
     last.length ? [nL(last.length, 'Last rally', 'Last {n} rallies'), `<span class="todots" aria-hidden="true">${last.map(e => `<i class="${e.k === 'us' ? 'w' : ''}"></i>`).join('')}</span>${nL(won, '{n} won|one', '{n} won')}`] : null,
     run >= 3 ? [L('Run'), esc(rk === 'us' ? homeName(m) : m.opp) + ' ' + run] : null,
-    team ? [L('Our errors'), er] : [esc(pName()), nL(pts(c), '{n} point', '{n} points') + ' · ' + er],
+    team ? [L('Our errors'), er] : [esc(pName(m)), nL(pts(c), '{n} point', '{n} points') + ' · ' + er],
     sv && sv.soOf ? [L('Side-out'), L('{a} of {b}', {a:sv.so, b:sv.soOf})] : null,
     nx ? [L(st.serving === 'us' ? 'Serving now' : 'Our next server'), '#' + esc(nx.num) + ' ' + esc(first(nx.name))] : null,
     [L('Time-outs left'), (m.away ? ['them', 'us'] : ['us', 'them']).map(k => `${esc(k === 'us' ? homeName(m) : m.opp)} ${left(k)}`).join('<br>')]].filter(Boolean);
@@ -1804,7 +1824,7 @@ function closeAndNew(){
 // Player match -> team match: the player's taps so far go to their number, the chosen team's roster is copied in.
 function switchToTeam(){
   const m = S.matches[S.activeId]; if (!m || isTeam(m)) return;
-  const num = jnum(S.player.num || '');
+  const pc = pCard(m), num = jnum(pc.num || '');
   if (!num) return toast(L("Add the player's number first (Profile tab)"));
   if (!S.team.players.length) return toast(L('Add the team first (Team tab)'));
   // the court clock is for one player only: close the spell now
@@ -1813,17 +1833,18 @@ function switchToTeam(){
   const back = !!m.soloNum;
   if (!back){ m.log.forEach(e => { if (BYK[e.k] && !e.p) e.p = num; }); m.teamSlot = S.slot; m.roster = JSON.parse(JSON.stringify(S.team.players)); }
   m.mode = 'team'; delete m.soloNum;
-  if (!m.roster.some(p => p.num === num)) m.roster = [...m.roster, {num, name:S.player.name||''}].sort((a,b) => a.num - b.num);
+  if (!m.roster.some(p => p.num === num)) m.roster = [...m.roster, {num, name:pc.name||''}].sort((a,b) => a.num - b.num);
   if (!m.home) m.home = S.team.name || '';
-  S.tag = null; save(m); render(); window.scrollTo(0,0); toast(L("Now {team} · {name}'s taps are #{n}", {team:teamLabel(slotOf(m)), name:pName(), n:num}));
+  S.tag = null; save(m); render(); window.scrollTo(0,0); toast(L("Now {team} · {name}'s taps are #{n}", {team:teamLabel(slotOf(m)), name:pName(m), n:num}));
 }
-// Team match -> player match: every tap is kept, only the player's number is shown and counts in the player Season.
-function switchToPlayer(){
-  const m = S.matches[S.activeId]; if (!m || !isTeam(m)) return;
-  const num = jnum(S.player.num || '');
+// Team match -> player match (k: which player, else the one chosen now): every tap is kept, only the player's number
+// is shown and counts in that player's Season.
+function switchToPlayer(k = S.pslot){
+  const m = S.matches[S.activeId]; if (!m || !isTeam(m) || !PSLOTS.includes(k)) return;
+  const num = jnum(S.players[k].num || '');
   if (!num) return toast(L("Add the player's number first (Profile tab)"));
-  delete m.mode; m.soloNum = num;
-  S.who = null; save(m); render(); window.scrollTo(0,0); toast(L('Now {name} only (#{n})', {name:pName(), n:num}));
+  delete m.mode; m.soloNum = num; m.pslot = k;
+  S.who = null; save(m); render(); window.scrollTo(0,0); toast(L('Now {name} only (#{n})', {name:pName(m), n:num}));
 }
 // Hidden while a match is live: that match's screen is where Live leads.
 const newMatchBtn = () => S.activeId && S.matches[S.activeId] ? '' : `<button class="btn btn-or" data-view="live">+ ${L('New match')}</button>`;
@@ -1942,6 +1963,8 @@ function newView(){
   const team = trackMode() === 'team', step = S.nfStep || 1, st = n => step === n ? '' : 'hidden', chosen = S.track || LS.get('ss.track');
   // a new user sees one "Add your team" (no empty second team, no Next that cannot go on)
   const anyTeam = SLOTS.some(k => teamOf(k).players.length);
+  // one player: a button for each player saved, or the boxes for a new one
+  const named = namedP(), adding = !named.length || !!S.nfAddP;
   const home = nd['f-home'] ?? (team ? S.team.name || '' : (last?.home || S.team.name || ''));
   return `
   <section class="panel">
@@ -1951,18 +1974,20 @@ function newView(){
         <h2>${L('What do you want to track?')}</h2>
         <div class="pick" role="group" aria-label="${L('Track')}" style="margin-top:14px">
           <button type="button" data-track="team" aria-pressed="${chosen === 'team'}">${L('Whole team')}<small>${L('every player, by number')}</small></button>
-          <button type="button" data-track="player" aria-pressed="${chosen === 'player'}">${L('One player')}<small>${esc(S.player.name || L("one player's stats"))}</small></button></div>
+          <button type="button" data-track="player" aria-pressed="${chosen === 'player'}">${L('One player')}<small>${esc(namedP().map(k => S.players[k].name).join(', ') || L("one player's stats"))}</small></button></div>
       </div>
       <div class="step" ${st(2)}>
         ${team ? `<h2>${L('Which team?')}</h2>
         <div class="wrap" style="gap:8px;margin-top:6px">${(anyTeam ? SLOTS : ['team']).map(k => { const t = teamOf(k), n = t.players.length;
           return `<button type="button" class="btn btn-dk pickteam" data-nfslot="${k}"><b>${anyTeam ? esc(teamLabel(k)) : L('Add your team')}</b><small>${n ? nL(n, '{n} player', '{n} players') : anyTeam ? L('no players yet: add them') : L('the names and numbers, once')}</small></button>`; }).join('')}</div>
         ${S.team.players.length ? `<button type="button" class="lnk" data-view="team">${L('Change {team}', {team:esc(teamLabel(S.slot))})}</button>` : ''}`
-        : `<h2>${L('Which player?')}</h2>
-        ${S.player.name ? `<div class="player"><div class="jersey">${esc(S.player.num || '?')}</div><div class="pinfo"><div class="pname${nmLong(S.player.name)}">${esc(S.player.name)}</div><div class="note">${esc(S.player.pos ? L(S.player.pos) : '')}</div></div></div>
-        <button type="button" class="lnk" data-view="player">${L('Change the player')}</button>`
-        : `<div class="row"><label>${L('Name')}<input id="f-pname" autocomplete="off" value="${esc(nd['f-pname']||'')}" placeholder="${L('e.g. Theo')}"></label>
-        <label>${L('Number')}<input id="f-pnum" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(nd['f-pnum']||'')}" placeholder="7"></label></div>`}`}
+        : `<h2>${L(named.length ? 'Which player?|pick' : 'Which player?')}</h2>
+        ${named.length ? `<div class="wrap" style="gap:8px;margin-top:6px">${named.map(k => { const p = S.players[k];
+          return `<button type="button" class="btn btn-dk pickteam" data-nfpslot="${k}"><b>${esc(p.name)}${p.num ? ' · #' + esc(p.num) : ''}</b>${p.pos ? `<small>${esc(L(p.pos))}</small>` : ''}</button>`; }).join('')}
+          ${named.length < PSLOTS.length && !adding ? `<button type="button" class="btn btn-dk pickteam" id="b-nfaddp"><b>+ ${L('Add player')}</b></button>` : ''}</div>` : ''}
+        ${adding ? `<div class="row"><label>${L('Name')}<input id="f-pname" autocomplete="off" value="${esc(nd['f-pname']||'')}" placeholder="${L('e.g. Theo')}"></label>
+        <label>${L('Number')}<input id="f-pnum" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(nd['f-pnum']||'')}" placeholder="7"></label></div>` : ''}
+        ${named.length ? `<button type="button" class="lnk" data-view="player">${L('Edit players')}</button>` : ''}`}
         <button type="button" class="lnk" id="b-practice" style="text-align:left">${L('Try it first: a practice match (nothing is saved)')} ›</button>
       </div>
       <div class="step" ${st(3)}>
@@ -1991,7 +2016,7 @@ function newView(){
         <p class="note">${team ? L("Count the score with the two big buttons. Tap a stat as it happens, then the player's number: a point adds one to your team, an error adds one to the other team. No time for the number? Tap Later, or just the next stat, and name it with Who? between rallies.")
           : L('Count the score with the two big buttons. Tap {whose} stats as they happen: a point adds one to your team, an error adds one to the other team. Tap the court button each time {who} goes on or off.', {whose:pWhose(), who:pWho()})}</p>
       </div>
-      ${step === 1 || (step === 2 && team) ? '' : step < 4 ? `<button class="btn btn-or" type="submit" id="b-nfnext">${L('Next')} ›</button>` : `<button class="btn btn-or" type="submit" id="b-start">${L('Start match')}</button>`}
+      ${step === 1 || (step === 2 && (team || !adding)) ? '' : step < 4 ? `<button class="btn btn-or" type="submit" id="b-nfnext">${L('Next')} ›</button>` : `<button class="btn btn-or" type="submit" id="b-start">${L('Start match')}</button>`}
     </form>
   </section>`;
 }
@@ -2006,10 +2031,12 @@ function nfNext(){
   keepNf();
   const step = S.nfStep || 1;
   if (step === 2 && trackMode() === 'team' && !S.team.players.length) return toast(L('Pick a team with players, or add them first'));
-  if (step === 2 && trackMode() !== 'team' && !S.player.name){
-    const name = ($('#f-pname')?.value || '').trim(), num = jnum($('#f-pnum')?.value || '');
+  // (a new player goes in the first free place of the five; another phone may have just filled the last one)
+  if (step === 2 && trackMode() !== 'team' && (S.nfAddP || !namedP().length)){
+    const name = ($('#f-pname')?.value || '').trim(), num = jnum($('#f-pnum')?.value || ''), k = PSLOTS.find(x => !S.players[x].name);
     if (!name){ $('#f-pname')?.focus(); return toast(L("Type the player's name")); }
-    S.player = Object.assign({}, S.player, {name, num}); savePlayer();
+    if (!k){ S.nfAddP = false; return render(); }
+    S.pslot = k; LS.set('ss.pslot', k); S.players[k] = Object.assign({}, S.players[k], {name, num}); savePlayer(k); S.nfAddP = false;
   }
   S.nfStep = Math.min(4, step + 1); render(); window.scrollTo(0,0);
 }
@@ -2089,7 +2116,7 @@ function playerList(rows, link){
 // One roster player over all team matches: the same kind of page as the single player's Season.
 function teamPlayerView(num){
   // slot: a team slot, or 'old:<name>' for a deleted team (its own players' names come from its matches)
-  const slot = S.seasonMode && S.seasonMode !== 'player' ? S.seasonMode : 'team', tm = SLOTS.includes(slot) ? teamOf(slot) : {players:[]};
+  const slot = S.seasonMode && !isPKey(S.seasonMode) ? S.seasonMode : 'team', tm = SLOTS.includes(slot) ? teamOf(slot) : {players:[]};
   const sorted = Object.values(S.matches).filter(m => isTeam(m) && seasonKey(m) === slot).sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
   const per = sorted.filter(m => (m.log||[]).some(e => e.p === num)).map(m => ({m, c:counts(m, null, num)}));
   const back = `<button class="btn btn-dk" data-view="history">‹ ${L('Back to team season')}</button>`;
@@ -2202,7 +2229,7 @@ function teamLive(m){
     <h2>${L('Final whistle')}</h2>
     ${finishForm(m)}
   </section>
-  ${S.player.num ? `<button class="btn btn-dk" id="b-toplayer">${L('Switch to {name} only', {name:esc(pName())})}</button>` : ''}
+  ${PSLOTS.filter(k => S.players[k].num).map(k => `<button class="btn btn-dk" data-toplayer="${k}">${L('Switch to {name} only', {name:esc(S.players[k].name || L('Player|name'))})}</button>`).join('')}
   ${m.practice ? '' : `<button class="btn btn-del ${S.armed==='del-'+m.id?'armed':''}" id="b-del" data-id="${m.id}">${S.armed==='del-'+m.id?L('Tap again to delete this match'):L('Delete this match')}</button>`}
   ${m.toOn ? freezeView(m) + whoBar(m) : lineupSheet(m) || subBar(m) || whoBar(m) || timeoutBar(m) || askBar(m) || setBar(m, a) || libBar(m) || libInBar(m) || serveBar(m, a) || howBar(m)}`;
 }
@@ -2373,6 +2400,19 @@ function deleteTeam(){
   if (S.seasonMode === slot) S.seasonMode = 'old:' + name;
   render(); toast(L('{team} deleted. Its matches stay in Season.', {team:name}));
 }
+// The player on the Profile page is deleted. Their matches stay in Season under their name, in a season of their own,
+// so a new player in this place starts afresh. Not while that player's match is live.
+function deletePlayer(){
+  const k = S.pslot, p = S.player, lm = S.activeId && S.matches[S.activeId];
+  if (lm && !isTeam(lm) && pKey(lm) === k) return toast(L('Finish the live match of this player first'));
+  const name = p.name;
+  Object.values(S.matches).forEach(m => { if (!isTeam(m) && !m.practice && pKey(m) === k){ m.playerGone = name; m.playerNum = p.num || ''; save(m); } });
+  // newer than the card it replaces, so the delete reaches every phone
+  S.players[k] = Object.assign(blankP(), {updatedAt:p.updatedAt||0}); savePlayer(k);
+  if (S.seasonMode === k) S.seasonMode = 'pold:' + name;
+  S.pslot = namedP()[0] || 'player'; LS.set('ss.pslot', S.pslot);
+  render(); toast(L('{name} deleted. Their matches stay in Season.', {name}));
+}
 // Save what is on the team page. Refused (false, with the reason) unless every player has a number and a name,
 // and no number is used twice: nothing typed is thrown away without a word.
 function saveTeamForm(){
@@ -2421,9 +2461,9 @@ function liveView(m){
   ${practiceBar(m)}
   <section class="bug">${(p => p ? `<div class="pips" style="padding-top:14px">${p}</div>` : '')(pipsHTML(m, a))}<div class="bug-foot">${setSel(m)}<button class="lnk" id="b-fix">${L('Fix score')}</button></div>${liveFoot(m)}</section>
   <section class="player">
-    <div class="jersey">${esc(S.player.num || '?')}</div>
+    <div class="jersey">${esc(pCard(m).num || '?')}</div>
     <div class="pinfo">
-      <div class="pname${nmLong(pName())}">${esc(pName())}</div>
+      <div class="pname${nmLong(pName(m))}">${esc(pName(m))}</div>
       <div class="note">${m.onCourt?'<span class="live-dot"></span>':''}${esc(since)} · ${m.onCourt?(m.courtSince?L('Playing now'):scoredSets(a.score).length?L('Set break, clock stopped'):L('Clock starts at the first point')):L('Not playing')}</div>
       <div class="pline">
         <div><b>${pts(all)}</b><span>${L('Pts')}</span></div>
@@ -2449,7 +2489,7 @@ const practiceBar = m => m.practice ? `<div class="practice"><span>${L('Practice
 function howBar(m){
   if (LS.get('ss.howto') || (m.log||[]).some(e => BYK[e.k] || e.k === 'us' || e.k === 'them')) return '';
   const lines = isTeam(m) ? [L('Each rally: tap what happened (Ace, Spike, an error…). It adds the point too.'), L("Then tap the player's number, or Later."), L('Not sure? Tap +1 for the team that won. A wrong tap? Undo.')]
-    : [L('A point or an error by {who}: tap what happened (Ace, Spike…). It adds the point too.', {who:pWho()}), L('Any other rally: tap +1 for the team that won it.'), L('Sub in / Sub out when {who} goes on or off. A wrong tap? Undo.', {who:pWho()})];
+    : [L('A point or an error by {who}: tap what happened (Ace, Spike…). It adds the point too.', {who:pWho(m)}), L('Any other rally: tap +1 for the team that won it.'), L('Sub in / Sub out when {who} goes on or off. A wrong tap? Undo.', {who:pWho(m)})];
   return `<div class="tagbar how" role="group" aria-label="${L('How it works')}"><div class="q">${L('How it works')}</div>
     <ol>${lines.map(x => `<li>${x}</li>`).join('')}</ol><div class="two"><button id="b-howok">${L('OK')}</button></div></div>`;
 }
@@ -2465,9 +2505,9 @@ function undoFab(m){
 function tagBar(m){
   if (!S.tag || S.tag.mid !== m.id) return '';
   const e = m.log[S.tag.i]; if (!e) return '';
-  const nums = [...Array.from({length:20},(_,i)=>String(i+1)), ...(S.player.extraNums||[])];
-  return `<div class="tagbar${nudgeCls()}" role="group" aria-label="${L('Who passed to {who}', {who:pWho()})}">
-    <div class="q" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>${esc(evLabel(e,m).t)}: ${L('who passed to {who}?', {who:pWho()})}</span><button type="button" class="skip" id="b-whoundo">${L('Wrong tap, undo')}</button></div>
+  const nums = [...Array.from({length:20},(_,i)=>String(i+1)), ...(pCard(m).extraNums||[])];
+  return `<div class="tagbar${nudgeCls()}" role="group" aria-label="${L('Who passed to {who}', {who:pWho(m)})}">
+    <div class="q" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>${esc(evLabel(e,m).t)}: ${L('who passed to {who}?', {who:pWho(m)})}</span><button type="button" class="skip" id="b-whoundo">${L('Wrong tap, undo')}</button></div>
     <div class="nums">${nums.map(n=>`<button data-pass="${esc(n)}">${esc(n)}</button>`).join('')}</div>
     <form class="more" id="passform">
       <input id="pass-other" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="${L('Other number')}" aria-label="${L('Other number')}">
@@ -2511,7 +2551,7 @@ function passTable(matches){
   }));
   const rows = Object.entries(by).sort((a,b)=>b[1].pts-a[1].pts);
   if (!rows.length) return '';
-  return `<section class="sec"><div class="sec-h"><h3>${L('Who passed to {who}', {who:pWho()})}</h3><span class="note">${L('points after their pass')}</span></div>
+  return `<section class="sec"><div class="sec-h"><h3>${L('Who passed to {who}', {who:pWho(matches[0])})}</h3><span class="note">${L('points after their pass')}</span></div>
     <div class="mates">${rows.map(([n,r])=>`<div class="mate"><span style="color:var(--ink);font-size:15px;font-weight:600">${esc(n)}</span><b>${r.pts}<small>${L(r.pts === 1 ? 'point' : 'points')}</small></b><b>${r.kill}<small>${L(r.kill === 1 ? 'spike' : 'spikes')}</small></b><b>${r.plase}<small>${L('plasé')}</small></b></div>`).join('')}</div></section>`;
 }
 function passLine(m){
@@ -3076,10 +3116,10 @@ function drawReport(m){
   // player
   const py = 640;
   ctx.fillStyle = PIC.volt; ctx.beginPath(); ctx.arc(P+64, py, 64, 0, 7); ctx.fill();
-  picText(ctx, S.player.num || '?', P+64, py+2, {w:800, size:70, head:true, color:PIC.voltInk, align:'center', base:'middle'});
+  picText(ctx, pCard(m).num || '?', P+64, py+2, {w:800, size:70, head:true, color:PIC.voltInk, align:'center', base:'middle'});
   // first names only on a picture that goes around (child-protection advice: never a child's full name)
-  picText(ctx, capsName(first(pName())), P+160, py+10, {w:800, size:76, head:true, fit:W-P-P-160});
-  picText(ctx, [S.player.pos ? L(S.player.pos) : '', L('{v} points per set', {v:fmtVir(pts(c)/setsPlayed(m))})].filter(Boolean).join(' · '), P+160, py+58, {size:30, color:PIC.muted, fit:W-P-P-160, w:500});
+  picText(ctx, capsName(first(pName(m))), P+160, py+10, {w:800, size:76, head:true, fit:W-P-P-160});
+  picText(ctx, [pCard(m).pos ? L(pCard(m).pos) : '', L('{v} points per set', {v:fmtVir(pts(c)/setsPlayed(m))})].filter(Boolean).join(' · '), P+160, py+58, {size:30, color:PIC.muted, fit:W-P-P-160, w:500});
   // hero numbers
   picTiles(ctx, [[String(pts(c)), capsName(L('Points')), PIC.ink], [fmtVir(vir(c)), capsName(L('Rating')), PIC.ink], [fmtPM(a.pm), '+/-', a.pm > 0 ? PIC.pos : a.pm < 0 ? PIC.neg : PIC.ink], [String(mins(playMs(m))), capsName(L('Minutes')), PIC.ink]], W, P);
   // attack / serve / reception
@@ -3219,7 +3259,7 @@ async function prepPicture(m){
   S.pic = {key, id:m.id, file:new File([blob], picName(m), {type:'image/jpeg'})};
   return S.pic;
 }
-const picKey = m => m.id + ':' + (m.updatedAt||0) + ':' + (S.player.updatedAt||0) + ':' + S.lang;
+const picKey = m => m.id + ':' + (m.updatedAt||0) + ':' + (pCard(m).updatedAt||0) + ':' + S.lang;
 function sharePicture(m){
   const pic = S.pic && S.pic.key === picKey(m) ? S.pic : null;
   // not made yet (tapped straight away): make it, then try; a phone that refuses a late share asks for one more tap
@@ -3308,7 +3348,7 @@ const OLD_HOSTS = ['giannosanag.github.io', 'spike-sheet-theo.firebaseapp.com'];
 const onOld = () => OLD_HOSTS.includes(location.hostname);
 const ssGet = k => { try{ return sessionStorage.getItem(k); }catch(e){ return null; } };
 // things only this phone holds (practice matches are never kept): saved by signing in here, before moving
-const keptHere = () => Object.values(S.matches).some(m => !m.practice) || SLOTS.some(k => (S.teams[k].players || []).length) || !!S.player.name || !!asideOf(true);
+const keptHere = () => Object.values(S.matches).some(m => !m.practice) || SLOTS.some(k => (S.teams[k].players || []).length) || !!namedP().length || !!asideOf(true);
 // everything on this phone is in the account: no save waiting or refused, and the cloud has confirmed every match
 const allSaved = () => !!S.user && S.serverSeen && !S.saveFailed && !Object.keys(S.pending).length && (window.SS_waiting ? window.SS_waiting() : 1) === 0
   && !asideOf() && Object.values(S.matches).every(m => m.practice || (S.confirmed[m.id] ?? -1) >= (m.updatedAt||0));
@@ -3342,7 +3382,7 @@ const gateView = () => {
     ${onOld() ? `<p style="margin:0"><b>${movedNote()}</b></p>` : ''}
     ${moveOnly ? '' : `<p style="margin:0">${L('Sign in with Google to start. Your matches are saved in your account and sync to every phone you sign in on.')}</p>
     <button class="btn btn-or gbtn" id="b-signin"${off ? ' disabled aria-busy="true"' : ''}>${GMARK}<span>${L(label)}</span></button>`}
-    <p class="note" style="margin:0">${L("With Google sign-in, your matches, teams, player card and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.")}</p>
+    <p class="note" style="margin:0">${L("With Google sign-in, your matches, teams, player cards and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.")}</p>
     <p class="note" style="margin:0">${L('Opened from Instagram, Facebook, Messenger or Viber? Open the page in Safari or Chrome first: Google sign-in does not work inside them.')}</p>
     <p class="note" style="margin:0"><button class="lnk" data-view="privacy">${L('Privacy')}</button></p>
   </section>`; };
@@ -3352,7 +3392,7 @@ function privacyView(){
   return `<section class="panel">
     <div class="kicker">Spike Sheet</div><h2>${L('Privacy')}</h2>
     <p style="margin:0">${L('Spike Sheet keeps only what it needs to count your matches.')}</p></section>
-    ${part('What is kept', L("The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player card, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages."))}
+    ${part('What is kept', L("The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player cards, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages."))}
     ${part('Where', L("In your account on Google Firebase, Google's cloud: Google provides the servers and the sign-in. A copy stays on this phone while you are signed in, so the app works without signal."))}
     ${part('Who sees it', L("You, on every phone you sign in on. The app's owner, to help you and fix problems. Nothing is sold or given to anyone else. No ads, no tracking."))}
     ${part('Live score link', L('Only the two team names and the score, to anyone with the link, for 12 hours at most.'))}
@@ -3546,7 +3586,7 @@ function playerMore(ms, season){
     [L('Rating'), fmtVir(vir(c)), L('{v} per set', {v:per(vir(c), sets)})],
     min ? [L('Minutes'), min, L('{v} per set', {v:per(min, sets)})] : null,
     ownMin ? [L('Points per 10 minutes on court'), fmtVir(ownP / ownMin * 10)] : null,
-    plus ? [L("Share of the team's points"), pctOf(ownP, plus), L('of the points the team won while {who} was on court', {who:pWho()})] : null,
+    plus ? [L("Share of the team's points"), pctOf(ownP, plus), L('of the points the team won while {who} was on court', {who:pWho(ms[0])})] : null,
     [L('+/- on court'), fmtPM(pm), season ? L('{v} per match', {v:(pm > 0 ? '+' : '') + dec(pm / ms.length)}) : '']]),
     ...skillSecs(c, sets, {})];
   if (season){ const done = ms.filter(m => m.result === 'W' || m.result === 'L'), byDate = ms.slice().sort((a, b) => (a.date||'').localeCompare(b.date||'') || (a.createdAt||0) - (b.createdAt||0));
@@ -3618,7 +3658,7 @@ function xlsx(sheets){
 function matchSheets(m){
   const a = analyze(m), team = isTeam(m), cols = STATS.filter(s => team || m.soloNum || !s.team), sets = scoredSets(a.score).sort((p, q) => p - q);
   const {w, l} = finalSets(m), r1 = v => Math.round(v * 10) / 10, sv = serveStats(m).sets;
-  const info = [[L('Match'), vsText(m)],
+  const info = [[L('Match'), vsText(m)], ...(team ? [] : [[L('Player'), pName(m) + (pCard(m).num ? ' #' + pCard(m).num : '')]]),
     [L('Date'), m.date || ''], [L('Competition'), m.team || ''], [L('Home or away'), L(m.away ? 'Away' : 'Home')],
     [L('Result'), m.result === 'W' ? L('Won') : m.result === 'L' ? L('Lost') : ''], [L('Sets'), ordS(m, w, l)],
     ...sets.map(n => [L('Set {n}', {n}), ordS(m, a.score[n].us, a.score[n].them)])];
@@ -3675,7 +3715,7 @@ function matchView(m){
   const rows = sets.map(s=>({label:L('Set {n}', {n:s}), c:counts(m,s)})).concat({label:L('Match'), c, sum:true});
   const armed = S.armed === 'del-'+m.id;
   return `
-  <div class="row" style="align-items:center"><div><div class="kicker">${L(m.result==='W'?'Final · Win':m.result==='L'?'Final · Loss':'Final')}${m.score?' '+esc(m.score):''}</div><h2>${vsLine(m)}</h2></div></div>
+  <div class="row" style="align-items:center"><div><div class="kicker">${L(m.result==='W'?'Final · Win':m.result==='L'?'Final · Loss':'Final')}${m.score?' '+esc(m.score):''} · ${esc(pName(m))}</div><h2>${vsLine(m)}</h2></div></div>
   ${scoreBug(m, a, {live:false})}
   ${tiles(c, {pm:a.pm, min:mins(playMs(m)), pmNote:`<em>${L('{a} won, {b} lost', {a:a.plus, b:a.minus})}</em>`, ptsNote:`<em>${L('{v} per set', {v:fmtVir(pts(c)/setsPlayed(m))})}</em>`})}
   <div class="row">
@@ -3689,7 +3729,7 @@ function matchView(m){
     <div class="stint"><span>${L('On at {score} (set {n})', {score:`<b>${ordS(m, st.inUs, st.inThem)}</b>`, n:st.inSet})} · ${st.outSet!=null?L('off at {score} (set {n})', {score:`<b>${ordS(m, st.outUs, st.outThem)}</b>`, n:st.outSet}):L('to the end')}${st.dur?' · '+L('{n} min', {n:mins(st.dur)}):''}</span><b class="${pmClass(st.plus-st.minus)}">${fmtPM(st.plus-st.minus)}</b></div>`).join('')}</div></section>` : ''}
   ${passTable([m])}
   ${playerMore([m])}
-  <details class="more sec"><summary>${L('Full table')}</summary><span class="note">${esc(pName())}${S.player.num?' #'+esc(S.player.num):''}</span>${boxTable(rows,L('Sets'),!!m.soloNum)}${legend()}</details>
+  <details class="more sec"><summary>${L('Full table')}</summary><span class="note">${esc(pName(m))}${pCard(m).num?' #'+esc(pCard(m).num):''}</span>${boxTable(rows,L('Sets'),!!m.soloNum)}${legend()}</details>
   ${a.feed.length ? `<section class="sec pbpsec"><div class="sec-h"><h3>${L('Play by play')}</h3><span class="note">${L('{n} events', {n:a.feed.length})}</span></div><div class="pbpbox">${feedHTML(m, a.feed.slice().reverse())}</div></section>` : ''}
   <div class="row">
     <button class="btn btn-dk" id="b-resume" data-id="${m.id}">${L('Keep tracking')}</button>
@@ -3705,14 +3745,14 @@ function historyView(){
   // each saved team has its own season; a team shows here once it has a match
   // (a deleted team keeps its own season, under its old name)
   const slots = [...SLOTS.filter(k => all.some(m => isTeam(m) && seasonKey(m) === k)), ...new Set(all.filter(m => isTeam(m) && m.teamGone).map(seasonKey))];
-  // the one-player season only for someone who has one (a player card or a one-player match)
-  const solo = !!S.player.name || all.some(m => !isTeam(m));
-  const mode = slots.includes(S.seasonMode) ? S.seasonMode : slots.length && (!solo || (S.seasonMode !== 'player' && all.every(isTeam))) ? slots[0] : 'player';
-  if (mode !== 'player') S.seasonMode = mode;
-  const seg = slots.length ? `<div><div class="seg" role="group" aria-label="${L('Season of')}">
-    ${solo ? `<button data-season="player" aria-pressed="${mode==='player'}">${esc(pName())}</button>` : ''}${slots.map(k => `<button data-season="${esc(k)}" aria-pressed="${mode===k}">${esc(seasonLabel(k))}</button>`).join('')}</div></div>` : '';
-  if (mode !== 'player') return teamSeason(all.filter(m => isTeam(m) && seasonKey(m) === mode), seg, mode);
-  const list = all.filter(m => !isTeam(m));
+  // a season per player: each one with a card or a one-player match, then the matches of a deleted player
+  const solo = [...PSLOTS.filter(k => S.players[k].name || all.some(m => !isTeam(m) && pKey(m) === k)), ...new Set(all.filter(m => !isTeam(m) && m.playerGone).map(pKey))];
+  const mode = [...solo, ...slots].includes(S.seasonMode) ? S.seasonMode : slots.length && (!solo.length || all.every(isTeam)) ? slots[0] : solo.includes(S.pslot) ? S.pslot : solo[0] || 'player';
+  if (!isPKey(mode)) S.seasonMode = mode;
+  const seg = slots.length || solo.length > 1 ? `<div><div class="seg" role="group" aria-label="${L('Season of')}">
+    ${solo.map(k => `<button data-season="${esc(k)}" aria-pressed="${mode===k}">${esc(k.startsWith('pold:') ? L('{team} (old)', {team:k.slice(5)}) : S.players[k].name || L('Player|name'))}</button>`).join('')}${slots.map(k => `<button data-season="${esc(k)}" aria-pressed="${mode===k}">${esc(seasonLabel(k))}</button>`).join('')}</div></div>` : '';
+  if (!isPKey(mode)) return teamSeason(all.filter(m => isTeam(m) && seasonKey(m) === mode), seg, mode);
+  const list = all.filter(m => !isTeam(m) && pKey(m) === mode), pc = PSLOTS.includes(mode) ? S.players[mode] : pCard(list[0]), pn = pc.name || L('Player|name');
   if (!list.length) return `${seg}<section class="panel"><h2>${L('Season')}</h2><p class="empty">${L('No matches yet.')}</p></section>${newMatchBtn()}`;
   const total = Object.fromEntries(STATS.map(s=>[s.k,0])); let time = 0, w = 0, l = 0, pm = 0, bestPts = null, bestVir = null;
   const per = list.map(m => { const c = counts(m), a = analyze(m); STATS.forEach(s=> total[s.k]+=c[s.k]); time += playMs(m); pm += a.pm; if (m.result==='W') w++; if (m.result==='L') l++;
@@ -3722,8 +3762,8 @@ function historyView(){
   const rows = per.map(p=>({label: fmtDate(p.m.date)+' '+p.m.opp, c:p.c})).concat({label:L('Season'), c:total, sum:true});
   return `${seg}
   <section class="player">
-    <div class="jersey">${esc(S.player.num || '?')}</div>
-    <div class="pinfo"><div class="pname${nmLong(pName())}">${esc(pName())}</div><div class="note">${esc(S.player.pos ? L(S.player.pos) : '')}${S.player.pos?' · ':''}${nL(n, '{n} match', '{n} matches')} · ${L('{w}W {l}L', {w, l})}</div>
+    <div class="jersey">${esc(pc.num || '?')}</div>
+    <div class="pinfo"><div class="pname${nmLong(pn)}">${esc(pn)}</div><div class="note">${esc(pc.pos ? L(pc.pos) : '')}${pc.pos?' · ':''}${nL(n, '{n} match', '{n} matches')} · ${L('{w}W {l}L', {w, l})}</div>
       <div class="pline">
         <div><b>${avg(pts(total))}</b><span>${L('Pts / match')}</span></div>
         <div><b>${avg(vir(total))}</b><span>${L('Rtg / match')}</span></div>
@@ -3756,10 +3796,12 @@ function historyView(){
 }
 
 function playerView(){
-  const p = S.player;
+  // up to five players: a button each to show its card, and + Add player while there is room
+  const p = S.player, named = namedP(), free = PSLOTS.find(k => !S.players[k].name), del = S.armed === 'delplayer';
   return `<section class="panel">
-    <h2>${L('Player card')}</h2>
-    <p class="note" style="margin:0">${L('For one-player matches. A whole team is on the Team page.')}</p>
+    <h2>${L('Players|cards')}</h2>
+    <p class="note" style="margin:0">${L('For one-player matches, up to 5 players. A whole team is on the Team page.')}</p>
+    ${named.length ? `<div><div class="seg" role="group" aria-label="${L('Players|cards')}">${named.map(k => `<button type="button" data-pslot="${k}" aria-pressed="${S.pslot === k}">${esc(S.players[k].name)}</button>`).join('')}${free ? `<button type="button" data-pslot="${free}" aria-pressed="${!p.name}">+ ${L('Add player')}</button>` : ''}</div></div>` : ''}
     <form id="pform" class="wrap" style="max-width:none;gap:12px">
       <div class="row">
         <label>${L('Name')}<input id="p-name" autocomplete="off" value="${esc(p.name)}" placeholder="${L('Name')}"></label>
@@ -3768,6 +3810,7 @@ function playerView(){
       <label>${L('Position')}<select id="p-pos">${['','Outside hitter','Opposite','Middle blocker','Setter','Libero','Defensive specialist'].map(o=>`<option ${o===p.pos?'selected':''} value="${esc(o)}">${o ? L(o) : L('Choose')}</option>`).join('')}</select></label>
       <button class="btn btn-or" type="submit">${L('Save player')}</button>
     </form>
+    ${p.name ? `<button type="button" class="btn btn-del ${del ? 'armed' : ''}" id="b-delplayer">${del ? L('Tap again to delete {team}', {team:esc(p.name)}) : L('Delete this player')}</button>` : ''}
   </section>
   <section class="panel">
     <div class="kicker">${L('Account')}</div>
@@ -3775,7 +3818,7 @@ function playerView(){
       ? `<p style="margin:0">${L('Signed in as {email}. Your matches are saved in your account and sync to every phone you sign in on.', {email:`<b>${esc(S.user.email||'')}</b>`})}</p>
          <button class="btn btn-dk ${S.armed === 'signout' ? 'btn-del armed' : ''}" id="b-signout">${L(S.armed === 'signout' ? 'Tap again to sign out' : 'Sign out')}</button>${isAdmin() ? `<button class="btn btn-or" id="b-admin">${L('Admin')}</button>` : ''}`
       : `<p style="margin:0">${L('Connecting to your account…')}</p>`}
-    <p class="note" style="margin:0">${L("With Google sign-in, your matches, teams, player card and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.")}</p>
+    <p class="note" style="margin:0">${L("With Google sign-in, your matches, teams, player cards and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.")}</p>
   </section>
   <section class="panel">
     <div class="kicker">Language · Γλώσσα</div>
@@ -3860,12 +3903,12 @@ function adminView(){
         .map(([l, v, wide]) => `<div${wide ? ' class="wide"' : ''}><span>${l}</span><b>${v}</b></div>`).join('')}</div></section>
       <section class="sec"><div class="sec-h"><h3>${L('Problems')}</h3><span class="note">${iss.length ? L('the last {n}', {n:iss.length}) : ''}</span></div>${iss.length ? `<div class="kpis">${iss.map(x => `<div class="kr"><span>${esc(x.m)}</span><b>${ago(x.t)}</b></div>`).join('')}</div>` : `<p class="note" style="margin:0">${L('No problems')}</p>`}</section>
       ${admPhones(p).length ? `<section class="sec"><div class="sec-h"><h3>${L('Phones')}</h3></div><div class="kpis">${admPhones(p).sort((x, y) => (y.at||0) - (x.at||0)).map(q => `<div class="kr"><span>${esc(q.kind || '?')} · ${esc(q.ver || '?')}</span><b style="white-space:normal">${L('seen {t}', {t:ago(q.at)})} · ${q.up ? L('uploaded {t}', {t:ago(q.up)}) : L('nothing uploaded yet')}${q.wait ? ` · <span class="neg">${nL(+q.wait, '{n} save waiting', '{n} saves waiting')}</span>` : ''}</b></div>`).join('')}</div></section>` : ''}
-      ${u.player && (u.player.name || u.player.num) ? `<section class="sec"><div class="sec-h"><h3>${L('Player card')}</h3></div><p class="note" style="margin:0">#${esc(u.player.num || '?')} ${esc(u.player.name || '')}${u.player.pos ? ' · ' + esc(L(u.player.pos)) : ''}</p></section>` : ''}
+      ${(ps => ps.length ? `<section class="sec"><div class="sec-h"><h3>${L('Players|cards')}</h3></div><p class="note" style="margin:0">${ps.map(x => '#' + esc(x.num || '?') + ' ' + esc(x.name || '') + (x.pos ? ' (' + esc(L(x.pos)) + ')' : '')).join(' · ')}</p></section>` : '')(Object.values(u.players || {}).filter(x => x && (x.name || x.num)))}
       ${u.teams.filter(t => t && (t.name || (t.players||[]).length)).map(t => `<section class="sec"><div class="sec-h"><h3>${esc(t.name || L('Team'))}</h3><span class="note">${nL((t.players||[]).length, '{n} player', '{n} players')}</span></div>
         <p class="note" style="margin:0">${(t.players||[]).map(x => '#' + esc(x.num) + ' ' + esc(x.name) + (x.pos ? ' (' + esc(posAb(x.pos)) + ')' : '')).join(' · ')}</p></section>`).join('')}
       <section class="sec"><div class="sec-h"><h3>${L('Matches')}</h3><span class="note">${ms.length}</span></div>
       <div class="mlist">${ms.map(m => `<button class="mitem" data-amatch="${esc(m.id)}"><span class="res ${admLive(m) ? 'live' : m.done ? esc(m.result||'') : ''}">${admLive(m) ? L('LIVE') : m.done ? resLetter(m.result) : '–'}</span>
-        <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${isTeam(m) ? L('whole team') : L('One player')}</div></span>
+        <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${isTeam(m) ? L('whole team') : esc(m.playerGone || ((u.players || {})[pslotOf(m)] || {}).name || L('One player'))}</div></span>
         <span class="p">${pts(counts(m))}<small>${unitW(pts(counts(m)), 'PTS')}</small></span></button>`).join('') || `<p class="empty">${L('No matches yet.')}</p>`}</div></section>
       <button class="btn btn-dk" id="b-adback">‹ ${L('Back')}</button>`; }
   // everyone: the totals, the versions in use, each person (a problem or a live match marked), then the latest matches
@@ -3993,15 +4036,18 @@ document.addEventListener('click', async e => {
   if (t.dataset.pass != null) return setPasser(t.dataset.pass);
   if (t.dataset.who != null) return setWho(t.dataset.who);
   if (t.dataset.setby != null) return setBy(t.dataset.setby);
-  if (t.dataset.tp){ const slot = S.view === 'match' ? seasonKey(S.matches[S.openId]) : S.seasonMode && S.seasonMode !== 'player' ? S.seasonMode : 'team';
+  if (t.dataset.tp){ const slot = S.view === 'match' ? seasonKey(S.matches[S.openId]) : S.seasonMode && !isPKey(S.seasonMode) ? S.seasonMode : 'team';
     S.view = 'tplayer'; S.tpNum = t.dataset.tp; S.seasonMode = slot; render(); window.scrollTo(0,0); return; }
   if (t.dataset.season){ S.seasonMode = t.dataset.season; S.editList = false; return render(); }
+  // the Profile page: which player's card is shown (or a free place for a new one)
+  if (t.dataset.pslot && PSLOTS.includes(t.dataset.pslot)){ S.pslot = t.dataset.pslot; LS.set('ss.pslot', S.pslot); return render(); }
+  if (t.dataset.toplayer) return switchToPlayer(t.dataset.toplayer);
   // new-match form: switch without redrawing, so what is typed stays
   if (t.dataset.track){
     // (it went on at once, so what was picked never showed)
     document.querySelectorAll('[data-track]').forEach(b => b.setAttribute('aria-pressed', String(b === t)));
     clearTimeout(S.pickT); S.pickT = setTimeout(() => {
-      keepNf(); S.track = t.dataset.track; LS.set('ss.track', S.track);
+      keepNf(); S.track = t.dataset.track; LS.set('ss.track', S.track); S.nfAddP = false;
       if (S.nfDraft) delete S.nfDraft['f-home'];
       S.nfStep = 2; render(); window.scrollTo(0,0);
     }, 250);
@@ -4014,6 +4060,15 @@ document.addEventListener('click', async e => {
       keepNf(); pickSlot(t.dataset.nfslot); if (S.nfDraft) delete S.nfDraft['f-home'];
       if (S.team.players.length){ S.nfStep = 3; render(); window.scrollTo(0,0); return; }
       S.teamFrom = true; S.view = 'team'; render(); window.scrollTo(0,0);
+    }, 250);
+    return;
+  }
+  // step 2 of a one-player match: the player picked goes on to step 3
+  if (t.dataset.nfpslot && PSLOTS.includes(t.dataset.nfpslot)){
+    document.querySelectorAll('[data-nfpslot]').forEach(b => b.setAttribute('aria-pressed', String(b === t)));
+    clearTimeout(S.pickT); S.pickT = setTimeout(() => {
+      keepNf(); S.pslot = t.dataset.nfpslot; LS.set('ss.pslot', S.pslot); S.nfAddP = false;
+      S.nfStep = 3; render(); window.scrollTo(0,0);
     }, 250);
     return;
   }
@@ -4089,7 +4144,7 @@ document.addEventListener('click', async e => {
     case 'b-matchend': { const {w, l} = setsWon(S.matches[S.activeId]); return finishMatch(w > l ? 'W' : 'L', w + '-' + l); }
     case 'b-court': return toggleCourt();
     case 'b-toteam': return switchToTeam();
-    case 'b-toplayer': return switchToPlayer();
+    case 'b-nfaddp': keepNf(); S.nfAddP = true; render(); $('#f-pname')?.focus(); return;
     case 'b-timeout': S.toAsk = true; S.barAt = Date.now(); return render();
     case 'b-fix': S.fixAsk = true; S.barAt = Date.now(); render(); $('#fix-us')?.select(); return;
     case 'b-fixno': S.fixAsk = false; S.barClosedAt = Date.now(); return render();
@@ -4154,6 +4209,9 @@ document.addEventListener('click', async e => {
     case 'b-delteam':
       if (wasArmed === 'delteam'){ if (Date.now() - (S.armAt||0) < 400){ S.armed = wasArmed; return; } S.armed = null; return deleteTeam(); }
       return arm('delteam');
+    case 'b-delplayer':
+      if (wasArmed === 'delplayer'){ if (Date.now() - (S.armAt||0) < 400){ S.armed = wasArmed; return; } S.armed = null; return deletePlayer(); }
+      return arm('delplayer');
     // the report as a picture, through the phone's share sheet (WhatsApp, Messages...)
     case 'b-share': return sharePicture(S.matches[t.dataset.id]);
     case 'b-xlsx': return exportMatch(S.matches[t.dataset.id]);
@@ -4196,8 +4254,11 @@ document.addEventListener('submit', e => {
     startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:!!$('#f-starter')?.checked, mode:trackMode(), away:!!S.nfAway, basic:nfBasic(), sets, now:now[0]});
   }
   if (e.target.id === 'pform'){
-    S.player = Object.assign({}, S.player, {name:$('#p-name').value.trim(), num:$('#p-num').value.trim(), pos:$('#p-pos').value});
-    savePlayer(); toast(L('Player saved')); S.view = S.activeId || !Object.keys(S.matches).length ? 'live' : 'history'; render();
+    // every player has a name (a place without one is free); the page stays, to add or change another
+    const name = $('#p-name').value.trim();
+    if (!name){ $('#p-name').focus(); return toast(L("Type the player's name")); }
+    S.player = Object.assign({}, S.player, {name, num:$('#p-num').value.trim(), pos:$('#p-pos').value});
+    savePlayer(); LS.set('ss.pslot', S.pslot); toast(L('Player saved')); render();
   }
 });
 document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#teamform')) keepDraft(readTeamRaw()); });
@@ -4258,7 +4319,7 @@ document.addEventListener('keydown', e => {
 // the same phone has the app open twice (home-screen app and a browser tab): take the other one's
 // changes at once, so an old screen can never save over newer taps
 window.addEventListener('storage', e => {
-  if (!e.key || !(e.key.startsWith('ss.m.') || ['ss.active','ss.player','ss.team','ss.team2'].includes(e.key))) return;
+  if (!e.key || !(e.key.startsWith('ss.m.') || ['ss.active', ...PSLOTS.map(k => 'ss.' + k), 'ss.team', 'ss.team2'].includes(e.key))) return;
   // several keys change together (one per match): one reload for the lot
   clearTimeout(S.stT); S.stT = setTimeout(() => { restore(); if (!isTyping()) render(); }, 30);
 });
@@ -4397,7 +4458,7 @@ async function ping(u){
 const okText = v => v == null || typeof v === 'string';
 const okMatch = m => !!m && typeof m === 'object' && typeof m.id === 'string' && Array.isArray(m.log)
   && m.log.every(e => e && typeof e === 'object' && typeof e.k === 'string' && Number.isInteger(e.set) && e.set >= 1 && e.set <= 9)
-  && ['date', 'opp', 'home', 'team', 'result', 'score'].every(k => okText(m[k]))
+  && ['date', 'opp', 'home', 'team', 'result', 'score', 'pslot', 'playerGone', 'playerNum'].every(k => okText(m[k]))
   && (m.roster == null || (Array.isArray(m.roster) && m.roster.every(x => x && typeof x === 'object' && okText(x.num) && okText(x.name))));
 const okCard = p => p && typeof p === 'object' && ['name', 'num', 'pos'].every(k => okText(p[k])) ? p : null;
 const okTeam = t => t && typeof t === 'object' && okText(t.name) && (t.players == null || (Array.isArray(t.players)
@@ -4411,13 +4472,13 @@ window.SS_admin = {
     const [us, bl] = await Promise.all([F.getDocs(F.collection(fs, 'users')), F.getDocs(F.collection(fs, 'blocked'))]);
     const gone = Object.fromEntries(bl.docs.map(d => [d.id, d.data() || {}]));
     const users = await Promise.all(us.docs.map(async d => {
-      const uid = d.id, [ms, p, t1, t2] = await Promise.all([F.getDocs(F.collection(fs, 'users', uid, 'matches')), F.getDoc(F.doc(fs, 'users', uid, 'settings', 'player')),
-        F.getDoc(F.doc(fs, 'users', uid, 'settings', 'team')), F.getDoc(F.doc(fs, 'users', uid, 'settings', 'team2'))]);
-      return {uid, profile:okProfile(d.data()), matches:ms.docs.map(x => x.data()).filter(okMatch), player:p.exists() ? okCard(p.data()) : null, teams:[t1, t2].map(t => t.exists() ? okTeam(t.data()) : null),
+      const uid = d.id, [ms, t1, t2, ...ps] = await Promise.all([F.getDocs(F.collection(fs, 'users', uid, 'matches')),
+        F.getDoc(F.doc(fs, 'users', uid, 'settings', 'team')), F.getDoc(F.doc(fs, 'users', uid, 'settings', 'team2')), ...PSLOTS.map(k => F.getDoc(F.doc(fs, 'users', uid, 'settings', k)))]);
+      return {uid, profile:okProfile(d.data()), matches:ms.docs.map(x => x.data()).filter(okMatch), players:Object.fromEntries(PSLOTS.map((k, i) => [k, ps[i].exists() ? okCard(ps[i].data()) : null])), teams:[t1, t2].map(t => t.exists() ? okTeam(t.data()) : null),
         removed:!!gone[uid], removedAt:gone[uid] && gone[uid].at};
     }));
     // removed people whose data is already deleted: still listed, so their access can be given back
-    Object.keys(gone).filter(uid => !users.some(x => x.uid === uid)).forEach(uid => users.push({uid, profile:{email:gone[uid].email || ''}, matches:[], player:null, teams:[null, null], removed:true, removedAt:gone[uid].at}));
+    Object.keys(gone).filter(uid => !users.some(x => x.uid === uid)).forEach(uid => users.push({uid, profile:{email:gone[uid].email || ''}, matches:[], players:{}, teams:[null, null], removed:true, removedAt:gone[uid].at}));
     return users;
   },
   // kick out: the rules refuse the account's folder and live links while blocked/<uid> exists
@@ -4426,7 +4487,7 @@ window.SS_admin = {
   // every document of one account: its matches, its settings and its profile
   async wipe(uid){
     const [ms, lv] = await Promise.all([F.getDocs(F.collection(fs, 'users', uid, 'matches')), F.getDocs(F.query(F.collection(fs, 'live'), F.where('uid', '==', uid)))]);
-    const refs = ms.docs.map(d => d.ref).concat(['player', 'team', 'team2'].map(k => F.doc(fs, 'users', uid, 'settings', k)), [F.doc(fs, 'users', uid)], lv.docs.map(d => d.ref));
+    const refs = ms.docs.map(d => d.ref).concat([...PSLOTS, 'team', 'team2'].map(k => F.doc(fs, 'users', uid, 'settings', k)), [F.doc(fs, 'users', uid)], lv.docs.map(d => d.ref));
     for (let i = 0; i < refs.length; i += 15){ const b = F.writeBatch(fs); refs.slice(i, i + 15).forEach(r => b.delete(r)); await b.commit(); }
     // the entry that keeps the access removed stays, without the email
     await F.setDoc(F.doc(fs, 'blocked', uid), {at:Date.now(), wiped:true});
