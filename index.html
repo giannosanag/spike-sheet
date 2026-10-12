@@ -416,6 +416,8 @@ html{scrollbar-gutter:stable}
 @keyframes nudge{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .tagbar.nudge{animation:nudge .2s 2}
 @media (prefers-reduced-motion:reduce){.tagbar.nudge{animation:none}}
+/* the test copy's mark beside the name */
+.testb{font-size:12px;font-weight:800;font-stretch:100%;letter-spacing:0;background:var(--neg);color:#fff;border-radius:999px;padding:3px 8px;margin-left:4px}
 /* the sign-in button with the Google mark */
 .gbtn{display:flex;align-items:center;justify-content:center;gap:10px}.gbtn svg{width:20px;height:20px;flex:none}
 /* a live score link: the score only (no tabs, no sync line) */
@@ -566,6 +568,8 @@ const S = {matches:{}, player:{name:'', num:'', pos:''}, teams:{team:{name:'', p
 // Words on screen: the English text is the key, EL holds the Greek. {name} in a text is filled from v.
 // "Player|tab": one English word with two Greek ones (the part after | is not shown in English;
 // without its own Greek it takes the plain word's).
+// The app's version, on the Player page and on the owner's page: bump it together with CACHE in sw.js on every release
+const APP_VERSION = 'v40';
 const EL = {
   // header and tabs
   'Live': 'Αγώνας', 'Season': 'Σεζόν', 'Player|tab': 'Προφίλ', 'Team': 'Ομάδα', 'Spike Sheet, home': 'Spike Sheet, αρχική', 'Views': 'Σελίδες',
@@ -632,6 +636,23 @@ const EL = {
   'First answer: who passed the ball?': 'Απάντησε πρώτα: ποιος έδωσε την πάσα;',
   'Matches of {email} that were not saved are kept on this phone: sign in as {email} to save them.': 'Αγώνες του {email} που δεν αποθηκεύτηκαν έχουν κρατηθεί σε αυτό το κινητό: συνδέσου ως {email} για να αποθηκευτούν.',
   'another account': 'άλλου λογαριασμού',
+  'Privacy': 'Απόρρητο',
+  'Spike Sheet keeps only what it needs to count your matches.': 'Το Spike Sheet κρατά μόνο ό,τι χρειάζεται για να καταγράφει τους αγώνες σου.',
+  'What is kept': 'Τι κρατάμε',
+  "The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player card, and the email and name of your Google account. To help and fix problems: when you open the app, the kind of phone, the app version and its error messages.": 'Τους αγώνες που καταγράφεις (σκορ, στατιστικά, φάση-φάση), τις ομάδες σου (ονόματα και αριθμούς παικτών), το προφίλ, και το email και το όνομα του λογαριασμού σου Google. Για να σε βοηθάμε και να διορθώνουμε προβλήματα: πότε ανοίγεις την εφαρμογή, τον τύπο του κινητού, την έκδοση της εφαρμογής και τα μηνύματα σφάλματός της.',
+  'Where': 'Πού',
+  "In your account on Google Firebase, Google's cloud. A copy stays on this phone, so the app works without signal.": 'Στον λογαριασμό σου στο Google Firebase, το cloud της Google. Ένα αντίγραφο μένει σε αυτό το κινητό, ώστε η εφαρμογή να δουλεύει και χωρίς σήμα.',
+  'Who sees it': 'Ποιος τα βλέπει',
+  "You, on every phone you sign in on. The app's owner, to help you and fix problems. Nothing is sold or given to anyone else. No ads, no tracking.": 'Εσύ, σε κάθε κινητό όπου συνδέεσαι. Ο διαχειριστής της εφαρμογής, για να σε βοηθά και να διορθώνει προβλήματα. Τίποτα δεν πουλιέται ούτε δίνεται σε άλλους. Χωρίς διαφημίσεις, χωρίς παρακολούθηση.',
+  'Only the two team names and the score, to anyone with the link, for 12 hours at most.': 'Μόνο τα ονόματα των δύο ομάδων και το σκορ, σε όποιον έχει τον σύνδεσμο, για 12 ώρες το πολύ.',
+  "Add players with their agreement, and for children with a parent's. First names are enough.": 'Πρόσθεσε παίκτες με τη συμφωνία τους, και για παιδιά με τη συμφωνία ενός γονιού. Αρκούν τα μικρά ονόματα.',
+  'Players|privacy': 'Παίκτες',
+  'Pictures and files': 'Εικόνες και αρχεία',
+  'The share picture, Excel and PDF are made on your phone. The app does not keep them.': 'Η εικόνα, το Excel και το PDF φτιάχνονται στο κινητό σου. Η εφαρμογή δεν τα κρατά.',
+  'Deleting': 'Διαγραφή',
+  'Delete a match or a team in the app at any time. To delete everything in your account, write to {email}.': 'Σβήσε έναν αγώνα ή μια ομάδα στην εφαρμογή όποτε θέλεις. Για να σβηστούν όλα από τον λογαριασμό σου, γράψε στο {email}.',
+  'Download all data': 'Λήψη όλων των δεδομένων',
+  'Spike Sheet backup': 'Αντίγραφο Spike Sheet',
   'Connecting to your account…': 'Σύνδεση με τον λογαριασμό σου…',
   'Opened from Instagram, Facebook, Messenger or Viber? Open the page in Safari or Chrome first: Google sign-in does not work inside them.': 'Το άνοιξες από Instagram, Facebook, Messenger ή Viber; Άνοιξε πρώτα τη σελίδα στο Safari ή στο Chrome: η σύνδεση Google δεν λειτουργεί μέσα σε αυτές τις εφαρμογές.', 'Sign-in did not finish. Try again.': 'Η σύνδεση δεν ολοκληρώθηκε. Δοκίμασε ξανά.',
   'Won with sets {s}? Check the result': 'Νίκη με σετ {s}; Έλεγξε το αποτέλεσμα', 'Lost with sets {s}? Check the result': 'Ήττα με σετ {s}; Έλεγξε το αποτέλεσμα',
@@ -791,7 +812,6 @@ const EL = {
   '{n} person': '{n} άτομο', '{n} people': '{n} άτομα', 'Active this week': 'Ενεργοί αυτή την εβδομάδα', '{d} today': 'σήμερα {d}', '{n} this week': '{n} αυτή την εβδομάδα',
   'Live now': 'Σε εξέλιξη', 'Problems': 'Προβλήματα', 'phones, last 7 days': 'κινητά, τελευταίες 7 μέρες', 'Versions': 'Εκδόσεις', 'Version': 'Έκδοση', 'Recent matches': 'Πρόσφατοι αγώνες',
   'People': 'Άτομα', 'the last {n}': 'τα τελευταία {n}', 'No problems': 'Κανένα πρόβλημα', '{n} problem': '{n} πρόβλημα', '{n} problems': '{n} προβλήματα',
-  'People who never sign in keep their matches on their phone only.': 'Όσοι δεν συνδέονται ποτέ κρατούν τους αγώνες μόνο στο κινητό τους.',
   'Someone shows here after opening this version of the app once while signed in.': 'Ένα άτομο εμφανίζεται εδώ αφού ανοίξει μία φορά αυτή την έκδοση ενώ είναι συνδεδεμένο.',
   '{n} day in 30': '{n} μέρα στις 30', '{n} days in 30': '{n} μέρες στις 30', '{t} team, {p} one player': 'ομάδα {t}, ατομικά {p}',
   'Came back': 'Ξαναγύρισαν', 'a 2nd match within 30 days': '2ος αγώνας μέσα σε 30 μέρες', 'Unfinished': 'Ανοιχτοί', 'matches open over a day': 'αγώνες ανοιχτοί πάνω από μία μέρα',
@@ -1705,13 +1725,14 @@ function render(){
     S.timer = setInterval(() => { if (S.watch.data === undefined) return render(); const x = $('#wago'); if (x && S.watch.data) x.textContent = ago(S.watch.data.at); }, 15000); return; }
   document.body.classList.toggle('gate', !S.user && !LS.get('ss.uid'));
   if (document.body.classList.contains('gate') && onOld() && !keptHere() && !homeApp()) return location.replace(NEW_HOME + location.hash);
-  if (document.body.classList.contains('gate')){ document.body.classList.remove('playing'); clearInterval(S.timer); $('#app').innerHTML = gateView(); capsFix($('#app')); return; }
-  document.querySelectorAll('.tabs button[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history') || (S.view==='admin' && b.dataset.view==='player'))));
+  if (document.body.classList.contains('gate')){ document.body.classList.remove('playing'); clearInterval(S.timer); $('#app').innerHTML = S.view === 'privacy' ? privacyView() : gateView(); capsFix($('#app')); return; }
+  document.querySelectorAll('.tabs button[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view || ((S.view==='match' || S.view==='tplayer') && b.dataset.view==='history') || ((S.view==='admin' || S.view==='privacy') && b.dataset.view==='player'))));
   const app = $('#app');
   if (S.view === 'live') app.innerHTML = S.activeId && S.matches[S.activeId] ? (S.choose ? chooseView(S.matches[S.activeId]) : liveView(S.matches[S.activeId])) : newView();
   else if (S.view === 'player') app.innerHTML = playerView();
   else if (S.view === 'team') app.innerHTML = teamView();
   else if (S.view === 'admin') app.innerHTML = adminView();
+  else if (S.view === 'privacy') app.innerHTML = privacyView();
   else if (S.view === 'tplayer' && S.tpNum) app.innerHTML = teamPlayerView(S.tpNum);
   else if (S.view === 'match' && S.matches[S.openId]){ app.innerHTML = matchView(S.matches[S.openId]); prepPicture(S.matches[S.openId]); }
   else { S.view = 'history'; app.innerHTML = historyView(); }
@@ -3118,6 +3139,8 @@ window.SS_liveSeen = d => { if (!S.watch) return;
   render(); };
 // Spike Sheet moved from GitHub Pages to Firebase Hosting (2026-10-09): Google's sign-in helper is on the page's own address there
 const NEW_HOST = 'spikesheet.web.app', NEW_HOME = 'https://' + NEW_HOST + '/';
+// the test copy: every release goes here first (same accounts and data as the app: test with a test account)
+const TEST_HOST = 'spikesheet-test.web.app';
 // the addresses it had before: GitHub Pages (to 10-09) and the Firebase project's own address (10-09 to 10-12)
 const OLD_HOSTS = ['giannosanag.github.io', 'spike-sheet-theo.firebaseapp.com'];
 const onOld = () => OLD_HOSTS.includes(location.hostname);
@@ -3150,7 +3173,23 @@ const gateView = () => {
     <button class="btn btn-or gbtn" id="b-signin"${off ? ' disabled aria-busy="true"' : ''}>${GMARK}<span>${L(label)}</span></button>`}
     <p class="note" style="margin:0">${L("With Google sign-in, your matches, teams, player card and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.")}</p>
     <p class="note" style="margin:0">${L('Opened from Instagram, Facebook, Messenger or Viber? Open the page in Safari or Chrome first: Google sign-in does not work inside them.')}</p>
+    <p class="note" style="margin:0"><button class="lnk" data-view="privacy">${L('Privacy')}</button></p>
   </section>`; };
+// What is kept, where, who sees it, how to delete it (Ian 10-12: before the app goes to clients)
+function privacyView(){
+  const part = (h, t) => `<section class="sec"><h3>${L(h)}</h3><p style="margin:0">${t}</p></section>`;
+  return `<section class="panel">
+    <div class="kicker">Spike Sheet</div><h2>${L('Privacy')}</h2>
+    <p style="margin:0">${L('Spike Sheet keeps only what it needs to count your matches.')}</p></section>
+    ${part('What is kept', L("The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player card, and the email and name of your Google account. To help and fix problems: when you open the app, the kind of phone, the app version and its error messages."))}
+    ${part('Where', L("In your account on Google Firebase, Google's cloud. A copy stays on this phone, so the app works without signal."))}
+    ${part('Who sees it', L("You, on every phone you sign in on. The app's owner, to help you and fix problems. Nothing is sold or given to anyone else. No ads, no tracking."))}
+    ${part('Live score link', L('Only the two team names and the score, to anyone with the link, for 12 hours at most.'))}
+    ${part('Players|privacy', L("Add players with their agreement, and for children with a parent's. First names are enough."))}
+    ${part('Pictures and files', L('The share picture, Excel and PDF are made on your phone. The app does not keep them.'))}
+    ${part('Deleting', L('Delete a match or a team in the app at any time. To delete everything in your account, write to {email}.', {email:`<a href="mailto:${ADMIN}" style="color:inherit"><b>${ADMIN}</b></a>`}))}
+    <button class="btn btn-dk" data-view="${S.user ? 'player' : 'live'}">‹ ${L('Back')}</button>`;
+}
 
 /* ---------- more stats: folded sections under every report and season ---------- */
 // One pass over a match's rallies, per set: the biggest lead each way, points from 20-all (10-all in the deciding
@@ -3570,12 +3609,20 @@ function playerView(){
     <div class="kicker">${L('Appearance')}</div>
     <div class="seg" role="group" aria-label="${L('Appearance')}">${[['light', 'Light'], ['dark', 'Dark'], ['', 'Auto']].map(([v, t]) =>
       `<button data-theme-set="${v}" aria-pressed="${(document.documentElement.getAttribute('data-theme') || '') === v}">${L(t)}</button>`).join('')}</div>
-  </section>`;
+  </section>
+  <p class="note" style="margin:0;text-align:center">Spike Sheet ${APP_VERSION} · <button class="lnk" data-view="privacy">${L('Privacy')}</button></p>`;
 }
 
 /* ---------- admin: the app's owner sees every account (the Firestore rules allow it for this account only) ---------- */
 const ADMIN = 'giannosanag@gmail.com';
 const isAdmin = () => !!(S.user && S.user.email === ADMIN);
+// The owner's copy of everything (the free plan keeps no backups): every account's profile, matches, player card
+// and teams as one file - to the share sheet on an iPhone (Save to Files), to Downloads elsewhere
+function adminBackup(){
+  const users = (S.adm && S.adm.users) || [], d = new Date(), two = v => String(v).padStart(2, '0');
+  const body = JSON.stringify({app:'Spike Sheet', version:APP_VERSION, made:d.toISOString(), users});
+  shareFile(new File([body], 'spike-sheet-backup-' + d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate()) + '.json', {type:'application/json'}), L('Spike Sheet backup'));
+}
 function adminLoad(){
   if (!window.SS_admin) return toast(L("Can't reach Google. Check the internet."));
   S.adm = {loading:true}; render();
@@ -3639,8 +3686,8 @@ function adminView(){
   const back = firsts.filter(t => t.length >= 2 && t[1] - t[0] <= 30 * 864e5).length, open = all.filter(({m}) => !m.done && now - (m.updatedAt || m.createdAt || 0) > 864e5).length;
   const upOf = p => { const ph = admPhones(p); return {up:Math.max(0, ...ph.map(q => q.up || 0)), wait:ph.reduce((t, q) => t + (+q.wait || 0), 0)}; };
   return `${head(nL(users.length, '{n} person', '{n} people'))}
-    <p class="note" style="margin:0">${L('Someone shows here after opening this version of the app once while signed in.')} ${L('People who never sign in keep their matches on their phone only.')}</p>
-    <button class="btn btn-dk" id="b-adload">${L('Read again')}</button></section>
+    <p class="note" style="margin:0">${L('Someone shows here after opening this version of the app once while signed in.')}</p>
+    <div class="row"><button class="btn btn-dk" id="b-adload">${L('Read again')}</button><button class="btn btn-or" id="b-adbackup">${L('Download all data')}</button></div></section>
     <div class="tiles">
       <div class="tile hero"><b>${users.filter(x => seen(x) > weekAgo).length}</b><span>${L('Active this week')}</span><em>${L('{d} today', {d:users.filter(x => seen(x) > dayAgo).length})}</em></div>
       <div class="tile"><b>${all.length}</b><span>${L('Matches')}</span><em>${L('{n} this week', {n:all.filter(({m}) => (m.createdAt||0) > weekAgo).length})}</em></div>
@@ -3901,6 +3948,7 @@ document.addEventListener('click', async e => {
     case 'b-xlsx': return exportMatch(S.matches[t.dataset.id]);
     // the owner's admin page: every account, one account, one match
     case 'b-admin': S.view = 'admin'; window.scrollTo(0,0); return adminLoad();
+    case 'b-adbackup': return adminBackup();
     case 'b-adload': return adminLoad();
     case 'b-adback': if (S.adm){ if (S.adm.match) S.adm.match = null; else S.adm.user = null; } window.scrollTo(0,0); return render();
     case 'b-pdf': return printPage();
@@ -4000,6 +4048,7 @@ S.lang = LS.get('ss.lang') || (/^el\b/i.test(navigator.language || '') ? 'el' : 
 try{ navigator.storage?.persist?.(); }catch(e){}
 { const c = (location.hash.match(/^#live=([a-z0-9]{8,32})$/) || [])[1]; if (c) S.watch = {code:c, t0:Date.now()}; }
 S.choose = idleLong();
+if (location.hostname === TEST_HOST) document.querySelector('.brand').insertAdjacentHTML('beforeend', '<span class="testb">TEST</span>');
 setTimeout(() => { S.authSlow = true; if (document.body.classList.contains('gate')) render(); }, 8000);
 // (the same site answers at spike-sheet-theo.web.app, where the sign-in is not set up)
 if (location.hostname === 'spike-sheet-theo.web.app') location.replace(NEW_HOME + location.hash);
@@ -4017,7 +4066,7 @@ const CONFIG = {
   // The page's own address, so the sign-in never depends on another site's storage (Safari, home-screen apps).
   // Firebase Hosting serves Google's sign-in helper (/__/auth/) there. The old address keeps its self-hosted copy
   // only for phones still signed in on it.
-  authDomain: [NEW_HOST, ...OLD_HOSTS].includes(location.hostname) ? location.hostname : NEW_HOST,
+  authDomain: [NEW_HOST, TEST_HOST, ...OLD_HOSTS].includes(location.hostname) ? location.hostname : NEW_HOST,
   projectId: "spike-sheet-theo",
   storageBucket: "spike-sheet-theo.firebasestorage.app",
   messagingSenderId: "617616185148",
@@ -4104,7 +4153,7 @@ async function ping(u){
     const day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), ua = navigator.userAgent;
     const kind = (/iPhone|iPad/.test(ua) ? 'iPhone' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'Mac' : 'Other') + ((matchMedia('(display-mode: standalone)').matches || navigator.standalone) ? ' app' : ' browser');
     // the version this phone runs (the saved copy's number), and its recent problems (a phone that is full is one too)
-    const ver = (('caches' in window ? await caches.keys() : []).find(k => /^spike-sheet-v\d+$/.test(k)) || '').replace('spike-sheet-', '');
+    const ver = APP_VERSION;
     const issues = JSON.parse(localStorage.getItem('ss.issues') || '[]').concat(S.lsFail ? [{t:now, m:'phone storage full'}] : []);
     // per phone: its kind and version, its last confirmed upload and the saves still waiting
     const phone = {kind, ver, at:now, up:+localStorage.getItem('ss.upAt') || 0, wait:waiting + Object.keys(S.pending).length};

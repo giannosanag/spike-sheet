@@ -51,6 +51,32 @@
         }
       ],
       "site": "spike-sheet-theo"
+    },
+    {
+      "public": ".",
+      "ignore": [
+        "firebase.json",
+        "README.md",
+        "firestore.rules",
+        "**/.*",
+        "NOTES.txt"
+      ],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            }
+          ]
+        }
+      ],
+      "site": "spikesheet-test"
     }
   ],
   "firestore": {
