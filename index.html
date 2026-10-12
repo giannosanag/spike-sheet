@@ -404,6 +404,23 @@ html{scrollbar-gutter:stable}
 .tile em{font-style:normal;font-size:11px;color:var(--muted);line-height:1.25}
 .tile.hero{background:var(--ink);color:var(--bg)}
 .tile.hero em{color:var(--faint)}
+/* the owner's page: small boxes and buttons, so the people list starts on the first screen */
+.panel.adm{gap:10px;padding:12px 16px 18px}
+.panel.adm h2{font-size:26px}
+.panel.adm h2.who{font:700 20px/1.2 var(--font);text-transform:none;letter-spacing:0;overflow-wrap:anywhere}
+.btn-sm{font-size:13px;padding:9px 14px;max-width:100%}
+.row>.btn-sm{flex:0 0 auto}
+.tiles.sm{grid-template-columns:repeat(12,1fr);gap:6px}
+.tiles.sm .tile{padding:10px 8px;border-radius:12px;gap:2px;grid-column:span 3}
+.tiles.sm .tile:nth-child(n+5){grid-column:span 4}
+.tiles.sm .tile b{font-size:24px}
+.tiles.sm .tile span{font-size:11px}
+.tiles.sm .tile em{font-size:10px}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.facts div{display:flex;flex-direction:column;gap:1px;min-width:0;font-size:14px}
+.facts span{font-size:11px;color:var(--muted)}
+.facts b{font-weight:600;overflow-wrap:anywhere}
+.facts .wide{grid-column:1/-1}
 
 .stints{display:flex;flex-direction:column}
 .stint{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 0;font-size:14px;border-bottom:1px solid var(--line)}
@@ -607,7 +624,7 @@ const S = {matches:{}, player:{name:'', num:'', pos:''}, teams:{team:{name:'', p
 // "Player|tab": one English word with two Greek ones (the part after | is not shown in English;
 // without its own Greek it takes the plain word's).
 // The app's version, on the Player page and on the owner's page: bump it together with CACHE in sw.js on every release
-const APP_VERSION = 'v44';
+const APP_VERSION = 'v45';
 const EL = {
   // header and tabs
   'Live': 'Αγώνας', 'Season': 'Σεζόν', 'Profile|tab': 'Προφίλ', 'Team': 'Ομάδα', 'Spike Sheet, home': 'Spike Sheet, αρχική', 'Views': 'Σελίδες',
@@ -708,7 +725,7 @@ const EL = {
   'Connecting to {acct}…': 'Σύνδεση με {acct}…',
   'Still connecting to your account. Try again in a moment.': 'Γίνεται ακόμα σύνδεση με τον λογαριασμό σου. Δοκίμασε ξανά σε λίγο.',
   'Online now': 'Συνδεδεμένοι τώρα', 'app open, last 5 min': 'εφαρμογή ανοιχτή, τελευταία 5 λεπτά', 'App open now': 'Η εφαρμογή είναι ανοιχτή τώρα',
-  'No access': 'Χωρίς πρόσβαση', 'Access': 'Πρόσβαση', 'Remove access': 'Αφαίρεση πρόσβασης', 'Tap again to remove access': 'Πάτα ξανά για αφαίρεση πρόσβασης',
+  'No access': 'Χωρίς πρόσβαση', 'Remove access': 'Αφαίρεση πρόσβασης', 'Tap again to remove access': 'Πάτα ξανά για αφαίρεση πρόσβασης',
   'Give access back': 'Επαναφορά πρόσβασης', 'Download their data': 'Λήψη δεδομένων χρήστη', 'Delete all their data': 'Διαγραφή όλων των δεδομένων χρήστη',
   'Tap again: delete everything of {email}': 'Πάτα ξανά: διαγραφή όλων του {email}', 'Download their data first. This cannot be undone.': 'Κατέβασε πρώτα τα δεδομένα. Δεν αναιρείται.',
   'Removing access stops this person using the app, on every phone. Their data stays until you delete it.': 'Η αφαίρεση πρόσβασης σταματά αυτό το άτομο να χρησιμοποιεί την εφαρμογή, σε κάθε κινητό. Τα δεδομένα του μένουν μέχρι να τα διαγράψεις.',
@@ -3780,15 +3797,13 @@ const isAdmin = () => !!(S.user && S.user.email === ADMIN);
 function admAccess(u){
   const own = S.user && u.uid === S.user.uid, email = esc((u.profile||{}).email || u.uid);
   const rm = S.armed === 'rm-' + u.uid, wipe = S.armed === 'wipe-' + u.uid;
-  return `<section class="sec"><div class="sec-h"><h3>${L('Access')}</h3></div>
-    <div class="row"><button class="btn btn-dk" id="b-adone">${L('Download their data')}</button>${own ? '' : u.removed
-      ? `<button class="btn btn-dk" id="b-adgive">${L('Give access back')}</button>`
-      : `<button class="btn btn-del ${rm ? 'armed' : ''}" id="b-adrm">${rm ? L('Tap again to remove access') : L('Remove access')}</button>`}</div>
+  return `<div class="row" style="gap:6px"><button class="btn btn-dk btn-sm" id="b-adone">${L('Download their data')}</button>${own ? '' : u.removed
+      ? `<button class="btn btn-dk btn-sm" id="b-adgive">${L('Give access back')}</button>
+        <button class="btn btn-del btn-sm ${wipe ? 'armed' : ''}" id="b-adwipe">${wipe ? L('Tap again: delete everything of {email}', {email}) : L('Delete all their data')}</button>`
+      : `<button class="btn btn-del btn-sm ${rm ? 'armed' : ''}" id="b-adrm">${rm ? L('Tap again to remove access') : L('Remove access')}</button>`}</div>
     ${own ? '' : u.removed
-      ? `<button class="btn btn-del ${wipe ? 'armed' : ''}" id="b-adwipe">${wipe ? L('Tap again: delete everything of {email}', {email}) : L('Delete all their data')}</button>
-        <p class="note" style="margin:0">${L('Download their data first. This cannot be undone.')}</p>`
-      : `<p class="note" style="margin:0">${L('Removing access stops this person using the app, on every phone. Their data stays until you delete it.')}</p>`}
-  </section>`;
+      ? `<p class="note" style="margin:0">${L('Download their data first. This cannot be undone.')}</p>`
+      : `<p class="note" style="margin:0">${L('Removing access stops this person using the app, on every phone. Their data stays until you delete it.')}</p>`}`;
 }
 // The owner's copy of everything (the free plan keeps no backups): every account's profile, matches, player card
 // and teams as one file - to the share sheet on an iPhone (Save to Files), to Downloads elsewhere
@@ -3818,7 +3833,7 @@ function ago(t){
 // days used in the last 30, from the profile's day counts
 const activeDays = p => { const from = Date.now() - 30 * 864e5; return Object.keys((p && p.days) || {}).filter(d => Date.parse(d + 'T12:00') >= from).length; };
 function adminView(){
-  const A = S.adm || {}, head = t => `<section class="panel"><button class="lnk" id="b-adtop" style="align-self:flex-start">‹ ${L('Back')}</button><div class="kicker">${L('Admin')}</div><h2>${t}</h2>`;
+  const A = S.adm || {}, head = (t, cls = '') => `<section class="panel adm"><button class="lnk" id="b-adtop" style="align-self:flex-start">‹ ${L('Back')}</button><div class="kicker">${L('Admin')}</div><h2 class="${cls}">${t}</h2>`;
   if (!isAdmin()) return `${head(L('Admin'))}<p class="empty">${L("Only the app's owner can open this page.")}</p></section>`;
   if (A.loading) return `${head(L('Admin'))}<p class="note">${L('Reading every account…')}</p></section>`;
   if (A.err) return `${head(L('Admin'))}<p class="note">${L('The accounts could not be read ({code}). Are the new Firestore rules published?', {code:esc(A.err)})}</p><button class="btn btn-or" id="b-adload">${L('Try again')}</button></section>`;
@@ -3836,12 +3851,13 @@ function adminView(){
   // one account
   if (u){ const p = u.profile || {}, ms = u.matches.slice().sort((a, b) => (b.date||'').localeCompare(a.date||'') || (b.createdAt||0) - (a.createdAt||0));
     const days = Object.keys(p.days || {}).sort().reverse().slice(0, 14), iss = admIssues(p).slice().reverse();
-    return `${head(esc(p.email || u.uid))}${p.name ? `<p class="note" style="margin:0">${esc(p.name)}</p>` : ''}
+    return `${head(esc(p.email || u.uid), 'who')}${p.name ? `<p class="note" style="margin:0">${esc(p.name)}</p>` : ''}
       ${onlineNow(p) ? `<p class="note" style="margin:0"><span class="dot-ok"></span>${L('App open now')}</p>` : ''}${u.removed ? `<p class="note neg" style="margin:0"><b>${L('Access removed {when}.', {when:ago(u.removedAt)})}</b></p>` : ''}
-      <div class="kpis">${[[L('Last seen'), ago(p.last)], [L('Version'), esc(p.ver || '?')], [L('First seen'), ago(p.first)], [L('Opens'), +p.opens || 0], [L('Days used, last 30'), activeDays(p)],
-        [L('Devices'), Object.entries(p.devices || {}).sort((a, b) => b[1] - a[1]).map(([k, t]) => esc(k) + ' (' + ago(t) + ')').join('<br>') || '–'],
-        [L('Language'), esc(p.lang || '–')], [L('Last days'), days.map(d => esc(shortDate(d)) + (p.days[d] > 1 ? ' ×' + p.days[d] : '')).join(' · ') || '–']]
-        .map(([l, v]) => `<div class="kr"><span>${l}</span><b style="white-space:normal">${v}</b></div>`).join('')}</div></section>
+      ${admAccess(u)}</section>
+      <section class="sec"><div class="facts">${[[L('Last seen'), ago(p.last)], [L('Version'), esc(p.ver || '?')], [L('First seen'), ago(p.first)], [L('Opens'), +p.opens || 0], [L('Days used, last 30'), activeDays(p)],
+        [L('Language'), esc(p.lang || '–')], [L('Devices'), Object.entries(p.devices || {}).sort((a, b) => b[1] - a[1]).map(([k, t]) => esc(k) + ' (' + ago(t) + ')').join(' · ') || '–', 1],
+        [L('Last days'), days.map(d => esc(shortDate(d)) + (p.days[d] > 1 ? ' ×' + p.days[d] : '')).join(' · ') || '–', 1]]
+        .map(([l, v, wide]) => `<div${wide ? ' class="wide"' : ''}><span>${l}</span><b>${v}</b></div>`).join('')}</div></section>
       <section class="sec"><div class="sec-h"><h3>${L('Problems')}</h3><span class="note">${iss.length ? L('the last {n}', {n:iss.length}) : ''}</span></div>${iss.length ? `<div class="kpis">${iss.map(x => `<div class="kr"><span>${esc(x.m)}</span><b>${ago(x.t)}</b></div>`).join('')}</div>` : `<p class="note" style="margin:0">${L('No problems')}</p>`}</section>
       ${admPhones(p).length ? `<section class="sec"><div class="sec-h"><h3>${L('Phones')}</h3></div><div class="kpis">${admPhones(p).sort((x, y) => (y.at||0) - (x.at||0)).map(q => `<div class="kr"><span>${esc(q.kind || '?')} · ${esc(q.ver || '?')}</span><b style="white-space:normal">${L('seen {t}', {t:ago(q.at)})} · ${q.up ? L('uploaded {t}', {t:ago(q.up)}) : L('nothing uploaded yet')}${q.wait ? ` · <span class="neg">${nL(+q.wait, '{n} save waiting', '{n} saves waiting')}</span>` : ''}</b></div>`).join('')}</div></section>` : ''}
       ${u.player && (u.player.name || u.player.num) ? `<section class="sec"><div class="sec-h"><h3>${L('Player card')}</h3></div><p class="note" style="margin:0">#${esc(u.player.num || '?')} ${esc(u.player.name || '')}${u.player.pos ? ' · ' + esc(L(u.player.pos)) : ''}</p></section>` : ''}
@@ -3851,9 +3867,8 @@ function adminView(){
       <div class="mlist">${ms.map(m => `<button class="mitem" data-amatch="${esc(m.id)}"><span class="res ${admLive(m) ? 'live' : m.done ? esc(m.result||'') : ''}">${admLive(m) ? L('LIVE') : m.done ? resLetter(m.result) : '–'}</span>
         <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${isTeam(m) ? L('whole team') : L('One player')}</div></span>
         <span class="p">${pts(counts(m))}<small>${unitW(pts(counts(m)), 'PTS')}</small></span></button>`).join('') || `<p class="empty">${L('No matches yet.')}</p>`}</div></section>
-      ${admAccess(u)}
       <button class="btn btn-dk" id="b-adback">‹ ${L('Back')}</button>`; }
-  // everyone: the totals, the versions in use, the latest matches, then each person (a problem or a live match marked)
+  // everyone: the totals, the versions in use, each person (a problem or a live match marked), then the latest matches
   const now = Date.now(), dayAgo = now - 864e5, weekAgo = now - 7 * 864e5, seen = x => (x.profile||{}).last || 0;
   const all = users.flatMap(x => x.matches.map(m => ({m, x}))), probs = x => admIssues(x.profile).filter(i => i.t > weekAgo);
   const count = vals => Object.entries(vals.reduce((t, v) => (t[v] = (t[v] || 0) + 1, t), {})).sort((a, b) => b[1] - a[1]).map(([k, n]) => esc(k) + ' ×' + n).join(' · ');
@@ -3866,8 +3881,8 @@ function adminView(){
   const upOf = p => { const ph = admPhones(p); return {up:Math.max(0, ...ph.map(q => q.up || 0)), wait:ph.reduce((t, q) => t + (+q.wait || 0), 0)}; };
   return `${head(nL(users.length, '{n} person', '{n} people'))}
     <p class="note" style="margin:0">${L('Someone shows here after opening this version of the app once while signed in.')}</p>
-    <div class="row"><button class="btn btn-dk" id="b-adload">${L('Read again')}</button><button class="btn btn-or" id="b-adbackup">${L('Download all data')}</button></div></section>
-    <div class="tiles">
+    <div class="row" style="gap:6px"><button class="btn btn-dk btn-sm" id="b-adload">${L('Read again')}</button><button class="btn btn-or btn-sm" id="b-adbackup">${L('Download all data')}</button></div></section>
+    <div class="tiles sm">
       <div class="tile"><b>${users.filter(x => onlineNow(x.profile)).length}</b><span>${L('Online now')}</span><em>${L('app open, last 5 min')}</em></div>
       <div class="tile hero"><b>${users.filter(x => seen(x) > weekAgo).length}</b><span>${L('Active this week')}</span><em>${L('{d} today', {d:users.filter(x => seen(x) > dayAgo).length})}</em></div>
       <div class="tile"><b>${all.length}</b><span>${L('Matches')}</span><em>${L('{n} this week', {n:all.filter(({m}) => (m.createdAt||0) > weekAgo).length})}</em></div>
@@ -3880,13 +3895,13 @@ function adminView(){
       <div class="kr"><span>${L('Versions')}</span><b style="white-space:normal">${count(users.map(x => (x.profile||{}).ver || '?'))}</b></div>
       <div class="kr"><span>${L('Devices')}</span><b style="white-space:normal">${count(users.map(x => (x.profile||{}).kind || '?'))}</b></div>
     </div>
-    ${recent.length ? `<section class="sec"><div class="sec-h"><h3>${L('Recent matches')}</h3></div><div class="mlist">${recent.map(({m, x}) => `<button class="mitem" data-arecent="${esc(x.uid)}|${esc(m.id)}"><span class="res ${admLive(m) ? 'live' : m.done ? esc(m.result||'') : ''}">${admLive(m) ? L('LIVE') : m.done ? resLetter(m.result) : '–'}</span>
-      <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${esc((x.profile||{}).email || x.uid)}</div></span><span class="p">${pts(counts(m))}<small>${unitW(pts(counts(m)), 'PTS')}</small></span></button>`).join('')}</div></section>` : ''}
     <section class="sec"><div class="sec-h"><h3>${L('People')}</h3></div>
     <div class="mlist">${users.slice().sort((a, b) => probs(b).length - probs(a).length || seen(b) - seen(a)).map(x => { const p = x.profile || {}, team = x.matches.filter(isTeam).length, pr = probs(x).length, lv = x.matches.some(admLive), u = upOf(p);
       return `<button class="mitem adu" data-auid="${esc(x.uid)}"><span><div class="t">${onlineNow(p) ? '<span class="dot-ok"></span>' : ''}${esc(p.email || x.uid)}${x.removed ? ` <span class="neg">${L('No access')}</span>` : ''}${lv ? ` <span class="res live" style="display:inline-grid;vertical-align:1px">${L('LIVE')}</span>` : ''}${pr ? ` <span class="neg" style="font-size:13px">⚠ ${nL(pr, '{n} problem', '{n} problems')}</span>` : ''}</div>
         <div class="d">${L('Last seen')} ${ago(p.last)} · ${esc(p.ver || '?')} · ${esc(p.kind || '?')} · ${nL(activeDays(p), '{n} day in 30', '{n} days in 30')}${u.up ? ' · ' + L('uploaded {t}', {t:ago(u.up)}) : ''}${u.wait ? ` · <span class="neg">${nL(u.wait, '{n} save waiting', '{n} saves waiting')}</span>` : ''}</div>
-        <div class="d">${nL(x.matches.length, '{n} match', '{n} matches')} (${L('{t} team, {p} one player', {t:team, p:x.matches.length - team})})${x.teams.filter(t => t && t.name).map(t => ' · ' + esc(t.name)).join('')}</div></span></button>`; }).join('')}</div></section>`;
+        <div class="d">${nL(x.matches.length, '{n} match', '{n} matches')} (${L('{t} team, {p} one player', {t:team, p:x.matches.length - team})})${x.teams.filter(t => t && t.name).map(t => ' · ' + esc(t.name)).join('')}</div></span></button>`; }).join('')}</div></section>
+    ${recent.length ? `<section class="sec"><div class="sec-h"><h3>${L('Recent matches')}</h3></div><div class="mlist">${recent.map(({m, x}) => `<button class="mitem" data-arecent="${esc(x.uid)}|${esc(m.id)}"><span class="res ${admLive(m) ? 'live' : m.done ? esc(m.result||'') : ''}">${admLive(m) ? L('LIVE') : m.done ? resLetter(m.result) : '–'}</span>
+      <span><div class="t">${vsLine(m)}</div><div class="d">${esc(fmtDate(m.date))}${m.score ? ' · ' + esc(m.score) : ''} · ${esc((x.profile||{}).email || x.uid)}</div></span><span class="p">${pts(counts(m))}<small>${unitW(pts(counts(m)), 'PTS')}</small></span></button>`).join('')}</div></section>` : ''}`;
 }
 // the app open now: its beat (every 4 minutes while shown) or an open in the last 5 minutes
 const onlineNow = p => Math.max(+(p && p.alive) || 0, +(p && p.last) || 0) > Date.now() - 5 * 60e3;
