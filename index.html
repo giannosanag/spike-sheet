@@ -626,7 +626,7 @@ const S = {matches:{}, players:{}, pslot:'player', teams:{team:{name:'', players
 // "Player|tab": one English word with two Greek ones (the part after | is not shown in English;
 // without its own Greek it takes the plain word's).
 // The app's version, on the Player page and on the owner's page: bump it together with CACHE in sw.js on every release
-const APP_VERSION = 'v47';
+const APP_VERSION = 'v48';
 const EL = {
   // header and tabs
   'Live': 'Αγώνας', 'Season': 'Σεζόν', 'Profile|tab': 'Προφίλ', 'Team': 'Ομάδα', 'Spike Sheet, home': 'Spike Sheet, αρχική', 'Views': 'Σελίδες',
@@ -887,7 +887,10 @@ const EL = {
   'You can keep two teams. Every player needs a number and a name. A new match asks what to track: {name} only, or a whole team. In a team match you tap the stat, then the number of the player.':
     'Μπορείς να κρατάς δύο ομάδες. Κάθε μέλος θέλει αριθμό και όνομα. Ο νέος αγώνας ρωτά τι θα καταγράψεις: «Όλη η ομάδα» ή «Ατομικά». Σε αγώνα ομάδας πατάς τη φάση και μετά τον αριθμό.',
   // player card and account
-  'Players|cards': 'Μέλη', 'For one-player matches, up to 5 players. A whole team is on the Team page.': 'Για τα «Ατομικά» στατιστικά, έως 5 μέλη. Την ομάδα τη φτιάχνεις στη σελίδα «Ομάδα».', 'Choose': 'Διάλεξε', 'Save player': 'Αποθήκευση', 'Then also delete the sign-in in the Firebase console (Authentication, Users).': 'Μετά σβήσε και τη σύνδεση Google του λογαριασμού στην κονσόλα Firebase (Authentication, Users).', 'Delete this player': 'Διαγραφή μέλους',
+  'Players|cards': 'Μέλη', 'For one-player matches, up to 5 players. A whole team is on the Team page.': 'Για τα «Ατομικά» στατιστικά, έως 5 μέλη. Την ομάδα τη φτιάχνεις στη σελίδα «Ομάδα».', 'Choose': 'Διάλεξε', 'Save player': 'Αποθήκευση', 'Pick the team': 'Διάλεξε ομάδα',
+  "Two teams already: {team}'s matches stay in Season.": 'Ήδη δύο ομάδες: οι αγώνες της ομάδας {team} μένουν στη Σεζόν.',
+  'Who is responsible': 'Υπεύθυνος επεξεργασίας', 'Ioannis Anagnostopoulos': 'Ιωάννης Αναγνωστόπουλος',
+  '{name} runs Spike Sheet and is responsible for your data. Write to {email}.': '{name}, που λειτουργεί το Spike Sheet. Για τα δεδομένα σου γράψε στο {email}.', 'Then also delete the sign-in in the Firebase console (Authentication, Users).': 'Μετά σβήσε και τη σύνδεση Google του λογαριασμού στην κονσόλα Firebase (Authentication, Users).', 'Delete this player': 'Διαγραφή μέλους',
   '{name} deleted. Their matches stay in Season.': 'Το μέλος {name} διαγράφηκε. Οι αγώνες του μένουν στη Σεζόν.', 'Finish the live match of this player first': 'Το μέλος έχει αγώνα σε εξέλιξη: τελείωσέ τον πρώτα', 'Account': 'Λογαριασμός', 'Sign out': 'Αποσύνδεση',
   'Signed in as {email}. Your matches are saved in your account and sync to every phone you sign in on.': 'Σύνδεση: {email}. Οι αγώνες σου αποθηκεύονται στον λογαριασμό σου και συγχρονίζονται σε κάθε κινητό όπου συνδέεσαι.',
   'Sign in with Google to start. Your matches are saved in your account and sync to every phone you sign in on.': 'Συνδέσου με Google για να ξεκινήσεις. Οι αγώνες σου αποθηκεύονται στον λογαριασμό σου και συγχρονίζονται σε κάθε κινητό όπου συνδέεσαι.',
@@ -938,8 +941,16 @@ const slotOf = m => m && m.teamSlot === 'team2' ? 'team2' : 'team';
 const teamLabel = slot => teamOf(slot).name || (slot === 'team2' ? L('Team 2') : L('Team 1'));
 // The season a team match belongs to: its team slot, or the old name of a team that was deleted
 // (a new team in that slot starts a fresh season).
-const seasonKey = m => m.teamGone ? 'old:' + m.teamGone : slotOf(m);
-const seasonLabel = k => String(k).startsWith('old:') ? L('{team} (old)', {team:k.slice(4)}) : teamLabel(k);
+// Each team has an id too (v48; a team from before keeps its place's name), and a team match keeps its team's id with
+// the name it had (tid, tname): a match belongs to the team with its id in either place, else it shows as "<team> (old)"
+// - two phones making a team in one place, or a deleted team's place used again, never move a match to another team
+const hasTeam = k => !!(S.teams[k].name || (S.teams[k].players || []).length);
+const tid = k => S.teams[k].id || k;
+const tidOf = m => m.tid || slotOf(m);
+const tslotFor = m => (!m.teamGone && SLOTS.find(k => hasTeam(k) && tid(k) === tidOf(m))) || null;
+const seasonKey = m => tslotFor(m) || 'old:' + (m.tid ? '#' + m.tid : m.teamGone || '');
+const seasonLabel = k => { if (!String(k).startsWith('old:')) return teamLabel(k);
+  const m = Object.values(S.matches).find(x => isTeam(x) && seasonKey(x) === k); return L('{team} (old)', {team:m ? m.tname || m.teamGone || m.home || '' : k.slice(4)}); };
 // Up to five players per account for one-player matches, in five places (settings/player, settings/player2..5 - Ian
 // 10-12); S.player is the one shown on the Profile page. Each player has an id, given when first named (v47; a card from
 // before keeps its place's name as id), and a one-player match keeps its player's id with the name and number it had
@@ -1080,6 +1091,7 @@ async function flush(){
       // a player's place is written once the account has answered for it: a phone that has not received the account's
       // players yet must not write a new one over one of them (it waits; the answer may move it, see connect)
       if (path.startsWith('settings/player') && !(S.pSeen && S.pSeen.has(path.slice(9)))) continue;
+      if (/^settings\/team2?$/.test(path) && !(S.tSeen && S.tSeen.has(path.slice(9)))) continue;
       delete S.pending[path];
       const body = bodyFor(path);
       // a refused write comes back through SS_writeFailed, which queues it again
@@ -1198,13 +1210,24 @@ function connect(db){
       if (changed){ backup(); if (!isTyping()) render(); }
     }, () => {}));
   });
+  S.tSeen = new Set();
   SLOTS.forEach(k => {
     let firstT = true;
     S.unsubs.push(db.doc('settings/' + k).onSnapshot(d => {
-      const r = d.exists && d.data();
-      if (r && (r.updatedAt||0) > (S.teams[k].updatedAt||0)) { S.teams[k] = Object.assign({name:'', players:[]}, r); backup(); if (!isTyping()) render(); }
-      else if (firstT && !d.metadata?.fromCache && (S.teams[k].updatedAt||0) > ((r && r.updatedAt)||0)) queue('settings/' + k);
-      if (!d.metadata?.fromCache) firstT = false;
+      const r = d.exists && d.data(), mine = S.teams[k], full = t => !!(t && (t.name || (t.players || []).length)); let changed = false;
+      // two different teams in one place (as for players above): the account's stays; this phone's, if newer, moves to
+      // the other place if it is free; with none free, its matches stay in Season under its name
+      if (full(r) && full(mine) && (r.id || k) !== tid(k) && (mine.updatedAt||0) > (r.updatedAt||0)){
+        const to = SLOTS.find(x => x !== k && !hasTeam(x));
+        delete S.pending['settings/' + k];
+        if (to){ S.teams[to] = Object.assign({}, mine, {id:tid(k)}); S.teams[to].updatedAt = stamp(S.teams[to]); queue('settings/' + to); }
+        else toast(L("Two teams already: {team}'s matches stay in Season.", {team:mine.name || L('Team')}));
+        S.teams[k] = Object.assign({name:'', players:[]}, r); changed = true;
+      }
+      else if (r && (r.updatedAt||0) > (mine.updatedAt||0)){ S.teams[k] = Object.assign({name:'', players:[]}, r); changed = true; }
+      else if (firstT && !d.metadata?.fromCache && (mine.updatedAt||0) > ((r && r.updatedAt)||0)) queue('settings/' + k);
+      if (!d.metadata?.fromCache){ firstT = false; if (!S.tSeen.has(k)){ S.tSeen.add(k); if (S.pending['settings/' + k]) queue('settings/' + k); } }
+      if (changed){ backup(); if (!isTyping()) render(); }
     }, () => {}));
   });
   flush();
@@ -1222,7 +1245,7 @@ function clearLocal(keepUnsaved, keepCards, unsent){
   S.matches = keep; S.activeId = null; dropDraft();
   try{ localStorage.removeItem('ss.matches'); }catch(e){} S.oldLeft = false;
   // keepCards: a save was being refused, so the player card and roster may exist only here
-  if (!keepCards){ PSLOTS.forEach(k => S.players[k] = blankP()); S.pslot = 'player'; LS.set('ss.pslot', 'player'); S.pDraft = null; S.nfP = null; S.teams = {team:{name:'', players:[]}, team2:{name:'', players:[]}}; }
+  if (!keepCards){ PSLOTS.forEach(k => S.players[k] = blankP()); S.pslot = 'player'; LS.set('ss.pslot', 'player'); S.pDraft = null; S.nfP = null; S.nfT = null; S.teams = {team:{name:'', players:[]}, team2:{name:'', players:[]}}; }
   try{ localStorage.removeItem('ss.synced'); localStorage.removeItem('ss.deleted'); localStorage.removeItem('ss.cloud'); }catch(e){}
   backup();
 }
@@ -1483,7 +1506,8 @@ function startMatch(f){
   if (f.away) m.away = true;
   if (f.basic) m.basic = true;
   if (f.practice) m.practice = true;
-  if (f.mode === 'team'){ m.mode = 'team'; m.teamSlot = S.slot; m.roster = JSON.parse(JSON.stringify(f.roster || S.team.players)); if (!m.home) m.home = S.team.name || ''; }
+  if (f.mode === 'team'){ const k = SLOTS.find(x => hasTeam(x) && tid(x) === (f.tid || S.nfT)) || S.slot, t = S.teams[k];
+    Object.assign(m, {mode:'team', teamSlot:k, tid:tid(k), tname:t.name || ''}); m.roster = JSON.parse(JSON.stringify(f.roster || t.players)); if (!m.home) m.home = t.name || ''; }
   else givePlayer(m, PSLOTS.find(x => S.players[x].name && cid(x) === (f.pid || S.nfP)) || (S.player.name ? S.pslot : namedP()[0] || S.pslot));
   // started late: the sets already played are over, the match carries on in the next one
   (f.sets||[]).forEach(([u, t], i) => { pushLate(m, i+1, u, t); m.ended.push(i+1); });
@@ -1491,7 +1515,7 @@ function startMatch(f){
   if (f.now) pushLate(m, S.set, f.now[0], f.now[1]);
   S.activeId = id; S.choose = false;
   // (a practice leaves the new-match steps as they were, to go on with after it)
-  if (!f.practice){ S.nfAway = false; S.nfDraft = null; S.nfStep = 1; S.nfBasic = null; S.nfAddP = false; S.nfP = null; LS.set('ss.basic', !!f.basic); }
+  if (!f.practice){ S.nfAway = false; S.nfDraft = null; S.nfStep = 1; S.nfBasic = null; S.nfAddP = false; S.nfP = null; S.nfT = null; LS.set('ss.basic', !!f.basic); }
   if (f.starter && !isTeam(m)) courtOn(m);
   save(m);
   keepAwake(); render(); window.scrollTo(0,0);
@@ -1583,9 +1607,9 @@ function setWho(n){
   }
   S.whoOther = false;
   // a spike or plasé: who set it, when the team asks it (Team page switch; once, "Don't know" keeps it unknown)
-  const st = e && n && TAG_KEYS.includes(e.k) && e.s === undefined && teamOf(slotOf(m)).setBy && court(m, e.set, S.who.i), setters = st ? st.pos.filter(x => x !== n && rosterP(m, x).pos === 'S') : [];
+  const st = e && n && TAG_KEYS.includes(e.k) && e.s === undefined && !!tslotFor(m) && teamOf(tslotFor(m)).setBy && court(m, e.set, S.who.i), setters = st ? st.pos.filter(x => x !== n && rosterP(m, x).pos === 'S') : [];
   if (setters.length === 1){ e.s = setters[0]; save(m); toast(evLabel(e, m).t); }
-  if (e && n && TAG_KEYS.includes(e.k) && e.s === undefined && teamOf(slotOf(m)).setBy){ S.who = {mid:m.id, i:S.who.i, setby:1, chain, fix:S.who.fix, set:S.who.set}; S.barAt = Date.now(); clearTimeout(S.tagT); return render(); }
+  if (e && n && TAG_KEYS.includes(e.k) && e.s === undefined && !!tslotFor(m) && teamOf(tslotFor(m)).setBy){ S.who = {mid:m.id, i:S.who.i, setby:1, chain, fix:S.who.fix, set:S.who.set}; S.barAt = Date.now(); clearTimeout(S.tagT); return render(); }
   nextWho(m, chain && n);
 }
 // After a number: with the Who? button the next stat without a number comes up at once (until none is left or Cancel);
@@ -1874,7 +1898,7 @@ function switchToTeam(){
   if (m.onCourt){ const seg = m.courtSince ? Date.now() - m.courtSince : 0, pre = m.stintMs||0; push(m, {k:'off', dur:pre+seg, onAt:m.courtSince, pre}); m.playMs = (m.playMs||0) + seg; m.onCourt = false; m.courtSince = null; m.stintMs = 0; }
   // a match that was a team match before (soloNum): its "no player" taps are teammates', its roster and team stay
   const back = !!m.soloNum;
-  if (!back){ m.log.forEach(e => { if (BYK[e.k] && !e.p) e.p = num; }); m.teamSlot = S.slot; m.roster = JSON.parse(JSON.stringify(S.team.players)); }
+  if (!back){ m.log.forEach(e => { if (BYK[e.k] && !e.p) e.p = num; }); m.teamSlot = S.slot; m.tid = tid(S.slot); m.tname = S.team.name || ''; m.roster = JSON.parse(JSON.stringify(S.team.players)); }
   m.mode = 'team'; delete m.soloNum;
   if (!m.roster.some(p => p.num === num)) m.roster = [...m.roster, {num, name:pc.name||''}].sort((a,b) => a.num - b.num);
   if (!m.home) m.home = S.team.name || '';
@@ -1906,7 +1930,7 @@ function removeMatch(id){
   LS.set('ss.deleted', [...new Set([...(LS.get('ss.deleted')||[]), id])]);
   if (S.activeId === id) S.activeId = null;
   backup(); queue('matches/'+id);
-  if (m.liveId){ window.SS_live?.stop(m.liveId).catch(() => {}); S.liveSent = null; }
+  if (m.liveId){ window.SS_live?.drop(m.liveId).catch(() => {}); S.liveSent = null; }
   S.view = 'history'; S.openId = null; render();
   // a delete by mistake: Undo brings it back, here and in the account, where it was
   toast(L('Match deleted'), {label:L('Undo'), fn(){
@@ -1984,7 +2008,7 @@ const markSeen = () => { if (S.view === 'live' && !S.choose && S.activeId) LS.se
 // Closed by mistake (or by the phone) halfway through a line-up or the new-match steps: it waits for the next open
 function keepOpen(){
   if (S.view === 'live' && !S.activeId) keepNf();
-  LS.set('ss.open', {t:Date.now(), lu:S.lu, nf:S.view === 'live' && (!S.activeId || S.matches[S.activeId]?.practice) ? {d:S.nfDraft, step:S.nfStep, away:S.nfAway, basic:S.nfBasic, p:S.nfP} : null});
+  LS.set('ss.open', {t:Date.now(), lu:S.lu, nf:S.view === 'live' && (!S.activeId || S.matches[S.activeId]?.practice) ? {d:S.nfDraft, step:S.nfStep, away:S.nfAway, basic:S.nfBasic, p:S.nfP, t:S.nfT} : null});
 }
 function chooseView(m){
   const a = analyze(m), sc = a.score[m.curSet||1] || {us:0, them:0}, {w, l} = setsWon(m);
@@ -2007,7 +2031,8 @@ function newView(){
   const anyTeam = SLOTS.some(k => teamOf(k).players.length);
   // one player: a button for each player saved, or the boxes for a new one
   const named = namedP(), adding = !named.length || !!S.nfAddP, nfM = {pid:S.nfP};
-  const home = nd['f-home'] ?? (team ? S.team.name || '' : (last?.home || S.team.name || ''));
+  const nfTeam = teamOf(SLOTS.find(x => hasTeam(x) && tid(x) === S.nfT) || S.slot);
+  const home = nd['f-home'] ?? (team ? nfTeam.name || '' : (last?.home || S.team.name || ''));
   return `
   <section class="panel">
     <div class="kicker">${step > 1 ? `<button type="button" class="lnk" id="b-nfback" style="padding:12px 12px 12px 0;margin:-8px 0">‹ ${L('Back')}</button>` : ''}${L('New match · step {n} of 4', {n:step})}</div>
@@ -2435,11 +2460,12 @@ function readTeam(){
 function deleteTeam(){
   const slot = S.slot, lm = S.activeId && S.matches[S.activeId];
   if (isTeam(lm) && seasonKey(lm) === slot) return toast(L('Finish the live match of this team first'));
-  const name = teamLabel(slot);
-  Object.values(S.matches).forEach(m => { if (isTeam(m) && seasonKey(m) === slot){ m.teamGone = name; save(m); } });
-  // newer than the team it replaces, so the delete reaches every phone
+  const name = teamLabel(slot), id = tid(slot);
+  // a match started before v48 keeps no team name of its own: it is given the team's name now
+  Object.values(S.matches).forEach(m => { if (isTeam(m) && !m.tname && seasonKey(m) === slot){ m.teamGone = name; save(m); } });
+  // newer than the team it replaces, so the delete reaches every phone (no id: the place is free)
   S.team = {name:'', players:[], updatedAt:S.team.updatedAt||0}; dropDraft(); saveTeam();
-  if (S.seasonMode === slot) S.seasonMode = 'old:' + name;
+  if (S.seasonMode === slot){ const one = Object.values(S.matches).find(m => isTeam(m) && tidOf(m) === id); S.seasonMode = one ? seasonKey(one) : undefined; }
   render(); toast(L('{team} deleted. Its matches stay in Season.', {team:name}));
 }
 // The player on the Profile page is deleted. Their matches stay in Season under their name, in a season of their own,
@@ -2469,10 +2495,11 @@ function saveTeamForm(){
   if (dup) return refuse(L('Number {n} is there twice', {n:dup.num}), dup, '.t-num');
   // in number order; empty rows are dropped
   d.players = d.players.filter(p => p.num).sort((a,b) => a.num - b.num);
-  S.team = Object.assign({}, S.team, d); dropDraft();
+  // (a team in a free place gets its id)
+  S.team = Object.assign({}, S.team, d, hasTeam(S.slot) ? {} : {id:newPid()}); dropDraft();
   // a team match in play with this team gets the new players and names too (nobody is taken out of it)
   const lm = S.activeId && S.matches[S.activeId];
-  if (isTeam(lm) && slotOf(lm) === S.slot){
+  if (isTeam(lm) && tslotFor(lm) === S.slot){
     const have = Object.fromEntries((lm.roster||[]).map(p => [p.num, p]));
     d.players.forEach(p => { if (!have[p.num]) lm.roster = [...(lm.roster||[]), Object.assign({}, p)]; else { if (p.name) have[p.num].name = p.name; have[p.num].pos = p.pos; } });
     lm.roster.sort((a,b) => a.num - b.num); save(lm);
@@ -3439,6 +3466,7 @@ function privacyView(){
   return `<section class="panel">
     <div class="kicker">Spike Sheet</div><h2>${L('Privacy')}</h2>
     <p style="margin:0">${L('Spike Sheet keeps only what it needs to count your matches.')}</p></section>
+    ${part('Who is responsible', L('{name} runs Spike Sheet and is responsible for your data. Write to {email}.', {name:L('Ioannis Anagnostopoulos'), email:`<a href="mailto:${ADMIN}" style="color:inherit"><b>${ADMIN}</b></a>`}))}
     ${part('What is kept', L("The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player cards, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (the last 30 days; every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages."))}
     ${part('Where', L("In your account on Google Firebase, Google's cloud: Google provides the servers and the sign-in. A copy stays on this phone while you are signed in, so the app works without signal; if your access is removed, the matches stay on it."))}
     ${part('Who sees it', L("You, on every phone you sign in on. The app's owner, to help you and fix problems. Nothing is sold or given to anyone else. No ads, no tracking."))}
@@ -3791,7 +3819,7 @@ function historyView(){
   // team matches have their own season, next to the player's
   // each saved team has its own season; a team shows here once it has a match
   // (a deleted team keeps its own season, under its old name)
-  const slots = [...SLOTS.filter(k => all.some(m => isTeam(m) && seasonKey(m) === k)), ...new Set(all.filter(m => isTeam(m) && m.teamGone).map(seasonKey))];
+  const slots = [...SLOTS.filter(k => all.some(m => isTeam(m) && seasonKey(m) === k)), ...new Set(all.filter(m => isTeam(m) && !tslotFor(m)).map(seasonKey))];
   // a season per player: each one with a card or a one-player match, then the matches of a deleted player
   const solo = [...namedP(), ...new Set(all.filter(m => !isTeam(m) && !pslotFor(m)).map(pKey))];
   const mode = [...solo, ...slots].includes(S.seasonMode) ? S.seasonMode : slots.length && (!solo.length || all.every(isTeam)) ? slots[0] : solo.includes(S.pslot) ? S.pslot : solo[0] || 'player';
@@ -4070,7 +4098,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.view){
     // during a team match the team page shows that match's team, so a late player reaches the who bar
     const lm = S.activeId && S.matches[S.activeId];
-    if (t.dataset.view === 'team' && isTeam(lm) && slotOf(lm) !== S.slot) pickSlot(slotOf(lm));
+    if (t.dataset.view === 'team' && isTeam(lm) && tslotFor(lm) && tslotFor(lm) !== S.slot) pickSlot(tslotFor(lm));
     if (S.view === 'team' && !waits) dropDraft();
     if (t.dataset.view !== 'live') dropPractice();
     // the logo on a live score page leads into the app (a scorer may open their own link in the installed app)
@@ -4108,7 +4136,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.nfslot){
     document.querySelectorAll('[data-nfslot]').forEach(b => b.setAttribute('aria-pressed', String(b === t)));
     clearTimeout(S.pickT); S.pickT = setTimeout(() => {
-      keepNf(); pickSlot(t.dataset.nfslot); if (S.nfDraft) delete S.nfDraft['f-home'];
+      keepNf(); pickSlot(t.dataset.nfslot); S.nfT = tid(t.dataset.nfslot); if (S.nfDraft) delete S.nfDraft['f-home'];
       if (S.team.players.length){ S.nfStep = 3; render(); window.scrollTo(0,0); return; }
       S.teamFrom = true; S.view = 'team'; render(); window.scrollTo(0,0);
     }, 250);
@@ -4290,12 +4318,15 @@ document.addEventListener('submit', e => {
   if (e.target.id === 'whoform') return setWho($('#who-other').value);
   if (e.target.id === 'teamform'){
     if (!saveTeamForm()) return;
-    if (S.teamFrom && S.team.players.length){ S.teamFrom = false; S.view = 'live'; S.track = 'team'; LS.set('ss.track', 'team'); S.nfStep = 3; window.scrollTo(0,0); }
+    if (S.teamFrom && S.team.players.length){ S.teamFrom = false; S.nfT = tid(S.slot); S.view = 'live'; S.track = 'team'; LS.set('ss.track', 'team'); S.nfStep = 3; window.scrollTo(0,0); }
     return render();
   }
   if (e.target.id === 'fixform') return fixScore(+jnum($('#fix-us').value || 0), +jnum($('#fix-them').value || 0));
   if (e.target.id === 'newform' && (S.nfStep || 1) < 4) return nfNext();
-  if (e.target.id === 'newform' && trackMode() === 'team' && !S.team.players.length){ S.view = 'team'; return render(); }
+  // the team picked at step 2 (deleted meanwhile: picked again; still without players: its Team page)
+  if (e.target.id === 'newform' && trackMode() === 'team'){ const k = SLOTS.find(x => hasTeam(x) && tid(x) === S.nfT);
+    if (!k){ S.nfStep = 2; render(); window.scrollTo(0,0); return toast(L('Pick the team')); }
+    if (!S.teams[k].players.length){ pickSlot(k); S.teamFrom = true; S.view = 'team'; return render(); } }
   if (e.target.id === 'newform'){
     // the player picked at step 2 (deleted or not picked meanwhile: picked again)
     if (trackMode() !== 'team' && !PSLOTS.some(x => S.players[x].name && cid(x) === S.nfP)){ S.nfStep = 2; render(); window.scrollTo(0,0); return toast(L('Pick the player')); }
@@ -4304,7 +4335,7 @@ document.addEventListener('submit', e => {
     if (!now || now.length > 1) return toast(L('Score now: type it like 10-12'));
     if (sets.length >= 5) return toast(L('At most 4 sets already played'));
     if ([0, 1].some(i => sets.filter(s => s[i] > s[1-i]).length >= 3)) return toast(L('Those sets already finish the match'));
-    startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:!!$('#f-starter')?.checked, mode:trackMode(), away:!!S.nfAway, basic:nfBasic(), sets, now:now[0], pid:S.nfP});
+    startMatch({opp:$('#f-opp').value.trim(), home:$('#f-home').value.trim(), date:$('#f-date').value, team:$('#f-team').value.trim(), starter:!!$('#f-starter')?.checked, mode:trackMode(), away:!!S.nfAway, basic:nfBasic(), sets, now:now[0], pid:S.nfP, tid:S.nfT});
   }
   if (e.target.id === 'pform'){
     // every player has a name (a place without one is free); the page stays, to add or change another
@@ -4387,7 +4418,7 @@ restore();
 // what was half done when the app closed, under 2 hours ago: the line-up being filled, the new-match steps
 { const o = LS.get('ss.open'); if (o && Date.now() - o.t < 2*3600e3){
   if (o.lu && o.lu.mid === S.activeId && o.lu.set === S.set) S.lu = o.lu;
-  if (o.nf && !S.activeId){ S.nfDraft = o.nf.d; S.nfStep = o.nf.step; S.nfAway = o.nf.away; S.nfBasic = o.nf.basic ?? null; S.nfP = o.nf.p || null; } } }
+  if (o.nf && !S.activeId){ S.nfDraft = o.nf.d; S.nfStep = o.nf.step; S.nfAway = o.nf.away; S.nfBasic = o.nf.basic ?? null; S.nfP = o.nf.p || null; S.nfT = o.nf.t || null; } } }
 S.lang = LS.get('ss.lang') || (/^el\b/i.test(navigator.language || '') ? 'el' : 'en');
 // asks the browser not to clear this site's data when the phone runs low (Chrome on Android grants it)
 try{ navigator.storage?.persist?.(); }catch(e){}
@@ -4521,10 +4552,10 @@ const okMatch = m => !!m && typeof m === 'object' && typeof m.id === 'string' &&
   && m.log.every(e => e && typeof e === 'object' && typeof e.k === 'string' && Number.isInteger(e.set) && e.set >= 1 && e.set <= 9
     && (e.side == null || e.side === 'us' || e.side === 'them') && ['p', 's', 'in', 'out'].every(k => e[k] == null || /^\d{0,3}$/.test(e[k]))
     && (e.pos == null || (Array.isArray(e.pos) && e.pos.every(x => x == null || /^\d{0,3}$/.test(x)))))
-  && ['date', 'opp', 'home', 'team', 'result', 'score', 'pslot', 'playerGone', 'playerNum', 'pid', 'pname', 'pnum'].every(k => okText(m[k]))
+  && ['date', 'opp', 'home', 'team', 'result', 'score', 'pslot', 'playerGone', 'playerNum', 'pid', 'pname', 'pnum', 'tid', 'tname', 'teamGone', 'teamSlot'].every(k => okText(m[k]))
   && (m.roster == null || (Array.isArray(m.roster) && m.roster.every(x => x && typeof x === 'object' && okText(x.num) && okText(x.name))));
 const okCard = p => p && typeof p === 'object' && ['name', 'num', 'pos', 'id'].every(k => okText(p[k])) ? p : null;
-const okTeam = t => t && typeof t === 'object' && okText(t.name) && (t.players == null || (Array.isArray(t.players)
+const okTeam = t => t && typeof t === 'object' && okText(t.name) && okText(t.id) && (t.players == null || (Array.isArray(t.players)
   && t.players.every(x => x && typeof x === 'object' && okText(x.num) && okText(x.name) && okText(x.pos)))) ? t : null;
 const okProfile = p => { p = p && typeof p === 'object' ? Object.assign({}, p) : {};
   ['email', 'name', 'ver', 'kind', 'lang'].forEach(k => { if (!okText(p[k])) delete p[k]; });
@@ -4565,7 +4596,8 @@ setInterval(alive, 4 * 60e3);
 window.SS_live = {
   put: (code, body) => auth.currentUser ? F.setDoc(F.doc(fs, 'live', code), Object.assign({}, body, {uid:auth.currentUser.uid, at:F.serverTimestamp(), until:F.Timestamp.fromMillis(Date.now() + (body.done ? 3 : 12) * 3600e3)}))
     : Promise.reject({code:'not signed in'}),
-  stop: code => F.deleteDoc(F.doc(fs, 'live', code)),
+  stop: code => F.updateDoc(F.doc(fs, 'live', code), {done:true, until:F.serverTimestamp()}),
+  drop: code => F.deleteDoc(F.doc(fs, 'live', code)),
 };
 // (nothing in this phone's copy is not an answer: it waits for the server, or says it cannot reach it)
 if (S.watch) F.onSnapshot(F.doc(fs, 'live', S.watch.code), s => { if (!s.exists() && s.metadata.fromCache) return;

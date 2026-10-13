@@ -1,4 +1,4 @@
-const CACHE = 'spike-sheet-v47';
+const CACHE = 'spike-sheet-v48';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png',
   ...['archivo-latin', 'archivo-latin-ext', 'roboto-condensed-latin', 'roboto-condensed-latin-ext', 'roboto-condensed-greek', 'roboto-condensed-greek-ext'].map(f => 'fonts/' + f + '.woff2')];
 // The sign-in and sync code (same version as V in index.html). Saved at install, so the first open
