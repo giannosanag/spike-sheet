@@ -626,7 +626,7 @@ const S = {matches:{}, players:{}, pslot:'player', teams:{team:{name:'', players
 // "Player|tab": one English word with two Greek ones (the part after | is not shown in English;
 // without its own Greek it takes the plain word's).
 // The app's version, on the Player page and on the owner's page: bump it together with CACHE in sw.js on every release
-const APP_VERSION = 'v48';
+const APP_VERSION = 'v49';
 const EL = {
   // header and tabs
   'Live': 'Αγώνας', 'Season': 'Σεζόν', 'Profile|tab': 'Προφίλ', 'Team': 'Ομάδα', 'Spike Sheet, home': 'Spike Sheet, αρχική', 'Views': 'Σελίδες',
@@ -887,7 +887,9 @@ const EL = {
   'You can keep two teams. Every player needs a number and a name. A new match asks what to track: {name} only, or a whole team. In a team match you tap the stat, then the number of the player.':
     'Μπορείς να κρατάς δύο ομάδες. Κάθε μέλος θέλει αριθμό και όνομα. Ο νέος αγώνας ρωτά τι θα καταγράψεις: «Όλη η ομάδα» ή «Ατομικά». Σε αγώνα ομάδας πατάς τη φάση και μετά τον αριθμό.',
   // player card and account
-  'Players|cards': 'Μέλη', 'For one-player matches, up to 5 players. A whole team is on the Team page.': 'Για τα «Ατομικά» στατιστικά, έως 5 μέλη. Την ομάδα τη φτιάχνεις στη σελίδα «Ομάδα».', 'Choose': 'Διάλεξε', 'Save player': 'Αποθήκευση', 'Pick the team': 'Διάλεξε ομάδα',
+  'Players|cards': 'Μέλη', 'For one-player matches, up to 5 players. A whole team is on the Team page.': 'Για τα «Ατομικά» στατιστικά, έως 5 μέλη. Την ομάδα τη φτιάχνεις στη σελίδα «Ομάδα».', 'Choose': 'Διάλεξε', 'Save player': 'Αποθήκευση', 'Last full backup: {when}': 'Τελευταίο πλήρες αντίγραφο: {when}', 'No full backup yet': 'Κανένα πλήρες αντίγραφο ακόμη',
+  'Time for a backup: Profile › Admin › Download all data.': 'Ώρα για αντίγραφο ασφαλείας: Προφίλ › Διαχείριση › Λήψη όλων των δεδομένων.', 'Backups': 'Αντίγραφα ασφαλείας',
+  "The app's owner downloads a copy of all data about once a month, to put things back after a problem, and keeps only the latest copy. What you delete leaves it with the next copy.": 'Ο διαχειριστής της εφαρμογής κατεβάζει περίπου μία φορά τον μήνα ένα αντίγραφο όλων των δεδομένων, για να επαναφέρει τα πάντα μετά από ένα πρόβλημα, και κρατά μόνο το πιο πρόσφατο. Ό,τι σβήνεις φεύγει από αυτό με το επόμενο αντίγραφο.', 'Pick the team': 'Διάλεξε ομάδα',
   "Two teams already: {team}'s matches stay in Season.": 'Ήδη δύο ομάδες: οι αγώνες της ομάδας {team} μένουν στη Σεζόν.',
   'Who is responsible': 'Υπεύθυνος επεξεργασίας', 'Ioannis Anagnostopoulos': 'Ιωάννης Αναγνωστόπουλος',
   '{name} runs Spike Sheet and is responsible for your data. Write to {email}.': '{name}, που λειτουργεί το Spike Sheet. Για τα δεδομένα σου γράψε στο {email}.', 'Then also delete the sign-in in the Firebase console (Authentication, Users).': 'Μετά σβήσε και τη σύνδεση Google του λογαριασμού στην κονσόλα Firebase (Authentication, Users).', 'Delete this player': 'Διαγραφή μέλους',
@@ -1280,6 +1282,7 @@ window.SS_onUser = (u, db) => {
     LS.set('ss.uid', u.uid);
     S.user = u;
     S.removed = undefined;
+    if (isAdmin()) setTimeout(backupNag, 3000);
     if (S.unRm){ S.unRm(); S.unRm = null; }
     if (!window.SS_watchRemoved) connect(db);
     else S.unRm = window.SS_watchRemoved(u.uid, r => {
@@ -3469,6 +3472,7 @@ function privacyView(){
     ${part('Who is responsible', L('{name} runs Spike Sheet and is responsible for your data. Write to {email}.', {name:L('Ioannis Anagnostopoulos'), email:`<a href="mailto:${ADMIN}" style="color:inherit"><b>${ADMIN}</b></a>`}))}
     ${part('What is kept', L("The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player cards, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (the last 30 days; every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages."))}
     ${part('Where', L("In your account on Google Firebase, Google's cloud: Google provides the servers and the sign-in. A copy stays on this phone while you are signed in, so the app works without signal; if your access is removed, the matches stay on it."))}
+    ${part('Backups', L('The app\'s owner downloads a copy of all data about once a month, to put things back after a problem, and keeps only the latest copy. What you delete leaves it with the next copy.'))}
     ${part('Who sees it', L("You, on every phone you sign in on. The app's owner, to help you and fix problems. Nothing is sold or given to anyone else. No ads, no tracking."))}
     ${part('Live score link', L('Only the two team names and the score (and a code for your account, no name or email), to anyone with the link, for 12 hours at most.'))}
     ${part('Players|privacy', L("Add players with their agreement, and for children with a parent's. First names are enough. Under 15, a parent or the coach should keep the account."))}
@@ -3892,7 +3896,7 @@ function playerView(){
     <div class="kicker">${L('Account')}</div>
     ${S.user
       ? `<p style="margin:0">${L('Signed in as {email}. Your matches are saved in your account and sync to every phone you sign in on.', {email:`<b>${esc(S.user.email||'')}</b>`})}</p>
-         <button class="btn btn-dk ${S.armed === 'signout' ? 'btn-del armed' : ''}" id="b-signout">${L(S.armed === 'signout' ? 'Tap again to sign out' : 'Sign out')}</button>${isAdmin() ? `<button class="btn btn-or" id="b-admin">${L('Admin')}</button>` : ''}`
+         <button class="btn btn-dk ${S.armed === 'signout' ? 'btn-del armed' : ''}" id="b-signout">${L(S.armed === 'signout' ? 'Tap again to sign out' : 'Sign out')}</button>${isAdmin() ? `<button class="btn btn-or" id="b-admin">${L('Admin')}</button>${backupLine()}` : ''}`
       : `<p style="margin:0">${L('Connecting to your account…')}</p>`}
     <p class="note" style="margin:0">${L("With Google sign-in, your matches, teams, player cards and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.")}</p>
   </section>
@@ -3926,11 +3930,22 @@ function admAccess(u){
 }
 // The owner's copy of everything (the free plan keeps no backups): every account's profile, matches, player card
 // and teams as one file - to the share sheet on an iPhone (Save to Files), to Downloads elsewhere
+// The owner's backup reminder (Ian 10-13): "Download all data" about once a month. When it was last done is kept on the
+// phone and on the owner's account (so every phone of theirs knows); over 30 days, or never: a line on Profile and on
+// the owner's page, and a message once a day when the app opens.
+const backupAt = () => +LS.get('ss.backupAt') || 0;
+const backupDue = () => isAdmin() && Date.now() - backupAt() > 30 * 864e5;
+const backupLine = () => `<p class="note${backupDue() ? ' neg' : ''}" style="margin:0">${backupAt() ? L('Last full backup: {when}', {when:ago(backupAt())}) : L('No full backup yet')}</p>`;
+window.SS_backupSeen = t => { if (+t > backupAt()) LS.set('ss.backupAt', +t); };
+function backupNag(){ const d = today(); if (!backupDue() || LS.get('ss.backupNag') === d) return; LS.set('ss.backupNag', d);
+  toast(L('Time for a backup: Profile › Admin › Download all data.')); }
 function adminBackup(one){
   const users = one ? [one] : (S.adm && S.adm.users) || [], d = new Date(), two = v => String(v).padStart(2, '0');
   const body = JSON.stringify({app:'Spike Sheet', version:APP_VERSION, made:d.toISOString(), users});
   const who = one ? String((one.profile||{}).email || one.uid).replace(/@.*/, '').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') : 'backup';
   shareFile(new File([body], 'spike-sheet-' + (who || 'account') + '-' + d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate()) + '.json', {type:'application/json'}), L('Spike Sheet backup'));
+  // (everyone's data: the monthly backup is done)
+  if (!one){ LS.set('ss.backupAt', d.getTime()); window.SS_backupDone?.(d.getTime()); render(); }
 }
 function adminLoad(){
   if (!window.SS_admin) return toast(L("Can't reach Google. Check the internet."));
@@ -4000,7 +4015,7 @@ function adminView(){
   const upOf = p => { const ph = admPhones(p); return {up:Math.max(0, ...ph.map(q => q.up || 0)), wait:ph.reduce((t, q) => t + (+q.wait || 0), 0)}; };
   return `${head(nL(users.length, '{n} person', '{n} people'))}
     <p class="note" style="margin:0">${L('Someone shows here after opening this version of the app once while signed in.')}</p>
-    <div class="row" style="gap:6px"><button class="btn btn-dk btn-sm" id="b-adload">${L('Read again')}</button><button class="btn btn-or btn-sm" id="b-adbackup">${L('Download all data')}</button></div></section>
+    <div class="row" style="gap:6px"><button class="btn btn-dk btn-sm" id="b-adload">${L('Read again')}</button><button class="btn btn-or btn-sm" id="b-adbackup">${L('Download all data')}</button></div>${backupLine()}</section>
     <div class="tiles sm">
       <div class="tile"><b>${users.filter(x => onlineNow(x.profile)).length}</b><span>${L('Online now')}</span><em>${L('app open, last 5 min')}</em></div>
       <div class="tile hero"><b>${users.filter(x => seen(x) > weekAgo).length}</b><span>${L('Active this week')}</span><em>${L('{d} today', {d:users.filter(x => seen(x) > dayAgo).length})}</em></div>
@@ -4531,6 +4546,7 @@ async function ping(u){
     if (Date.now() - (+localStorage.getItem(key) || 0) < 30 * 60e3) return;
     localStorage.setItem(key, String(Date.now()));
     const ref = F.doc(fs, 'users', u.uid), had = (await F.getDoc(ref)).data(), now = Date.now(), d = new Date();
+    if (had && had.backupAt) window.SS_backupSeen?.(had.backupAt);
     const day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), ua = navigator.userAgent;
     const kind = (/iPhone|iPad/.test(ua) ? 'iPhone' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'Mac' : 'Other') + ((matchMedia('(display-mode: standalone)').matches || navigator.standalone) ? ' app' : ' browser');
     // the version this phone runs (the saved copy's number), and its recent problems (a phone that is full is one too)
@@ -4561,6 +4577,8 @@ const okProfile = p => { p = p && typeof p === 'object' ? Object.assign({}, p) :
   ['email', 'name', 'ver', 'kind', 'lang'].forEach(k => { if (!okText(p[k])) delete p[k]; });
   ['last', 'first', 'alive', 'opens'].forEach(k => { if (p[k] != null && typeof p[k] !== 'number') delete p[k]; });
   return p; };
+// the owner's last full backup, on their own account (the reminder on every phone of theirs)
+window.SS_backupDone = t => { const u = auth.currentUser; if (u) F.setDoc(F.doc(fs, 'users', u.uid), {backupAt:t}, {merge:true}).catch(() => {}); };
 window.SS_admin = {
   async all(){
     const [us, bl] = await Promise.all([F.getDocs(F.collection(fs, 'users')), F.getDocs(F.collection(fs, 'blocked'))]);
