@@ -1,10 +1,10 @@
-const CACHE = 'spike-sheet-v49';
+const CACHE = 'spike-sheet-v50';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png',
   ...['archivo-latin', 'archivo-latin-ext', 'roboto-condensed-latin', 'roboto-condensed-latin-ext', 'roboto-condensed-greek', 'roboto-condensed-greek-ext'].map(f => 'fonts/' + f + '.woff2')];
 // The sign-in and sync code (same version as V in index.html). Saved at install, so the first open
 // after an update also works without signal. Best effort: a miss here must not stop the install.
 const FB = 'https://www.gstatic.com/firebasejs/10.14.1/';
-const LIBS = ['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].map(f => FB + f);
+const LIBS = ['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js', 'firebase-app-check.js'].map(f => FB + f);
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE)
     .then(c => c.addAll(SHELL).then(() => Promise.all(LIBS.map(u => c.add(u).catch(() => {})))))

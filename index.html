@@ -403,6 +403,8 @@ html{scrollbar-gutter:stable}
 .tile em{font-style:normal;font-size:11px;color:var(--muted);line-height:1.25}
 .tile.hero{background:var(--ink);color:var(--bg)}
 .tile.hero em{color:var(--faint)}
+/* reCAPTCHA's badge would cover the bottom buttons: Google allows hiding it when its line is in the user flow (sign-in) */
+.grecaptcha-badge{visibility:hidden}
 /* the owner's page: small boxes and buttons, so the people list starts on the first screen */
 .panel.adm{gap:10px;padding:12px 16px 18px}
 .panel.adm h2{font-size:26px}
@@ -626,7 +628,7 @@ const S = {matches:{}, players:{}, pslot:'player', teams:{team:{name:'', players
 // "Player|tab": one English word with two Greek ones (the part after | is not shown in English;
 // without its own Greek it takes the plain word's).
 // The app's version, on the Player page and on the owner's page: bump it together with CACHE in sw.js on every release
-const APP_VERSION = 'v49';
+const APP_VERSION = 'v50';
 const EL = {
   // header and tabs
   'Live': 'Αγώνας', 'Season': 'Σεζόν', 'Profile|tab': 'Προφίλ', 'Team': 'Ομάδα', 'Spike Sheet, home': 'Spike Sheet, αρχική', 'Views': 'Σελίδες',
@@ -887,7 +889,10 @@ const EL = {
   'You can keep two teams. Every player needs a number and a name. A new match asks what to track: {name} only, or a whole team. In a team match you tap the stat, then the number of the player.':
     'Μπορείς να κρατάς δύο ομάδες. Κάθε μέλος θέλει αριθμό και όνομα. Ο νέος αγώνας ρωτά τι θα καταγράψεις: «Όλη η ομάδα» ή «Ατομικά». Σε αγώνα ομάδας πατάς τη φάση και μετά τον αριθμό.',
   // player card and account
-  'Players|cards': 'Μέλη', 'For one-player matches, up to 5 players. A whole team is on the Team page.': 'Για τα «Ατομικά» στατιστικά, έως 5 μέλη. Την ομάδα τη φτιάχνεις στη σελίδα «Ομάδα».', 'Choose': 'Διάλεξε', 'Save player': 'Αποθήκευση', 'Last full backup: {when}': 'Τελευταίο πλήρες αντίγραφο: {when}', 'No full backup yet': 'Κανένα πλήρες αντίγραφο ακόμη',
+  'Players|cards': 'Μέλη', 'For one-player matches, up to 5 players. A whole team is on the Team page.': 'Για τα «Ατομικά» στατιστικά, έως 5 μέλη. Την ομάδα τη φτιάχνεις στη σελίδα «Ομάδα».', 'Choose': 'Διάλεξε', 'Save player': 'Αποθήκευση', 'Privacy Policy': 'Πολιτική Απορρήτου', 'Terms of Service': 'Όροι Παροχής Υπηρεσιών',
+  'This site is protected by reCAPTCHA and the Google {privacy} and {terms} apply.': 'Αυτός ο ιστότοπος προστατεύεται από το reCAPTCHA και ισχύουν η {privacy} και οι {terms} της Google.',
+  'Security check': 'Έλεγχος ασφαλείας',
+  "So that only this app reaches your data, Google reCAPTCHA quietly checks the phone or browser each time the app connects (there is no puzzle); Google sees the browser's signals for this.": 'Για να φτάνει στα δεδομένα σου μόνο αυτή η εφαρμογή, το Google reCAPTCHA ελέγχει αθόρυβα το κινητό ή τον browser κάθε φορά που συνδέεται η εφαρμογή (χωρίς παζλ)· γι\' αυτό η Google βλέπει στοιχεία του browser.', 'Last full backup: {when}': 'Τελευταίο πλήρες αντίγραφο: {when}', 'No full backup yet': 'Κανένα πλήρες αντίγραφο ακόμη',
   'Time for a backup: Profile › Admin › Download all data.': 'Ώρα για αντίγραφο ασφαλείας: Προφίλ › Διαχείριση › Λήψη όλων των δεδομένων.', 'Backups': 'Αντίγραφα ασφαλείας',
   "The app's owner downloads a copy of all data about once a month, to put things back after a problem, and keeps only the latest copy. What you delete leaves it with the next copy.": 'Ο διαχειριστής της εφαρμογής κατεβάζει περίπου μία φορά τον μήνα ένα αντίγραφο όλων των δεδομένων, για να επαναφέρει τα πάντα μετά από ένα πρόβλημα, και κρατά μόνο το πιο πρόσφατο. Ό,τι σβήνεις φεύγει από αυτό με το επόμενο αντίγραφο.', 'Pick the team': 'Διάλεξε ομάδα',
   "Two teams already: {team}'s matches stay in Season.": 'Ήδη δύο ομάδες: οι αγώνες της ομάδας {team} μένουν στη Σεζόν.',
@@ -3443,6 +3448,10 @@ const removedView = () => `<section class="panel"><h2>${L('Access removed')}</h2
 // Signed out: only this page, until Google sign-in
 // The Google "G" (as on VIT Watch)
 const GMARK = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+// Google's required line when its badge is hidden (sign-in page and privacy page)
+const recaptchaLine = () => L('This site is protected by reCAPTCHA and the Google {privacy} and {terms} apply.', {
+  privacy:`<a href="https://policies.google.com/privacy" target="_blank" rel="noopener" style="color:inherit">${L('Privacy Policy')}</a>`,
+  terms:`<a href="https://policies.google.com/terms" target="_blank" rel="noopener" style="color:inherit">${L('Terms of Service')}</a>`});
 const gateView = () => {
   // the button is off until the sign-in code has loaded (a press before did nothing), while the answer from Google
   // is read, and while Google opens; an old Home Screen icon with nothing to keep is only told the way to the new one
@@ -3462,6 +3471,7 @@ const gateView = () => {
     <p class="note" style="margin:0">${L("With Google sign-in, your matches, teams, player cards and when you open the app are saved in your account. The app's owner can see them, to help you and fix problems.")}</p>
     <p class="note" style="margin:0">${L('Opened from Instagram, Facebook, Messenger or Viber? Open the page in Safari or Chrome first: Google sign-in does not work inside them.')}</p>
     <p class="note" style="margin:0"><button class="lnk" data-view="privacy">${L('Privacy')}</button></p>
+    <p class="note" style="margin:0;font-size:11px">${recaptchaLine()}</p>
   </section>`; };
 // What is kept, where, who sees it, how to delete it (Ian 10-12: before the app goes to clients)
 function privacyView(){
@@ -3472,6 +3482,7 @@ function privacyView(){
     ${part('Who is responsible', L('{name} runs Spike Sheet and is responsible for your data. Write to {email}.', {name:L('Ioannis Anagnostopoulos'), email:`<a href="mailto:${ADMIN}" style="color:inherit"><b>${ADMIN}</b></a>`}))}
     ${part('What is kept', L("The matches you track (scores, stats, play by play), your teams (players' names and numbers), the player cards, and the email and name of your Google account. To help and fix problems: when and on which days you use the app (the last 30 days; every few minutes while it is open), the kind of phone and a code for it, the language, the app version and its error messages."))}
     ${part('Where', L("In your account on Google Firebase, Google's cloud: Google provides the servers and the sign-in. A copy stays on this phone while you are signed in, so the app works without signal; if your access is removed, the matches stay on it."))}
+    ${part('Security check', L("So that only this app reaches your data, Google reCAPTCHA quietly checks the phone or browser each time the app connects (there is no puzzle); Google sees the browser's signals for this.") + ' ' + recaptchaLine())}
     ${part('Backups', L('The app\'s owner downloads a copy of all data about once a month, to put things back after a problem, and keeps only the latest copy. What you delete leaves it with the next copy.'))}
     ${part('Who sees it', L("You, on every phone you sign in on. The app's owner, to help you and fix problems. Nothing is sold or given to anyone else. No ads, no tracking."))}
     ${part('Live score link', L('Only the two team names and the score (and a code for your account, no name or email), to anyone with the link, for 12 hours at most.'))}
@@ -4467,6 +4478,15 @@ const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/
 const A = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
 const F = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
 const app = initializeApp(CONFIG);
+// App Check (Ian 10-13): every request carries a pass from Google reCAPTCHA that it comes from this page on one of our
+// addresses (a score from the browser, no puzzle). Not on this PC's preview (localhost is not on the key). Nothing is
+// refused until the owner switches on enforcement in the Firebase console; offline, the saves wait as before.
+const RECAPTCHA_KEY = '6Ld0C-0tAAAAAOspHevbttRpX3d7UVMhY0Gx4quy';
+if ([NEW_HOST, TEST_HOST, ...OLD_HOSTS].includes(location.hostname)){
+  try{ const AC = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app-check.js`);
+    AC.initializeAppCheck(app, {provider:new AC.ReCaptchaEnterpriseProvider(RECAPTCHA_KEY), isTokenAutoRefreshEnabled:true}); }
+  catch(e){ noteIssue('app check: ' + ((e && e.message) || e)); }
+}
 const auth = A.getAuth(app);
 let fs;
 try{ fs = F.initializeFirestore(app, {localCache: F.persistentLocalCache({tabManager: F.persistentMultipleTabManager()})}); }
